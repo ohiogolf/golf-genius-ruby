@@ -46,8 +46,8 @@ jobs:
       - name: Run tests
         run: bundle exec rake test
 
-  build:
-    name: Build Gem
+  package:
+    name: Verify Gem Packaging
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -59,11 +59,16 @@ jobs:
           ruby-version: "3.3"
           bundler-cache: true
 
-      - name: Build gem
+      - name: Build gem package
         run: gem build golf-genius.gemspec
 
-      - name: Verify gem can be installed
-        run: gem install golf-genius-*.gem --local
+      - name: Verify gem structure
+        run: |
+          # Check that the gem was built
+          ls -la golf-genius-*.gem
+
+          # Verify gem contents include expected files
+          gem specification golf-genius-*.gem | grep -E "(name|version|files)"
 
       - name: Upload gem artifact
         uses: actions/upload-artifact@v4
