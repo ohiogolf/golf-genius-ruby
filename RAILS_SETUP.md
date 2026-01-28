@@ -96,7 +96,7 @@ class EventsController < ApplicationController
   end
 
   def show
-    @event = GolfGenius::Event.retrieve(params[:id])
+    @event = GolfGenius::Event.fetch(params[:id])
     @roster = GolfGenius::Event.roster(params[:id])
     @rounds = GolfGenius::Event.rounds(params[:id])
   end
@@ -108,7 +108,7 @@ end
 ```ruby
 class Tournament < ApplicationRecord
   def sync_from_golf_genius
-    event = GolfGenius::Event.retrieve(golf_genius_id)
+    event = GolfGenius::Event.fetch(golf_genius_id)
 
     update(
       name: event.name,
@@ -170,7 +170,7 @@ class GolfGeniusSync
   private
 
   def sync_event(event)
-    full_event = GolfGenius::Event.retrieve(event.id)
+    full_event = GolfGenius::Event.fetch(event.id)
     roster = GolfGenius::Event.roster(event.id)
     rounds = GolfGenius::Event.rounds(event.id)
 
@@ -281,7 +281,7 @@ class EventsController < ApplicationController
   rescue_from GolfGenius::GolfGeniusError, with: :handle_golf_genius_error
 
   def show
-    @event = GolfGenius::Event.retrieve(params[:id])
+    @event = GolfGenius::Event.fetch(params[:id])
   rescue GolfGenius::NotFoundError
     render_not_found
   rescue GolfGenius::RateLimitError => e
@@ -328,7 +328,7 @@ class EventsController < ApplicationController
 
   def show
     @event = Rails.cache.fetch("golf_genius/event/#{params[:id]}", expires_in: 5.minutes) do
-      GolfGenius::Event.retrieve(params[:id])
+      GolfGenius::Event.fetch(params[:id])
     end
   end
 end

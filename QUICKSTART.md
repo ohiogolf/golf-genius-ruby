@@ -2,6 +2,8 @@
 
 Get up and running with the Golf Genius Ruby gem in minutes.
 
+**📖 [Official API Documentation](https://www.golfgenius.com/api/v2/docs)**
+
 ## Installation
 
 ### Option 1: Install from Source (Current)
@@ -67,11 +69,15 @@ end
 
 ```ruby
 # Get full event details
-event = GolfGenius::Event.retrieve('event_id')
+event = GolfGenius::Event.fetch('event_id')
 
 puts "Event: #{event.name}"
 puts "Date: #{event.date}"
 puts "Location: #{event.location}"
+
+# Access nested objects
+puts "Season: #{event.season.name}"
+puts "Category: #{event.category.name}"
 ```
 
 ### Get Event Roster
@@ -94,6 +100,18 @@ rounds.each do |round|
 end
 ```
 
+### Auto-Pagination
+
+```ruby
+# Iterate through ALL events automatically
+GolfGenius::Event.auto_paging_each(season_id: 'season_123') do |event|
+  puts event.name
+end
+
+# Or get all as an array
+all_events = GolfGenius::Event.list_all(season_id: 'season_123')
+```
+
 ## Using the Client Pattern
 
 For applications that need to use multiple API keys or prefer an instance-based approach:
@@ -105,15 +123,20 @@ client = GolfGenius::Client.new(api_key: 'your_api_key')
 # Use the client to access resources
 seasons = client.seasons.list
 events = client.events.list(page: 1)
-event = client.events.retrieve('event_id')
+event = client.events.fetch('event_id')
 roster = client.events.roster('event_id')
+
+# Auto-pagination works too
+client.events.auto_paging_each do |event|
+  process(event)
+end
 ```
 
 ## Error Handling
 
 ```ruby
 begin
-  event = GolfGenius::Event.retrieve('invalid_id')
+  event = GolfGenius::Event.fetch('invalid_id')
 rescue GolfGenius::NotFoundError => e
   puts "Event not found: #{e.message}"
 rescue GolfGenius::AuthenticationError => e
@@ -123,6 +146,22 @@ rescue GolfGenius::RateLimitError => e
 rescue GolfGenius::GolfGeniusError => e
   puts "API error: #{e.message} (Status: #{e.http_status})"
 end
+```
+
+## Serialization
+
+```ruby
+event = GolfGenius::Event.fetch('event_id')
+
+# Convert to hash (recursively converts nested objects)
+hash = event.to_h
+
+# Convert to JSON
+json = event.to_json
+
+# Check for attributes
+event.key?(:name)  # => true
+event[:name]       # => "Event Name"
 ```
 
 ## Advanced Configuration
@@ -148,12 +187,7 @@ Run the test suite:
 bundle exec rake test
 ```
 
-Run with real API (requires GOLF_GENIUS_API_KEY environment variable):
-
-```bash
-export GOLF_GENIUS_API_KEY='your_api_key'
-bundle exec rake test
-```
+The test suite uses WebMock stubs, so no API key is required for testing.
 
 ## Examples
 
@@ -190,12 +224,13 @@ directories.each { |dir| puts dir.name }
 event_id = 'your_event_id'
 
 # Get comprehensive event data
-event = GolfGenius::Event.retrieve(event_id)
+event = GolfGenius::Event.fetch(event_id)
 roster = GolfGenius::Event.roster(event_id)
 rounds = GolfGenius::Event.rounds(event_id)
 courses = GolfGenius::Event.courses(event_id)
 
 # Get tournament data for a specific round
+round = rounds.first
 tournaments = GolfGenius::Event.tournaments(event_id, round.id)
 ```
 
@@ -214,50 +249,33 @@ events = GolfGenius::Event.list(category_id: category.id)
 events = GolfGenius::Event.list(archived: false)
 ```
 
-## Accessing Attributes
-
-All resources return Ruby objects with attribute accessors:
-
-```ruby
-season = GolfGenius::Season.retrieve('season_id')
-season.id        # => "123"
-season.name      # => "2026 Season"
-season.current   # => true
-
-# Convert to hash
-season.to_h      # => {:id=>"123", :name=>"2026 Season", :current=>true}
-```
-
-## Need Help?
-
-- Check the [README.md](README.md) for comprehensive documentation
-- Review the [examples/](examples/) directory for complete working examples
-- Run the examples with your API key to see the gem in action
-- Read the [IMPLEMENTATION_SUMMARY.md](IMPLEMENTATION_SUMMARY.md) for technical details
-
 ## API Reference
 
 ### Resources
 
-- `GolfGenius::Season` - List and retrieve seasons
+- `GolfGenius::Season` - List and fetch seasons
   - `.list()` - Get all seasons
-  - `.retrieve(id)` - Get a specific season
+  - `.fetch(id)` - Get a specific season
+  - `.auto_paging_each { }` - Iterate through all pages
+  - `.list_all()` - Get all as array
 
-- `GolfGenius::Category` - List and retrieve categories
+- `GolfGenius::Category` - List and fetch categories
   - `.list()` - Get all categories
-  - `.retrieve(id)` - Get a specific category
+  - `.fetch(id)` - Get a specific category
 
-- `GolfGenius::Directory` - List and retrieve directories
+- `GolfGenius::Directory` - List and fetch directories
   - `.list()` - Get all directories
-  - `.retrieve(id)` - Get a specific directory
+  - `.fetch(id)` - Get a specific directory
 
 - `GolfGenius::Event` - Comprehensive event access
   - `.list(params)` - Get events with optional filters
-  - `.retrieve(id)` - Get a specific event
+  - `.fetch(id)` - Get a specific event
   - `.roster(event_id, params)` - Get event roster
   - `.rounds(event_id)` - Get event rounds
   - `.courses(event_id)` - Get event courses
   - `.tournaments(event_id, round_id)` - Get round tournaments
+  - `.auto_paging_each(params) { }` - Iterate through all pages
+  - `.list_all(params)` - Get all as array
 
 ### Configuration
 
@@ -265,6 +283,7 @@ season.to_h      # => {:id=>"123", :name=>"2026 Season", :current=>true}
 - `GolfGenius.base_url` - Set/get base URL
 - `GolfGenius.logger` - Set/get logger
 - `GolfGenius.log_level` - Set/get log level
+- `GolfGenius.reset_configuration!` - Reset to defaults
 
 ### Error Classes
 
@@ -279,4 +298,8 @@ season.to_h      # => {:id=>"123", :name=>"2026 Season", :current=>true}
 
 ---
 
-Ready to start building? Just set your API key and start making requests!
+**Need Help?**
+
+- Check the [README.md](README.md) for comprehensive documentation
+- Review the [examples/](examples/) directory for complete working examples
+- Read the [Golf Genius API Documentation](https://www.golfgenius.com/api/v2/docs)

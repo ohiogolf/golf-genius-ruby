@@ -9,10 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - Initial release
-- Support for Seasons resource (list, retrieve)
-- Support for Categories resource (list, retrieve)
-- Support for Directories resource (list, retrieve)
-- Support for Events resource (list, retrieve, roster, rounds, courses, tournaments)
+- Support for Seasons resource (list, fetch)
+- Support for Categories resource (list, fetch)
+- Support for Directories resource (list, fetch)
+- Support for Events resource (list, fetch, roster, rounds, courses, tournaments)
 - Configuration management with API key and base URL
 - Comprehensive error handling with specific error classes
 - Client-based and module-level API access patterns

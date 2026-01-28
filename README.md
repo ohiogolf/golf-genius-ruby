@@ -2,6 +2,10 @@
 
 A Ruby library for accessing the Golf Genius API v2. This gem provides read-only access to seasons, categories, directories, and events.
 
+## Documentation
+
+- **[Golf Genius API Documentation](https://www.golfgenius.com/api/v2/docs)** - Official API reference
+
 ## Installation
 
 Add this line to your application's Gemfile:
@@ -43,22 +47,7 @@ No `require` needed! Just add the gem to your Gemfile and Rails will auto-load i
 gem 'golf-genius'
 ```
 
-Then configure in an initializer (see Rails Configuration below).
-
-Or configure with a block:
-
-```ruby
-GolfGenius.configure do |config|
-  config.api_key = 'your_api_key_here'
-  config.base_url = 'https://www.golfgenius.com' # optional, this is the default
-  config.logger = Logger.new(STDOUT) # optional
-  config.log_level = :info # optional
-end
-```
-
-### Rails Configuration
-
-The gem works seamlessly with Rails! Rails will automatically load the gem when you add it to your Gemfile (no manual `require` needed). Just create an initializer to set your API key globally:
+Then configure in an initializer:
 
 ```ruby
 # config/initializers/golf_genius.rb
@@ -72,8 +61,7 @@ GolfGenius.configure do |config|
 end
 ```
 
-After configuring in an initializer, the gem is ready to use anywhere in your Rails app (controllers, models, jobs, services) without passing the API key each time. See [RAILS_SETUP.md](RAILS_SETUP.md) for a complete Rails integration guide.
-```
+See [RAILS_SETUP.md](RAILS_SETUP.md) for a complete Rails integration guide.
 
 ### Using the Client
 
@@ -82,12 +70,12 @@ You can use the module-level methods or create a client instance:
 ```ruby
 # Module-level usage
 seasons = GolfGenius::Season.list
-season = GolfGenius::Season.retrieve('season_id')
+season = GolfGenius::Season.fetch('season_id')
 
 # Client instance usage (useful for multiple API keys)
 client = GolfGenius::Client.new(api_key: 'your_api_key')
 seasons = client.seasons.list
-season = client.seasons.retrieve('season_id')
+season = client.seasons.fetch('season_id')
 ```
 
 ### Seasons
@@ -97,7 +85,7 @@ season = client.seasons.retrieve('season_id')
 seasons = GolfGenius::Season.list
 
 # Get a specific season
-season = GolfGenius::Season.retrieve('season_id')
+season = GolfGenius::Season.fetch('season_id')
 
 # Access attributes
 season.id
@@ -112,7 +100,7 @@ season.current
 categories = GolfGenius::Category.list
 
 # Get a specific category
-category = GolfGenius::Category.retrieve('category_id')
+category = GolfGenius::Category.fetch('category_id')
 
 # Access attributes
 category.id
@@ -129,7 +117,7 @@ category.archived
 directories = GolfGenius::Directory.list
 
 # Get a specific directory
-directory = GolfGenius::Directory.retrieve('directory_id')
+directory = GolfGenius::Directory.fetch('directory_id')
 
 # Access attributes
 directory.id
@@ -151,7 +139,7 @@ events = GolfGenius::Event.list(
 )
 
 # Get a specific event
-event = GolfGenius::Event.retrieve('event_id')
+event = GolfGenius::Event.fetch('event_id')
 
 # Get event roster
 roster = GolfGenius::Event.roster('event_id', page: 1, photo: true)
@@ -180,13 +168,51 @@ event.participants.each do |participant|
 end
 ```
 
+### Pagination
+
+The gem provides automatic pagination support for list endpoints:
+
+```ruby
+# Iterate through all events across all pages
+GolfGenius::Event.auto_paging_each(season_id: 'season_123') do |event|
+  puts event.name
+end
+
+# Get all events as an array (use with caution on large datasets)
+all_events = GolfGenius::Event.list_all(season_id: 'season_123')
+
+# Works with the client too
+client = GolfGenius::Client.new(api_key: 'your_key')
+client.events.auto_paging_each do |event|
+  process(event)
+end
+```
+
+### Serialization
+
+Objects can be easily serialized:
+
+```ruby
+event = GolfGenius::Event.fetch('event_id')
+
+# Convert to hash (recursively converts nested objects)
+hash = event.to_h
+
+# Convert to JSON
+json = event.to_json
+
+# Check for attributes
+event.key?(:name)  # => true
+event[:name]       # => "Event Name"
+```
+
 ### Error Handling
 
 The gem raises specific errors for different API responses:
 
 ```ruby
 begin
-  event = GolfGenius::Event.retrieve('invalid_id')
+  event = GolfGenius::Event.fetch('invalid_id')
 rescue GolfGenius::NotFoundError => e
   puts "Event not found: #{e.message}"
 rescue GolfGenius::AuthenticationError => e
@@ -211,6 +237,20 @@ Available error classes:
 - `GolfGenius::ConnectionError` - Network errors
 - `GolfGenius::ConfigurationError` - Configuration errors
 
+### Using Custom API Keys
+
+Pass an API key to individual calls or use the client:
+
+```ruby
+# Per-request API key
+seasons = GolfGenius::Season.list(api_key: 'different_key')
+season = GolfGenius::Season.fetch('season_id', api_key: 'different_key')
+
+# Client with specific API key
+client = GolfGenius::Client.new(api_key: 'org_specific_key')
+seasons = client.seasons.list
+```
+
 ## Development
 
 After checking out the repo, run:
@@ -225,12 +265,54 @@ To run tests:
 bundle exec rake test
 ```
 
+The test suite uses WebMock to stub API responses, so no API key is needed for testing.
+
 To generate documentation:
 
 ```bash
 bundle exec yard doc
 bundle exec yard server
 ```
+
+## Adding New Resources
+
+Resources follow a consistent pattern. To add a new resource:
+
+```ruby
+# lib/golf_genius/resources/player.rb
+module GolfGenius
+  class Player < Resource
+    # Explicit path - no magic!
+    RESOURCE_PATH = "/players"
+
+    extend APIOperations::List
+    extend APIOperations::Fetch
+
+    # Add nested resources if needed
+    extend APIOperations::NestedResource
+    nested_resource :scores, path: "/players/%{parent_id}/scores"
+  end
+end
+```
+
+Then add to `lib/golf_genius.rb`:
+
+```ruby
+require "golf_genius/resources/player"
+```
+
+And to the client if desired:
+
+```ruby
+def players
+  @players ||= ResourceProxy.new(Player, @api_key)
+end
+```
+
+## Resources
+
+- [Golf Genius API Documentation](https://www.golfgenius.com/api/v2/docs)
+- [GitHub Repository](https://github.com/ohiogolf/golf-genius-ruby)
 
 ## Contributing
 

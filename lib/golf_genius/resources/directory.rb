@@ -1,12 +1,23 @@
 # frozen_string_literal: true
 
 module GolfGenius
+  # Represents a Golf Genius directory.
+  # Directories are used to organize events.
+  #
+  # @example List all directories
+  #   directories = GolfGenius::Directory.list
+  #   directories.each { |d| puts "#{d.name} - #{d.event_count} events" }
+  #
+  # @example Fetch a specific directory
+  #   directory = GolfGenius::Directory.fetch('directory_123')
+  #   puts directory.name
+  #
+  # @see https://www.golfgenius.com/api/v2/docs Golf Genius API Documentation
   class Directory < Resource
-    extend APIOperations::List
-    extend APIOperations::Retrieve
+    # API endpoint path for directories
+    RESOURCE_PATH = "/directories"
 
-    def self.resource_path
-      "/directories"
-    end
+    extend APIOperations::List
+    extend APIOperations::Fetch
   end
 end
