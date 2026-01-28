@@ -6,12 +6,12 @@
 # Add to Gemfile: gem 'golf-genius'
 
 # Option 1: Simple direct assignment (recommended for most cases)
-GolfGenius.api_key = ENV['GOLF_GENIUS_API_KEY']
+GolfGenius.api_key = ENV["GOLF_GENIUS_API_KEY"]
 
 # Option 2: Using the configure block (recommended for multiple settings)
 GolfGenius.configure do |config|
-  config.api_key = ENV['GOLF_GENIUS_API_KEY']
-  config.base_url = ENV.fetch('GOLF_GENIUS_BASE_URL', 'https://www.golfgenius.com')
+  config.api_key = ENV["GOLF_GENIUS_API_KEY"]
+  config.base_url = ENV.fetch("GOLF_GENIUS_BASE_URL", "https://www.golfgenius.com")
   config.open_timeout = 30
   config.read_timeout = 80
 

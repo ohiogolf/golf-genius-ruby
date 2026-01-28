@@ -68,7 +68,7 @@ module GolfGenius
       def deep_nested_resource(name, path:, parent_ids:, returns: :array, resource_class: nil)
         define_singleton_method(name) do |*ids, **options|
           if ids.length != parent_ids.length
-            raise ArgumentError, "Expected #{parent_ids.length} IDs (#{parent_ids.join(', ')}), got #{ids.length}"
+            raise ArgumentError, "Expected #{parent_ids.length} IDs (#{parent_ids.join(", ")}), got #{ids.length}"
           end
 
           params = options.fetch(:params, {}).dup

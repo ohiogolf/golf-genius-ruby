@@ -32,10 +32,10 @@ class GolfGeniusTest < Minitest::Test
   end
 
   def test_resource_classes_inherit_from_resource
-    assert GolfGenius::Season < GolfGenius::Resource
-    assert GolfGenius::Category < GolfGenius::Resource
-    assert GolfGenius::Directory < GolfGenius::Resource
-    assert GolfGenius::Event < GolfGenius::Resource
+    assert_operator GolfGenius::Season, :<, GolfGenius::Resource
+    assert_operator GolfGenius::Category, :<, GolfGenius::Resource
+    assert_operator GolfGenius::Directory, :<, GolfGenius::Resource
+    assert_operator GolfGenius::Event, :<, GolfGenius::Resource
   end
 
   def test_error_classes_exist

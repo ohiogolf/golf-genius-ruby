@@ -21,10 +21,10 @@ module GolfGenius
     attr_accessor :base_url
 
     # @return [Integer] Connection open timeout in seconds (default: 30)
-    attr_accessor :open_timeout
+    attr_reader :open_timeout
 
     # @return [Integer] Read timeout in seconds (default: 80)
-    attr_accessor :read_timeout
+    attr_reader :read_timeout
 
     # @return [Logger, nil] Logger instance for request/response logging
     attr_accessor :logger

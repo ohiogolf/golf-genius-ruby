@@ -166,13 +166,13 @@ class ErrorsTest < Minitest::Test
   end
 
   def test_error_inheritance
-    assert GolfGenius::AuthenticationError < GolfGenius::GolfGeniusError
-    assert GolfGenius::NotFoundError < GolfGenius::GolfGeniusError
-    assert GolfGenius::ValidationError < GolfGenius::GolfGeniusError
-    assert GolfGenius::RateLimitError < GolfGenius::GolfGeniusError
-    assert GolfGenius::ServerError < GolfGenius::GolfGeniusError
-    assert GolfGenius::APIError < GolfGenius::GolfGeniusError
-    assert GolfGenius::ConnectionError < GolfGenius::GolfGeniusError
-    assert GolfGenius::ConfigurationError < GolfGenius::GolfGeniusError
+    assert_operator GolfGenius::AuthenticationError, :<, GolfGenius::GolfGeniusError
+    assert_operator GolfGenius::NotFoundError, :<, GolfGenius::GolfGeniusError
+    assert_operator GolfGenius::ValidationError, :<, GolfGenius::GolfGeniusError
+    assert_operator GolfGenius::RateLimitError, :<, GolfGenius::GolfGeniusError
+    assert_operator GolfGenius::ServerError, :<, GolfGenius::GolfGeniusError
+    assert_operator GolfGenius::APIError, :<, GolfGenius::GolfGeniusError
+    assert_operator GolfGenius::ConnectionError, :<, GolfGenius::GolfGeniusError
+    assert_operator GolfGenius::ConfigurationError, :<, GolfGenius::GolfGeniusError
   end
 end

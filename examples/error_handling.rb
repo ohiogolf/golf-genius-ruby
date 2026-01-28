@@ -27,7 +27,7 @@ puts "2. Attempting to use invalid API key..."
 begin
   old_key = GolfGenius.api_key
   GolfGenius.api_key = "invalid_key"
-  events = GolfGenius::Event.list
+  GolfGenius::Event.list
 rescue GolfGenius::AuthenticationError => e
   puts "Error: Authentication failed (#{e.http_status})"
   puts "Message: #{e.message}"
@@ -41,7 +41,7 @@ puts "3. Attempting to connect to invalid host..."
 begin
   old_url = GolfGenius.base_url
   GolfGenius.base_url = "https://invalid-host-that-does-not-exist.example.com"
-  events = GolfGenius::Event.list
+  GolfGenius::Event.list
 rescue GolfGenius::ConnectionError => e
   puts "Error: Connection failed"
   puts "Message: #{e.message}"
@@ -54,7 +54,7 @@ puts
 puts "4. Attempting to make request without API key..."
 begin
   GolfGenius.reset_configuration!
-  events = GolfGenius::Event.list
+  GolfGenius::Event.list
 rescue GolfGenius::ConfigurationError => e
   puts "Error: Configuration error"
   puts "Message: #{e.message}"
@@ -73,7 +73,7 @@ rescue GolfGenius::NotFoundError => e
 rescue GolfGenius::AuthenticationError => e
   puts "Authentication failed: #{e.message}"
 rescue GolfGenius::RateLimitError => e
-  puts "Rate limit exceeded, retry after: #{e.http_headers['Retry-After']}"
+  puts "Rate limit exceeded, retry after: #{e.http_headers["Retry-After"]}"
 rescue GolfGenius::ValidationError => e
   puts "Invalid request: #{e.message}"
 rescue GolfGenius::ServerError => e
@@ -96,7 +96,7 @@ rescue GolfGenius::GolfGeniusError => e
   puts "Error class: #{e.class.name}"
   puts "HTTP Status: #{e.http_status}"
   puts "HTTP Body: #{e.http_body.inspect}"
-  puts "HTTP Headers: #{e.http_headers.keys.join(', ')}" if e.http_headers.any?
-  puts "Request ID: #{e.request_id || 'N/A'}"
+  puts "HTTP Headers: #{e.http_headers.keys.join(", ")}" if e.http_headers.any?
+  puts "Request ID: #{e.request_id || "N/A"}"
   puts "Full message: #{e}"
 end

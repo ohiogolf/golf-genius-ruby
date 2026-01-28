@@ -76,7 +76,7 @@ module GolfGenius
         return unless logger
 
         log_level = GolfGenius.log_level || :info
-        levels = [:debug, :info, :warn, :error]
+        levels = %i[debug info warn error]
         return if levels.index(level) < levels.index(log_level)
 
         logger.send(level, message)

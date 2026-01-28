@@ -13,6 +13,7 @@ class ConfigurationTest < Minitest::Test
 
   def test_default_configuration
     config = GolfGenius::Configuration.new
+
     assert_nil config.api_key
     assert_equal "https://www.golfgenius.com", config.base_url
     assert_equal 30, config.open_timeout
@@ -37,9 +38,11 @@ class ConfigurationTest < Minitest::Test
 
   def test_convenience_accessors
     GolfGenius.api_key = "my_key"
+
     assert_equal "my_key", GolfGenius.api_key
 
     GolfGenius.base_url = "https://custom.example.com"
+
     assert_equal "https://custom.example.com", GolfGenius.base_url
   end
 
@@ -58,9 +61,11 @@ class ConfigurationTest < Minitest::Test
     initial_version = config.version
 
     config.open_timeout = 60
+
     assert_equal initial_version + 1, config.version
 
     config.read_timeout = 120
+
     assert_equal initial_version + 2, config.version
   end
 

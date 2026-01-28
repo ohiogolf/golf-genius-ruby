@@ -6,24 +6,30 @@ Get up and running with the Golf Genius Ruby gem in minutes.
 
 ## Installation
 
-### Option 1: Install from Source (Current)
+### From GitHub (Recommended)
+
+Add to your Gemfile:
+
+```ruby
+# Latest from main branch
+gem "golf-genius", github: "ohiogolf/golf-genius-ruby"
+
+# Or pin to a specific version tag
+gem "golf-genius", github: "ohiogolf/golf-genius-ruby", tag: "v0.1.0"
+```
+
+Then run:
+```bash
+bundle install
+```
+
+### From Source (Development)
 
 ```bash
 cd golf-genius-ruby
 bundle install
 bundle exec rake build
 gem install pkg/golf-genius-0.1.0.gem
-```
-
-### Option 2: Add to Gemfile (After Publishing)
-
-```ruby
-gem 'golf-genius'
-```
-
-Then run:
-```bash
-bundle install
 ```
 
 ## Basic Setup

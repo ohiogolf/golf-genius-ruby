@@ -40,20 +40,20 @@ module GolfGenius
 
     # Nested resource: Event roster
     # GET /api_v2/{api_key}/events/{event_id}/roster
-    nested_resource :roster, path: "/events/%{parent_id}/roster"
+    nested_resource :roster, path: "/events/%<parent_id>s/roster"
 
     # Nested resource: Event rounds
     # GET /api_v2/{api_key}/events/{event_id}/rounds
-    nested_resource :rounds, path: "/events/%{parent_id}/rounds"
+    nested_resource :rounds, path: "/events/%<parent_id>s/rounds"
 
     # Nested resource: Event courses/tees
     # GET /api_v2/{api_key}/events/{event_id}/courses
-    nested_resource :courses, path: "/events/%{parent_id}/courses"
+    nested_resource :courses, path: "/events/%<parent_id>s/courses"
 
     # Deeply nested resource: Tournaments for a specific round
     # GET /api_v2/{api_key}/events/{event_id}/rounds/{round_id}/tournaments
     deep_nested_resource :tournaments,
-                         path: "/events/%{event_id}/rounds/%{round_id}/tournaments",
-                         parent_ids: [:event_id, :round_id]
+                         path: "/events/%<event_id>s/rounds/%<round_id>s/tournaments",
+                         parent_ids: %i[event_id round_id]
   end
 end

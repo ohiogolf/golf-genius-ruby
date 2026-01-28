@@ -64,13 +64,9 @@ if events.any?
   puts "  Date: #{full_event.date}" if full_event.key?(:date)
 
   # Access nested objects
-  if full_event.key?(:season)
-    puts "  Season: #{full_event.season.name}"
-  end
+  puts "  Season: #{full_event.season.name}" if full_event.key?(:season)
 
-  if full_event.key?(:category)
-    puts "  Category: #{full_event.category.name}"
-  end
+  puts "  Category: #{full_event.category.name}" if full_event.key?(:category)
 
   # Get event roster
   puts "\nFetching roster..."

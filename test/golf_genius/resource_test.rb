@@ -33,8 +33,8 @@ class ResourceTest < Minitest::Test
       "name" => "Test Event",
       "season" => {
         "id" => "season456",
-        "name" => "2026 Season"
-      }
+        "name" => "2026 Season",
+      },
     }
 
     event = GolfGenius::Event.construct_from(data)
@@ -51,8 +51,8 @@ class ResourceTest < Minitest::Test
       "id" => "event123",
       "participants" => [
         { "id" => "p1", "name" => "Player 1" },
-        { "id" => "p2", "name" => "Player 2" }
-      ]
+        { "id" => "p2", "name" => "Player 2" },
+      ],
     }
 
     event = GolfGenius::Event.construct_from(data)
@@ -72,19 +72,21 @@ class ResourceTest < Minitest::Test
           "id" => "round1",
           "tournaments" => [
             { "id" => "t1", "name" => "Tournament 1" },
-            { "id" => "t2", "name" => "Tournament 2" }
-          ]
-        }
-      ]
+            { "id" => "t2", "name" => "Tournament 2" },
+          ],
+        },
+      ],
     }
 
     event = GolfGenius::Event.construct_from(data)
 
     round = event.rounds.first
+
     assert_kind_of GolfGenius::GolfGeniusObject, round
     assert_equal "round1", round.id
 
     tournament = round.tournaments.first
+
     assert_kind_of GolfGenius::GolfGeniusObject, tournament
     assert_equal "t1", tournament.id
     assert_equal "Tournament 1", tournament.name
@@ -95,8 +97,8 @@ class ResourceTest < Minitest::Test
       "id" => "event123",
       "season" => { "id" => "season456", "name" => "2026 Season" },
       "participants" => [
-        { "id" => "p1", "name" => "Player 1" }
-      ]
+        { "id" => "p1", "name" => "Player 1" },
+      ],
     }
 
     event = GolfGenius::Event.construct_from(data)

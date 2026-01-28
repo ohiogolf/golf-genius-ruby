@@ -30,7 +30,10 @@ module GolfGenius
         # @raise [APIError] For other error responses
         def execute(method:, path:, params: {}, api_key: nil)
           api_key ||= GolfGenius.api_key
-          raise ConfigurationError, "No API key provided. Set GolfGenius.api_key or pass api_key parameter." unless api_key
+          unless api_key
+            raise ConfigurationError,
+                  "No API key provided. Set GolfGenius.api_key or pass api_key parameter."
+          end
 
           # Build URL with API key in path
           url = "#{GolfGenius.base_url}/api_v2/#{api_key}#{path}"
@@ -42,7 +45,7 @@ module GolfGenius
             response = connection.send(method) do |req|
               req.url url
               req.params = params if method == :get && !params.empty?
-              req.body = params.to_json if [:post, :put, :patch].include?(method) && !params.empty?
+              req.body = params.to_json if %i[post put patch].include?(method) && !params.empty?
             end
 
             handle_response(response)
@@ -90,7 +93,7 @@ module GolfGenius
               interval: 0.5,
               interval_randomness: 0.5,
               backoff_factor: 2,
-              exceptions: [Faraday::TimeoutError, Faraday::ConnectionFailed]
+              exceptions: [Faraday::TimeoutError, Faraday::ConnectionFailed],
             }
             conn.options.timeout = config.read_timeout
             conn.options.open_timeout = config.open_timeout

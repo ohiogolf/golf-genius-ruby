@@ -1,0 +1,70 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+echo "=== Golf Genius Ruby CI ==="
+echo ""
+
+# Colors for output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+NC='\033[0m' # No Color
+
+success() {
+  echo -e "${GREEN}✓ $1${NC}"
+}
+
+failure() {
+  echo -e "${RED}✗ $1${NC}"
+  exit 1
+}
+
+info() {
+  echo -e "${YELLOW}→ $1${NC}"
+}
+
+# Step 1: Install dependencies
+info "Installing dependencies..."
+bundle check || bundle install
+success "Dependencies installed"
+
+# Step 2: Run RuboCop
+info "Running RuboCop..."
+if bundle exec rubocop --parallel; then
+  success "RuboCop passed"
+else
+  failure "RuboCop failed"
+fi
+
+# Step 3: Run tests
+info "Running tests..."
+if bundle exec rake test; then
+  success "Tests passed"
+else
+  failure "Tests failed"
+fi
+
+# Step 4: Build gem
+info "Building gem..."
+if gem build golf-genius.gemspec; then
+  success "Gem built successfully"
+else
+  failure "Gem build failed"
+fi
+
+# Step 5: Verify gem can be installed
+info "Verifying gem installation..."
+GEM_FILE=$(ls -t golf-genius-*.gem | head -1)
+if gem install "$GEM_FILE" --local --no-document; then
+  success "Gem installs correctly"
+  # Clean up
+  gem uninstall golf-genius --executables --force 2>/dev/null || true
+else
+  failure "Gem installation failed"
+fi
+
+# Clean up built gem
+rm -f golf-genius-*.gem
+
+echo ""
+echo -e "${GREEN}=== All CI checks passed! ===${NC}"

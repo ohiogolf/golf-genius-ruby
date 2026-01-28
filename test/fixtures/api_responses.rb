@@ -12,15 +12,15 @@ module GolfGenius
         "name" => "2026 Season",
         "current" => true,
         "start_date" => "2026-01-01",
-        "end_date" => "2026-12-31"
+        "end_date" => "2026-12-31",
       },
       {
         "id" => "season_002",
         "name" => "2025 Season",
         "current" => false,
         "start_date" => "2025-01-01",
-        "end_date" => "2025-12-31"
-      }
+        "end_date" => "2025-12-31",
+      },
     ].freeze
 
     SEASON = SEASONS.first.freeze
@@ -32,15 +32,15 @@ module GolfGenius
         "name" => "Member Events",
         "color" => "#FF5733",
         "event_count" => 15,
-        "archived" => false
+        "archived" => false,
       },
       {
         "id" => "cat_002",
         "name" => "Guest Events",
         "color" => "#33FF57",
         "event_count" => 8,
-        "archived" => false
-      }
+        "archived" => false,
+      },
     ].freeze
 
     CATEGORY = CATEGORIES.first.freeze
@@ -51,14 +51,14 @@ module GolfGenius
         "id" => "dir_001",
         "name" => "Main Directory",
         "event_count" => 25,
-        "all_events" => false
+        "all_events" => false,
       },
       {
         "id" => "dir_002",
         "name" => "Archive Directory",
         "event_count" => 100,
-        "all_events" => true
-      }
+        "all_events" => true,
+      },
     ].freeze
 
     DIRECTORY = DIRECTORIES.first.freeze
@@ -74,13 +74,13 @@ module GolfGenius
         "archived" => false,
         "season" => {
           "id" => "season_001",
-          "name" => "2026 Season"
+          "name" => "2026 Season",
         },
         "category" => {
           "id" => "cat_001",
           "name" => "Member Events",
-          "color" => "#FF5733"
-        }
+          "color" => "#FF5733",
+        },
       },
       {
         "id" => "event_002",
@@ -91,14 +91,14 @@ module GolfGenius
         "archived" => false,
         "season" => {
           "id" => "season_001",
-          "name" => "2026 Season"
+          "name" => "2026 Season",
         },
         "category" => {
           "id" => "cat_002",
           "name" => "Guest Events",
-          "color" => "#33FF57"
-        }
-      }
+          "color" => "#33FF57",
+        },
+      },
     ].freeze
 
     EVENT = EVENTS.first.freeze
@@ -111,7 +111,7 @@ module GolfGenius
         "email" => "john@example.com",
         "handicap" => 12.5,
         "tee" => "Blue",
-        "photo_url" => "https://example.com/photos/john.jpg"
+        "photo_url" => "https://example.com/photos/john.jpg",
       },
       {
         "id" => "player_002",
@@ -119,7 +119,7 @@ module GolfGenius
         "email" => "jane@example.com",
         "handicap" => 8.2,
         "tee" => "White",
-        "photo_url" => "https://example.com/photos/jane.jpg"
+        "photo_url" => "https://example.com/photos/jane.jpg",
       },
       {
         "id" => "player_003",
@@ -127,8 +127,8 @@ module GolfGenius
         "email" => "bob@example.com",
         "handicap" => 18.0,
         "tee" => "Blue",
-        "photo_url" => nil
-      }
+        "photo_url" => nil,
+      },
     ].freeze
 
     # Sample event rounds response
@@ -138,15 +138,15 @@ module GolfGenius
         "number" => 1,
         "date" => "2026-04-15",
         "format" => "stroke_play",
-        "status" => "completed"
+        "status" => "completed",
       },
       {
         "id" => "round_002",
         "number" => 2,
         "date" => "2026-04-16",
         "format" => "stroke_play",
-        "status" => "scheduled"
-      }
+        "status" => "scheduled",
+      },
     ].freeze
 
     # Sample event courses response
@@ -157,7 +157,7 @@ module GolfGenius
         "tee" => "Blue",
         "rating" => 74.5,
         "slope" => 145,
-        "par" => 72
+        "par" => 72,
       },
       {
         "id" => "course_002",
@@ -165,8 +165,8 @@ module GolfGenius
         "tee" => "White",
         "rating" => 71.2,
         "slope" => 138,
-        "par" => 72
-      }
+        "par" => 72,
+      },
     ].freeze
 
     # Sample tournaments response
@@ -176,64 +176,64 @@ module GolfGenius
         "name" => "Flight A - Gross",
         "type" => "individual",
         "scoring" => "gross",
-        "status" => "completed"
+        "status" => "completed",
       },
       {
         "id" => "tourn_002",
         "name" => "Flight A - Net",
         "type" => "individual",
         "scoring" => "net",
-        "status" => "completed"
-      }
+        "status" => "completed",
+      },
     ].freeze
 
     # Paginated events response (page 1 of 2)
     EVENTS_PAGE_1 = (1..25).map do |i|
       {
-        "id" => "event_#{i.to_s.rjust(3, '0')}",
+        "id" => "event_#{i.to_s.rjust(3, "0")}",
         "name" => "Event #{i}",
         "type" => "tournament",
-        "date" => "2026-01-#{i.to_s.rjust(2, '0')}",
-        "archived" => false
+        "date" => "2026-01-#{i.to_s.rjust(2, "0")}",
+        "archived" => false,
       }
     end.freeze
 
     # Paginated events response (page 2 of 2)
     EVENTS_PAGE_2 = (26..30).map do |i|
       {
-        "id" => "event_#{i.to_s.rjust(3, '0')}",
+        "id" => "event_#{i.to_s.rjust(3, "0")}",
         "name" => "Event #{i}",
         "type" => "tournament",
-        "date" => "2026-02-#{(i - 25).to_s.rjust(2, '0')}",
-        "archived" => false
+        "date" => "2026-02-#{(i - 25).to_s.rjust(2, "0")}",
+        "archived" => false,
       }
     end.freeze
 
     # Error responses
     ERROR_NOT_FOUND = {
       "error" => "Resource not found",
-      "message" => "The requested resource could not be found"
+      "message" => "The requested resource could not be found",
     }.freeze
 
     ERROR_UNAUTHORIZED = {
       "error" => "Unauthorized",
-      "message" => "Invalid or missing API key"
+      "message" => "Invalid or missing API key",
     }.freeze
 
     ERROR_VALIDATION = {
       "error" => "Validation failed",
       "message" => "Invalid parameters provided",
-      "errors" => ["page must be a positive integer"]
+      "errors" => ["page must be a positive integer"],
     }.freeze
 
     ERROR_RATE_LIMIT = {
       "error" => "Rate limit exceeded",
-      "message" => "Too many requests. Please retry after 60 seconds."
+      "message" => "Too many requests. Please retry after 60 seconds.",
     }.freeze
 
     ERROR_SERVER = {
       "error" => "Internal server error",
-      "message" => "An unexpected error occurred"
+      "message" => "An unexpected error occurred",
     }.freeze
   end
 end

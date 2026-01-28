@@ -13,11 +13,13 @@ class ClientTest < Minitest::Test
 
   def test_client_initialization_with_api_key
     client = GolfGenius::Client.new(api_key: "custom_key")
+
     assert_equal "custom_key", client.api_key
   end
 
   def test_client_initialization_with_global_api_key
     client = GolfGenius::Client.new
+
     assert_equal TEST_API_KEY, client.api_key
   end
 

@@ -8,22 +8,33 @@ A Ruby library for accessing the Golf Genius API v2. This gem provides read-only
 
 ## Installation
 
+### From GitHub (Recommended)
+
 Add this line to your application's Gemfile:
 
 ```ruby
-gem 'golf-genius'
+# Latest from main branch
+gem "golf-genius", github: "ohiogolf/golf-genius-ruby"
+
+# Or pin to a specific version tag
+gem "golf-genius", github: "ohiogolf/golf-genius-ruby", tag: "v0.1.0"
+
+# Or pin to a specific commit
+gem "golf-genius", github: "ohiogolf/golf-genius-ruby", ref: "abc1234"
 ```
 
-And then execute:
+Then execute:
 
 ```bash
 bundle install
 ```
 
-Or install it yourself as:
+### From RubyGems (Future)
 
-```bash
-gem install golf-genius
+Once published to RubyGems:
+
+```ruby
+gem "golf-genius"
 ```
 
 ## Usage

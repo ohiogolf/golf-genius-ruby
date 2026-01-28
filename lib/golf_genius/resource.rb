@@ -22,11 +22,9 @@ module GolfGenius
     # @return [String] The resource path (e.g., "/seasons")
     # @raise [NotImplementedError] If RESOURCE_PATH is not defined
     def self.resource_path
-      if const_defined?(:RESOURCE_PATH)
-        const_get(:RESOURCE_PATH)
-      else
-        raise NotImplementedError, "#{name} must define RESOURCE_PATH constant"
-      end
+      raise NotImplementedError, "#{name} must define RESOURCE_PATH constant" unless const_defined?(:RESOURCE_PATH)
+
+      const_get(:RESOURCE_PATH)
     end
 
     # Constructs a new resource instance from API response attributes.

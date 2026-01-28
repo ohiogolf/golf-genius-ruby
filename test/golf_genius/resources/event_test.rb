@@ -74,7 +74,7 @@ class EventTest < Minitest::Test
     assert_kind_of GolfGenius::GolfGeniusObject, roster.first
     assert_equal "player_001", roster.first.id
     assert_equal "John Smith", roster.first.name
-    assert_equal 12.5, roster.first.handicap
+    assert_in_delta(12.5, roster.first.handicap)
   end
 
   def test_event_roster_with_params
@@ -111,7 +111,7 @@ class EventTest < Minitest::Test
     assert_equal 2, courses.length
     assert_kind_of GolfGenius::GolfGeniusObject, courses.first
     assert_equal "course_001", courses.first.id
-    assert_equal 74.5, courses.first.rating
+    assert_in_delta(74.5, courses.first.rating)
   end
 
   def test_event_tournaments
