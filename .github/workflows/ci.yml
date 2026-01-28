@@ -71,7 +71,7 @@ jobs:
           gem specification golf-genius-*.gem | grep -E "(name|version|files)"
 
       - name: Upload gem artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: gem
           path: golf-genius-*.gem
