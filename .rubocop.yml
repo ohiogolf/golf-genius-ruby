@@ -29,6 +29,7 @@ Metrics/BlockLength:
   Exclude:
     - "test/**/*"
     - "*.gemspec"
+    - "lib/golf_genius/api_operations/**/*"
 
 # Allow more ABC complexity in tests and API operations
 Metrics/AbcSize:
@@ -94,6 +95,10 @@ Metrics/CyclomaticComplexity:
     - "lib/golf_genius/util.rb"
 
 Metrics/PerceivedComplexity:
+  Exclude:
+    - "lib/golf_genius/api_operations/**/*"
+
+Metrics/ParameterLists:
   Exclude:
     - "lib/golf_genius/api_operations/**/*"
 

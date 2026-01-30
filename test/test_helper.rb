@@ -48,6 +48,15 @@ module GolfGenius
       )
     end
 
+    def stub_nested(path, response_body, query: nil)
+      stub_api_request(
+        method: :get,
+        path: path,
+        response_body: response_body,
+        query: query
+      )
+    end
+
     def stub_error(method:, path:, status:, error_body:, query: nil)
       stub_api_request(
         method: method,
