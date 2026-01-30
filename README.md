@@ -2,8 +2,6 @@
 
 Ruby client for the [Golf Genius API v2](https://www.golfgenius.com/api/v2/docs). Read-only access to seasons, categories, directories, and events.
 
-**Environments:** Production is at `www.golfgenius.com`. A staging API is at **ggstest.com**. You can set the base URL globally via **`GOLF_GENIUS_ENV=staging`** (uses ggstest.com) or **`GOLF_GENIUS_BASE_URL`** (any URL); otherwise the client defaults to production.
-
 ## Install
 
 ```ruby
@@ -21,116 +19,200 @@ bundle install
 require "golf_genius"
 
 GolfGenius.api_key = ENV["GOLF_GENIUS_API_KEY"]
-# Or: GolfGenius.configure { |c| c.api_key = "..." }
-
-# Optional: use staging — set env GOLF_GENIUS_ENV=staging (or GOLF_GENIUS_BASE_URL), or:
-# GolfGenius.base_url = "https://ggstest.com"
 ```
 
-## Usage
+To use the console locally with staging or production, create `.env.staging` or `.env.production` with `GOLF_GENIUS_API_KEY=your_key`, and set `GOLF_GENIUS_ENV=staging` or `production` as needed. See [.env.example](.env.example).
 
-**Seasons, categories, directories**
+---
+
+## Resources (alphabetical)
+
+### Category
+
+**List all categories**
 
 ```ruby
-GolfGenius::Season.list
-GolfGenius::Season.fetch("season_id")
-
 GolfGenius::Category.list
-GolfGenius::Category.fetch("category_id")
+```
 
+```ruby
+# => [
+#   #<GolfGenius::Category id="cat_001" name="Member Events" color="#FF5733" event_count=15 archived=false>,
+#   #<GolfGenius::Category id="cat_002" name="Guest Events" color="#33FF57" event_count=8 archived=false>
+# ]
+```
+
+**Fetch one category by id**
+
+```ruby
+GolfGenius::Category.fetch("cat_001")
+```
+
+```ruby
+# => #<GolfGenius::Category id="cat_001" name="Member Events" color="#FF5733" event_count=15 archived=false>
+```
+
+---
+
+### Directory
+
+**List all directories**
+
+```ruby
 GolfGenius::Directory.list
-GolfGenius::Directory.fetch("directory_id")
 ```
-
-**Events (list, filter, fetch by id or ggid)**
 
 ```ruby
-# list() fetches all pages by default
-GolfGenius::Event.list(directory: dir)
-# Single page only: pass page
-GolfGenius::Event.list(page: 1, directory: dir, season: season, category: cat, archived: false)
-
-# Fetch one event by id or ggid (uses list under the hood; Event matches on both)
-GolfGenius::Event.fetch(171716)
-GolfGenius::Event.fetch("zphsqa", season_id: "season_123", max_pages: 10)
+# => [
+#   #<GolfGenius::Directory id="dir_001" name="Main Directory" event_count=25 all_events=false>,
+#   #<GolfGenius::Directory id="dir_002" name="Archive Directory" event_count=100 all_events=true>
+# ]
 ```
 
-**Fetch** — All resources support `fetch(id, **params)`. Fetch uses the list endpoint and matches `id` (as string) against configured attributes. By default only `:id` is matched; Event also matches `:ggid` (e.g. `Event.fetch("zphsqa")`). Optional params: list filters plus `:max_pages` (default 20). New resources can declare `fetch_match_on :id, :other_field` to match additional attributes.
-
-**List parameters (filters)** — Per the API. Only these resources support list; filters below.
-
-| Resource   | List params |
-| ---------- | ----------- |
-| Season     | `:page`, `:api_key` only (no filters). |
-| Category   | `:page`, `:api_key` only (no filters). |
-| Directory  | `:page`, `:api_key` only (no filters). |
-| Event      | `:directory` / `:directory_id`, `:season` / `:season_id`, `:category` / `:category_id`, `:archived`, `:page`, `:api_key`. Pass resource objects or ids. **Default: non-archived only.** Use `archived: true` for archived-only. |
-
-**Event nested data** (roster, rounds, courses, tournaments)
+**Fetch one directory by id**
 
 ```ruby
-GolfGenius::Event.roster("event_id", photo: true)   # :photo, :page
-GolfGenius::Event.rounds("event_id")
-GolfGenius::Event.courses("event_id")
-GolfGenius::Event.tournaments("event_id", "round_id")
+GolfGenius::Directory.fetch("dir_001")
 ```
-
-**Pagination**
 
 ```ruby
-# list() already fetches all pages; for streaming use:
-GolfGenius::Event.auto_paging_each(directory: dir) { |e| puts e.name }
-# Or list_all (same as list() when no page: is passed)
-GolfGenius::Event.list_all(season: season)
+# => #<GolfGenius::Directory id="dir_001" name="Main Directory" event_count=25 all_events=false>
 ```
 
-**Client (multiple API keys)**
+---
 
-```ruby
-client = GolfGenius::Client.new(api_key: "key")
-client.seasons.list
-client.events.list(directory: dir)
-client.events.fetch(171716)
-client.events.roster("event_id")
-```
+### Event
 
-**Attributes**
+**List events** (optionally filter by directory, season, category; by default non-archived only)
 
 ```ruby
 dir = GolfGenius::Directory.list.first
-dir.id
-dir.name
-dir.event_count
-dir.all_events
+GolfGenius::Event.list(directory: dir)
 ```
-
-**Errors**
 
 ```ruby
-GolfGenius::NotFoundError
-GolfGenius::AuthenticationError
-GolfGenius::RateLimitError
-GolfGenius::GolfGeniusError  # base
+# => [
+#   #<GolfGenius::Event id="event_001" name="Spring Championship" type="tournament" date="2026-04-15" location="Pine Valley Golf Club" archived=false ...>,
+#   #<GolfGenius::Event id="event_002" name="Summer Outing" type="outing" date="2026-07-20" ...>
+# ]
 ```
 
-**Environment (interrogate in console)**
+**Fetch one event by id or ggid**
 
 ```ruby
-GolfGenius.env              # => #<GolfGenius::Environment production base_url="...">
-GolfGenius.env.production?  # => true
-GolfGenius.env.staging?    # => false
-GolfGenius.env.custom?     # => false when production or staging
-GolfGenius.env.to_s         # => "production" | "staging" | "custom"
+GolfGenius::Event.fetch(171716)
+# or by short ggid:
+GolfGenius::Event.fetch("zphsqa")
 ```
-
-**Debug (log raw requests)**
 
 ```ruby
-GolfGenius.debug = true   # logs each request (method + full URL) and response to $stdout
-# Or: GolfGenius.logger = Logger.new($stdout); GolfGenius.log_level = :debug
+# => #<GolfGenius::Event id="event_001" name="Spring Championship" type="tournament" date="2026-04-15" location="Pine Valley Golf Club" archived=false ...>
 ```
 
-The API key is never logged or shown in `inspect`; it is only visible when you explicitly call `GolfGenius.api_key`.
+**Event roster** (players; pass `photo: true` to include profile picture URLs)
+
+```ruby
+GolfGenius::Event.roster("event_001", photo: true)
+```
+
+```ruby
+# => [
+#   #<GolfGenius::GolfGeniusObject id="player_001" name="John Smith" email="john@example.com" handicap=12.5 tee="Blue" photo_url="https://...">,
+#   #<GolfGenius::GolfGeniusObject id="player_002" name="Jane Doe" ...>
+# ]
+```
+
+**Event rounds**
+
+```ruby
+GolfGenius::Event.rounds("event_001")
+```
+
+```ruby
+# => [
+#   #<GolfGenius::GolfGeniusObject id="round_001" number=1 date="2026-04-15" format="stroke_play" status="completed">,
+#   #<GolfGenius::GolfGeniusObject id="round_002" number=2 date="2026-04-16" status="scheduled">
+# ]
+```
+
+**Event courses** (tees / ratings)
+
+```ruby
+GolfGenius::Event.courses("event_001")
+```
+
+```ruby
+# => [
+#   #<GolfGenius::GolfGeniusObject id="course_001" name="Pine Valley - Championship" tee="Blue" rating=74.5 slope=145 par=72>,
+#   #<GolfGenius::GolfGeniusObject id="course_002" name="Pine Valley - Championship" tee="White" rating=71.2 slope=138 par=72>
+# ]
+```
+
+**Tournaments for a round**
+
+```ruby
+GolfGenius::Event.tournaments("event_001", "round_001")
+```
+
+```ruby
+# => [
+#   #<GolfGenius::GolfGeniusObject id="tourn_001" name="Flight A - Gross" type="individual" scoring="gross" status="completed">,
+#   #<GolfGenius::GolfGeniusObject id="tourn_002" name="Flight A - Net" scoring="net" status="completed">
+# ]
+```
+
+---
+
+### Season
+
+**List all seasons**
+
+```ruby
+GolfGenius::Season.list
+```
+
+```ruby
+# => [
+#   #<GolfGenius::Season id="season_001" name="2026 Season" current=true start_date="2026-01-01" end_date="2026-12-31">,
+#   #<GolfGenius::Season id="season_002" name="2025 Season" current=false start_date="2025-01-01" end_date="2025-12-31">
+# ]
+```
+
+**Fetch one season by id**
+
+```ruby
+GolfGenius::Season.fetch("season_001")
+```
+
+```ruby
+# => #<GolfGenius::Season id="season_001" name="2026 Season" current=true start_date="2026-01-01" end_date="2026-12-31">
+```
+
+---
+
+## Multiple API keys (client)
+
+Use a dedicated client when you need a different API key than the global one:
+
+```ruby
+client = GolfGenius::Client.new(api_key: "your_key")
+client.seasons.list
+client.events.list(directory: dir)
+client.events.fetch(171716)
+client.events.roster("event_001")
+```
+
+---
+
+## Advanced options
+
+- **Pagination:** `list` fetches all pages by default. To request a single page, pass `page: 1`. For streaming, use `GolfGenius::Event.auto_paging_each(directory: dir) { |e| ... }`.
+- **Event filters:** `list(directory: dir, season: season, category: cat, archived: true)` — pass resource objects or ids; default is non-archived only.
+- **Fetch:** Event supports lookup by `id` or `ggid`; other resources by `id`. Optional `max_pages` for fetch (default 20).
+- **Environment:** Production is `golfgenius.com`. Staging is `ggstest.com`. Set `GOLF_GENIUS_ENV=staging` or `GOLF_GENIUS_BASE_URL` to override.
+- **Debug:** `GolfGenius.debug = true` logs each request and response to `$stdout`. The API key is never logged.
+
+---
 
 ## Development
 
@@ -140,11 +222,9 @@ bin/console   # then reload! after editing lib/
 bundle exec rake test
 ```
 
-**Console env loading** — `bin/console` loads env files via the [dotenv](https://github.com/bkeepers/dotenv) gem (development dependency). Order: `.env` (base) → `.env.#{GOLF_GENIUS_ENV}` (if set, e.g. `.env.staging` or `.env.production`) → `.env.local` (overrides). All except `.env.example` are gitignored. Format: one `KEY=value` per line, no spaces around `=`, comments with `#`. Copy [.env.example](.env.example) to `.env.local` and fill in your API key. To use staging or production keys, set `GOLF_GENIUS_ENV=staging` or `GOLF_GENIUS_ENV=production` in your shell or in `.env`, and create `.env.staging` or `.env.production` with the corresponding keys; `.env.local` always wins for overlapping keys.
-
 - [QUICKSTART.md](QUICKSTART.md) – example-focused guide
 - [RAILS_SETUP.md](RAILS_SETUP.md) – Rails integration
-- [API docs](https://www.golfgenius.com/api/v2/docs) (staging: https://ggstest.com)
+- [API docs](https://www.golfgenius.com/api/v2/docs) (staging: `https://ggstest.com`)
 
 ## License
 
