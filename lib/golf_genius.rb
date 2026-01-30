@@ -2,6 +2,7 @@
 
 require "golf_genius/version"
 require "golf_genius/configuration"
+require "golf_genius/errors"
 
 # Golf Genius Ruby API client.
 # A Ruby library for accessing the Golf Genius API v2.
