@@ -91,6 +91,7 @@ Metrics/ModuleLength:
 Metrics/CyclomaticComplexity:
   Exclude:
     - "lib/golf_genius/api_operations/**/*"
+    - "lib/golf_genius/util.rb"
 
 Metrics/PerceivedComplexity:
   Exclude:
