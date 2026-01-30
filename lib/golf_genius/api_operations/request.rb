@@ -169,7 +169,15 @@ module GolfGenius
           elsif body.is_a?(Hash) && body["message"]
             body["message"]
           elsif body.is_a?(String)
-            body
+            # Avoid dumping HTML (e.g. Golf Genius 404 page) into the exception message
+            if body.strip.downcase.start_with?("<!doctype") || body.strip.downcase.start_with?("<html")
+              case response.status
+              when 404 then "Resource not found"
+              else "API request failed with status #{response.status}"
+              end
+            else
+              body
+            end
           else
             "API request failed with status #{response.status}"
           end
