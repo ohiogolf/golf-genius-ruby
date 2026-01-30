@@ -135,6 +135,8 @@ bin/console   # then reload! after editing lib/
 bundle exec rake test
 ```
 
+**Console env loading** — `bin/console` loads env files via the [dotenv](https://github.com/bkeepers/dotenv) gem (development dependency). Order: `.env` (base) → `.env.#{GOLF_GENIUS_ENV}` (if set, e.g. `.env.staging` or `.env.production`) → `.env.local` (overrides). All except `.env.example` are gitignored. Format: one `KEY=value` per line, no spaces around `=`, comments with `#`. Copy [.env.example](.env.example) to `.env.local` and fill in your API key. To use staging or production keys, set `GOLF_GENIUS_ENV=staging` or `GOLF_GENIUS_ENV=production` in your shell or in `.env`, and create `.env.staging` or `.env.production` with the corresponding keys; `.env.local` always wins for overlapping keys.
+
 - [QUICKSTART.md](QUICKSTART.md) – example-focused guide
 - [RAILS_SETUP.md](RAILS_SETUP.md) – Rails integration
 - [API docs](https://www.golfgenius.com/api/v2/docs) (staging: https://ggstest.com)

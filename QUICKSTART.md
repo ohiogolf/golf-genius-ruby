@@ -80,6 +80,8 @@ client.events.fetch("event_id")
 bin/console
 ```
 
+`bin/console` loads env files (all gitignored except [.env.example](.env.example)) in this order: `.env` → `.env.staging` or `.env.production` (if `GOLF_GENIUS_ENV` is set) → `.env.local` (overrides). Format: `KEY=value` per line, no spaces around `=`. Copy `.env.example` to `.env.local` and add your API key; or use `GOLF_GENIUS_ENV=staging` / `GOLF_GENIUS_ENV=production` with a matching `.env.staging` / `.env.production` file.
+
 - **`reload!`** – re-load the gem after editing `lib/` (no restart).
 - **`table(collection)`** – print a list of resources as a table, e.g. `table(GolfGenius::Directory.list)`.
 

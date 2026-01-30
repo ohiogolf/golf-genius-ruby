@@ -2,7 +2,23 @@
 # frozen_string_literal: true
 
 require "bundler/setup"
+
+# Load env files (all gitignored). Order: .env (base) → .env.#{GOLF_GENIUS_ENV} (e.g. staging/production) → .env.local (wins).
+# Set GOLF_GENIUS_ENV=staging or GOLF_GENIUS_ENV=production to load .env.staging / .env.production.
+root = File.expand_path("..", __dir__)
+require "dotenv"
+Dotenv.load(File.join(root, ".env"))
+env_specific = ENV["GOLF_GENIUS_ENV"].to_s.strip
+unless env_specific.empty?
+  env_file = File.join(root, ".env.#{env_specific}")
+  Dotenv.overload(env_file) if File.file?(env_file)
+end
+Dotenv.overload(File.join(root, ".env.local"))
+
 require "golf_genius"
+
+# Apply env vars to gem config so .env* keys work without extra setup.
+GolfGenius.api_key = ENV.fetch("GOLF_GENIUS_API_KEY", nil) if ENV["GOLF_GENIUS_API_KEY"].to_s.strip != ""
 
 # Reload the gem's lib so code changes are picked up without restarting the console.
 def reload! # rubocop:disable Naming/PredicateMethod
