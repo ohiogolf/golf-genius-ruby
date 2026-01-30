@@ -83,7 +83,7 @@ class EventTest < Minitest::Test
   def test_event_nested_season
     event = GolfGenius::Event.construct_from(EVENT)
 
-    assert_kind_of GolfGenius::GolfGeniusObject, event.season
+    assert_kind_of GolfGenius::Season, event.season
     assert_equal "season_001", event.season.id
     assert_equal "2026 Season", event.season.name
   end
@@ -91,20 +91,38 @@ class EventTest < Minitest::Test
   def test_event_nested_category
     event = GolfGenius::Event.construct_from(EVENT)
 
-    assert_kind_of GolfGenius::GolfGeniusObject, event.category
+    assert_kind_of GolfGenius::Category, event.category
     assert_equal "cat_001", event.category.id
     assert_equal "Member Events", event.category.name
     assert_equal "#FF5733", event.category.color
   end
 
+  def test_event_directories_typed
+    event_data = EVENT.merge("directories" => [{ "directory" => { "id" => "dir_001", "name" => "Main Directory" } }])
+    event = GolfGenius::Event.construct_from(event_data)
+
+    dirs = event.directories
+
+    assert_kind_of Array, dirs
+    assert_equal 1, dirs.length
+    assert_kind_of GolfGenius::Directory, dirs.first
+    assert_equal "dir_001", dirs.first.id
+    assert_equal "Main Directory", dirs.first.name
+  end
+
   def test_event_roster
-    stub_nested("/events/event_001/roster", EVENT_ROSTER)
+    stub_api_request(
+      method: :get,
+      path: "/events/event_001/roster",
+      response_body: EVENT_ROSTER,
+      query: { "page" => "1" }
+    )
 
     roster = GolfGenius::Event.roster("event_001")
 
     assert_kind_of Array, roster
     assert_equal 3, roster.length
-    assert_kind_of GolfGenius::GolfGeniusObject, roster.first
+    assert_kind_of GolfGenius::RosterMember, roster.first
     assert_equal "player_001", roster.first.id
     assert_equal "John Smith", roster.first.name
     assert_in_delta(12.5, roster.first.handicap)
@@ -115,7 +133,7 @@ class EventTest < Minitest::Test
       method: :get,
       path: "/events/event_001/roster",
       response_body: EVENT_ROSTER,
-      query: { photo: "true" }
+      query: { "page" => "1", "photo" => "true" }
     )
 
     roster = GolfGenius::Event.roster("event_001", photo: true)
@@ -123,38 +141,258 @@ class EventTest < Minitest::Test
     assert_equal 3, roster.length
   end
 
+  def test_event_roster_paginates_all_pages
+    page1 = (1..100).map { |i| { "id" => "p#{i}", "name" => "Player #{i}" } }
+    page2 = (1..76).map { |i| { "id" => "p#{100 + i}", "name" => "Player #{100 + i}" } }
+    stub_api_request(
+      method: :get,
+      path: "/events/event_001/roster",
+      response_body: page1,
+      query: { "page" => "1" }
+    )
+    stub_api_request(
+      method: :get,
+      path: "/events/event_001/roster",
+      response_body: page2,
+      query: { "page" => "2" }
+    )
+
+    roster = GolfGenius::Event.roster("event_001")
+
+    assert_equal 176, roster.length
+    assert_equal "p1", roster.first.id
+    assert_equal "p176", roster.last.id
+  end
+
+  def test_event_roster_photo_url_alias
+    roster_with_photo = [
+      { "member" => { "id" => "p1", "name" => "Jane", "photo" => "https://example.com/photo.jpg" } },
+      { "member" => { "id" => "p2", "name" => "Joe", "photo" => nil } },
+    ]
+    stub_api_request(
+      method: :get,
+      path: "/events/event_001/roster",
+      response_body: roster_with_photo,
+      query: { "page" => "1", "photo" => "true" }
+    )
+
+    roster = GolfGenius::Event.roster("event_001", photo: true)
+
+    assert_equal "https://example.com/photo.jpg", roster.first.photo_url
+    assert_nil roster.last.photo_url
+  end
+
+  def test_event_roster_waitlist_filter
+    # API returns both confirmed and waitlisted; :waitlist is not sent to API, filtered client-side
+    roster_with_waitlist = [
+      { "id" => "p1", "name" => "Confirmed One", "waitlist" => false },
+      { "id" => "p2", "name" => "Waitlisted One", "waitlist" => true },
+      { "id" => "p3", "name" => "Confirmed Two", "waitlist" => false },
+    ]
+    stub_api_request(
+      method: :get,
+      path: "/events/event_001/roster",
+      response_body: roster_with_waitlist,
+      query: { "page" => "1" }
+    )
+
+    confirmed = GolfGenius::Event.roster("event_001", waitlist: false)
+
+    assert_equal 2, confirmed.length
+    assert_equal %w[p1 p3], confirmed.map(&:id)
+    assert(confirmed.all? { |m| m.waitlist == false })
+  end
+
+  def test_event_instance_roster
+    stub_api_request(
+      method: :get,
+      path: "/events/event_001/roster",
+      response_body: EVENT_ROSTER,
+      query: { "page" => "1" }
+    )
+
+    event = GolfGenius::Event.construct_from(EVENT)
+    roster = event.roster
+
+    assert_kind_of Array, roster
+    assert_equal 3, roster.length
+    assert_equal "player_001", roster.first.id
+  end
+
+  def test_event_instance_rounds
+    stub_api_request(method: :get, path: "/events/event_001/rounds", response_body: EVENT_ROUNDS, query: { "page" => "1" })
+
+    event = GolfGenius::Event.construct_from(EVENT)
+    rounds = event.rounds
+
+    assert_kind_of Array, rounds
+    assert_equal 2, rounds.length
+    assert_equal "round_001", rounds.first.id
+  end
+
+  def test_event_instance_courses
+    stub_api_request(method: :get, path: "/events/event_001/courses", response_body: EVENT_COURSES, query: { "page" => "1" })
+
+    event = GolfGenius::Event.construct_from(EVENT)
+    courses = event.courses
+
+    assert_kind_of Array, courses
+    assert_equal 2, courses.length
+  end
+
+  def test_event_divisions
+    stub_api_request(
+      method: :get,
+      path: "/events/event_001/divisions",
+      response_body: EVENT_DIVISIONS
+    )
+
+    divisions = GolfGenius::Event.divisions("event_001")
+
+    assert_kind_of Array, divisions
+    assert_equal 2, divisions.length
+    assert_kind_of GolfGenius::Division, divisions.first
+    assert_equal "2794531013441653808", divisions.first.id
+    assert_equal "Division Test", divisions.first.name
+    assert_equal "not started", divisions.first.status
+    assert_equal 0, divisions.first.position
+    assert_equal "div_002", divisions.last.id
+    assert_equal "Flight B", divisions.last.name
+  end
+
+  def test_event_instance_divisions
+    stub_api_request(
+      method: :get,
+      path: "/events/event_001/divisions",
+      response_body: EVENT_DIVISIONS
+    )
+
+    event = GolfGenius::Event.construct_from(EVENT)
+    divisions = event.divisions
+
+    assert_kind_of Array, divisions
+    assert_equal 2, divisions.length
+    assert_kind_of GolfGenius::Division, divisions.first
+    assert_equal "Division Test", divisions.first.name
+  end
+
+  def test_event_instance_tournaments
+    stub_api_request(method: :get, path: "/events/event_001/rounds/round_001/tournaments", response_body: TOURNAMENTS, query: { "page" => "1" })
+
+    event = GolfGenius::Event.construct_from(EVENT)
+    tournaments = event.tournaments("round_001")
+
+    assert_kind_of Array, tournaments
+    assert_equal 2, tournaments.length
+    assert_equal "tourn_001", tournaments.first.id
+  end
+
+  def test_event_instance_tournaments_requires_round_id
+    event = GolfGenius::Event.construct_from(EVENT)
+
+    error = assert_raises(ArgumentError) { event.tournaments }
+    assert_match(/tournaments requires 1 argument/, error.message)
+    assert_match(/round_id/, error.message)
+  end
+
+  def test_event_tournaments_accepts_round_object
+    stub_api_request(method: :get, path: "/events/event_001/rounds/round_001/tournaments", response_body: TOURNAMENTS, query: { "page" => "1" })
+
+    event = GolfGenius::Event.construct_from(EVENT)
+    round = GolfGenius::Round.construct_from({ "id" => "round_001" })
+
+    tournaments = event.tournaments(round)
+
+    assert_equal 2, tournaments.length
+    assert_equal "tourn_001", tournaments.first.id
+  end
+
+  def test_event_tournaments_accepts_round_keyword
+    stub_api_request(method: :get, path: "/events/event_001/rounds/round_001/tournaments", response_body: TOURNAMENTS, query: { "page" => "1" })
+
+    event = GolfGenius::Event.construct_from(EVENT)
+    round = GolfGenius::Round.construct_from({ "id" => "round_001" })
+
+    tournaments = event.tournaments(round: round)
+
+    assert_equal 2, tournaments.length
+    assert_equal "tourn_001", tournaments.first.id
+  end
+
+  def test_round_tournaments_from_event_rounds
+    stub_api_request(method: :get, path: "/events/event_001/rounds", response_body: EVENT_ROUNDS, query: { "page" => "1" })
+    stub_api_request(method: :get, path: "/events/event_001/rounds/round_001/tournaments", response_body: TOURNAMENTS, query: { "page" => "1" })
+
+    event = GolfGenius::Event.construct_from(EVENT)
+    round = event.rounds.first
+
+    assert_kind_of GolfGenius::Round, round
+    assert_equal "event_001", round[:event_id]
+
+    tournaments = round.tournaments
+
+    assert_kind_of Array, tournaments
+    assert_equal 2, tournaments.length
+    assert_kind_of GolfGenius::Tournament, tournaments.first
+    assert_equal "tourn_001", tournaments.first.id
+  end
+
+  def test_round_tournaments_raises_without_event_id
+    round = GolfGenius::Round.construct_from({ "id" => "round_001" })
+
+    error = assert_raises(ArgumentError) { round.tournaments }
+    assert_match(/event_id/, error.message)
+  end
+
   def test_event_rounds
-    stub_nested("/events/event_001/rounds", EVENT_ROUNDS)
+    stub_api_request(method: :get, path: "/events/event_001/rounds", response_body: EVENT_ROUNDS, query: { "page" => "1" })
 
     rounds = GolfGenius::Event.rounds("event_001")
 
     assert_kind_of Array, rounds
     assert_equal 2, rounds.length
-    assert_kind_of GolfGenius::GolfGeniusObject, rounds.first
+    assert_kind_of GolfGenius::Round, rounds.first
     assert_equal "round_001", rounds.first.id
     assert_equal 1, rounds.first.number
   end
 
+  def test_event_rounds_sorted_by_index
+    # API returns rounds in reverse index order; we should return them sorted by index
+    rounds_reversed = [
+      { "id" => "round_002", "index" => 2, "name" => "Round 2" },
+      { "id" => "round_001", "index" => 1, "name" => "Round 1" },
+    ]
+    stub_api_request(method: :get, path: "/events/event_001/rounds", response_body: rounds_reversed, query: { "page" => "1" })
+
+    rounds = GolfGenius::Event.rounds("event_001")
+
+    assert_equal 2, rounds.length
+    assert_equal 1, rounds.first.index
+    assert_equal "round_001", rounds.first.id
+    assert_equal 2, rounds.last.index
+    assert_equal "round_002", rounds.last.id
+  end
+
   def test_event_courses
-    stub_nested("/events/event_001/courses", EVENT_COURSES)
+    stub_api_request(method: :get, path: "/events/event_001/courses", response_body: EVENT_COURSES, query: { "page" => "1" })
 
     courses = GolfGenius::Event.courses("event_001")
 
     assert_kind_of Array, courses
     assert_equal 2, courses.length
-    assert_kind_of GolfGenius::GolfGeniusObject, courses.first
+    assert_kind_of GolfGenius::Course, courses.first
     assert_equal "course_001", courses.first.id
     assert_in_delta(74.5, courses.first.rating)
   end
 
   def test_event_tournaments
-    stub_nested("/events/event_001/rounds/round_001/tournaments", TOURNAMENTS)
+    stub_api_request(method: :get, path: "/events/event_001/rounds/round_001/tournaments", response_body: TOURNAMENTS, query: { "page" => "1" })
 
     tournaments = GolfGenius::Event.tournaments("event_001", "round_001")
 
     assert_kind_of Array, tournaments
     assert_equal 2, tournaments.length
-    assert_kind_of GolfGenius::GolfGeniusObject, tournaments.first
+    assert_kind_of GolfGenius::Tournament, tournaments.first
     assert_equal "tourn_001", tournaments.first.id
     assert_equal "Flight A - Gross", tournaments.first.name
   end

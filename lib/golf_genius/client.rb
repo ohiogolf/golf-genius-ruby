@@ -158,6 +158,16 @@ module GolfGenius
         @resource_class.courses(event_id, params.merge(api_key: @api_key))
       end
 
+      # Gets the event divisions (Event-specific).
+      #
+      # @param event_id [String] The event ID
+      # @param params [Hash] Query parameters
+      # @return [Array<Division>] Division entries
+      def divisions(event_id, params = {})
+        ensure_event_resource!
+        @resource_class.divisions(event_id, params.merge(api_key: @api_key))
+      end
+
       # Gets tournaments for a round (Event-specific).
       #
       # @param event_id [String] The event ID

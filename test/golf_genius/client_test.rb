@@ -96,7 +96,12 @@ class ClientTest < Minitest::Test
   end
 
   def test_client_events_roster
-    stub_nested("/events/event_001/roster", EVENT_ROSTER)
+    stub_api_request(
+      method: :get,
+      path: "/events/event_001/roster",
+      response_body: EVENT_ROSTER,
+      query: { "page" => "1" }
+    )
 
     client = GolfGenius::Client.new
     roster = client.events.roster("event_001")
@@ -106,7 +111,7 @@ class ClientTest < Minitest::Test
   end
 
   def test_client_events_rounds
-    stub_nested("/events/event_001/rounds", EVENT_ROUNDS)
+    stub_api_request(method: :get, path: "/events/event_001/rounds", response_body: EVENT_ROUNDS, query: { "page" => "1" })
 
     client = GolfGenius::Client.new
     rounds = client.events.rounds("event_001")
@@ -115,7 +120,7 @@ class ClientTest < Minitest::Test
   end
 
   def test_client_events_courses
-    stub_nested("/events/event_001/courses", EVENT_COURSES)
+    stub_api_request(method: :get, path: "/events/event_001/courses", response_body: EVENT_COURSES, query: { "page" => "1" })
 
     client = GolfGenius::Client.new
     courses = client.events.courses("event_001")
@@ -123,8 +128,22 @@ class ClientTest < Minitest::Test
     assert_equal 2, courses.length
   end
 
+  def test_client_events_divisions
+    stub_api_request(
+      method: :get,
+      path: "/events/event_001/divisions",
+      response_body: EVENT_DIVISIONS
+    )
+
+    client = GolfGenius::Client.new
+    divisions = client.events.divisions("event_001")
+
+    assert_equal 2, divisions.length
+    assert_equal "Division Test", divisions.first.name
+  end
+
   def test_client_events_tournaments
-    stub_nested("/events/event_001/rounds/round_001/tournaments", TOURNAMENTS)
+    stub_api_request(method: :get, path: "/events/event_001/rounds/round_001/tournaments", response_body: TOURNAMENTS, query: { "page" => "1" })
 
     client = GolfGenius::Client.new
     tournaments = client.events.tournaments("event_001", "round_001")

@@ -131,10 +131,11 @@ module GolfGenius
       },
     ].freeze
 
-    # Sample event rounds response
+    # Sample event rounds response (API uses index for ordering)
     EVENT_ROUNDS = [
       {
         "id" => "round_001",
+        "index" => 1,
         "number" => 1,
         "date" => "2026-04-15",
         "format" => "stroke_play",
@@ -142,10 +143,39 @@ module GolfGenius
       },
       {
         "id" => "round_002",
+        "index" => 2,
         "number" => 2,
         "date" => "2026-04-16",
         "format" => "stroke_play",
         "status" => "scheduled",
+      },
+    ].freeze
+
+    # Sample event divisions response (API returns [ { "division" => {...} } ])
+    EVENT_DIVISIONS = [
+      {
+        "division" => {
+          "id" => "2794531013441653808",
+          "id_str" => "2794531013441653808",
+          "event_id" => "2794531013441653805",
+          "event_id_str" => "2794531013441653805",
+          "name" => "Division Test",
+          "status" => "not started",
+          "position" => 0,
+          "tee_times" => [
+            { "time" => "8:10 AM", "starting_hole" => 1, "starting_hole_label" => "A" },
+            { "time" => "8:15 AM", "starting_hole" => 1, "starting_hole_label" => "A" },
+          ],
+        },
+      },
+      {
+        "division" => {
+          "id" => "div_002",
+          "name" => "Flight B",
+          "event_id" => "2794531013441653805",
+          "status" => "in progress",
+          "position" => 1,
+        },
       },
     ].freeze
 

@@ -14,6 +14,11 @@ require "golf_genius/client"
 require "golf_genius/resources/season"
 require "golf_genius/resources/directory"
 require "golf_genius/resources/category"
+require "golf_genius/resources/roster_member"
+require "golf_genius/resources/round"
+require "golf_genius/resources/course"
+require "golf_genius/resources/tournament"
+require "golf_genius/resources/division"
 require "golf_genius/resources/event"
 
 # Golf Genius Ruby API client.
