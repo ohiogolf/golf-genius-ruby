@@ -1,0 +1,32 @@
+/.bundle/
+/.yardoc
+/_yardoc/
+/coverage/
+/doc/
+/pkg/
+/spec/reports/
+/tmp/
+*.gem
+Gemfile.lock
+
+# rspec failure tracking
+.rspec_status
+
+# macOS
+.DS_Store
+
+# IDE files
+.idea/
+*.swp
+*.swo
+*~
+
+# Environment files
+.env
+.env.local
+
+# Ruby version (local preference)
+.ruby-version
+
+# AI / scratch work (not part of the gem)
+/thoughts/
