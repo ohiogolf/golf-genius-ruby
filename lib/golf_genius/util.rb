@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require "time"
+
 module GolfGenius
   # Utility methods for the Golf Genius gem.
   # @api private
@@ -92,6 +94,36 @@ module GolfGenius
         end
       end
 
+      # Parses a value as a Time if it is a date/time string (e.g. from API).
+      # Returns the value unchanged if it's not a string, is empty, or fails to parse.
+      #
+      # @param value [Object] Usually a string like "2017-08-03 10:15:18 -0400" or "2017-09-01"
+      # @return [Time, Object] Parsed Time or original value
+      def parse_time(value)
+        return value unless value.is_a?(String) && !value.strip.empty?
+
+        Time.parse(value)
+      rescue ArgumentError
+        value
+      end
+
+      # Returns true if the attribute key looks like a date/time (e.g. created_at, date, start_date).
+      def date_attribute?(key)
+        s = key.to_s
+        s == "date" || s.end_with?("_at") || s.end_with?("_date")
+      end
+
+      # Coerces a value to true or false for predicate methods (e.g. deleted? -> deleted).
+      def coerce_boolean?(value)
+        case value
+        when true then true
+        when false, nil then false
+        when String then value.strip.downcase == "true"
+        else
+          !!value
+        end
+      end
+
       # Logs a message if logger is configured.
       #
       # @param level [Symbol] Log level (:debug, :info, :warn, :error)
@@ -133,6 +165,7 @@ module GolfGenius
       # Symbolize keys first, then convert nested structures
       symbolized = Util.symbolize_keys(attributes)
       @attributes = convert_nested_values(symbolized)
+      parse_date_attributes!
     end
 
     # Constructs a new object from attributes.
@@ -198,13 +231,19 @@ module GolfGenius
     def method_missing(method_name, *args)
       if @attributes.key?(method_name)
         @attributes[method_name]
+      elsif method_name.end_with?("?") && args.empty?
+        base = method_name.to_s.chomp("?").to_sym
+        @attributes.key?(base) ? Util.coerce_boolean?(@attributes[base]) : super
       else
         super
       end
     end
 
     def respond_to_missing?(method_name, include_private = false)
-      @attributes.key?(method_name) || super
+      return true if @attributes.key?(method_name)
+      return true if method_name.end_with?("?") && @attributes.key?(method_name.to_s.chomp("?").to_sym)
+
+      super
     end
 
     protected
@@ -214,7 +253,7 @@ module GolfGenius
 
     private
 
-    # Recursively converts a hash to plain Ruby hashes.
+    # Recursively converts a hash to plain Ruby hashes. Time values become ISO8601 strings for JSON.
     def deep_to_h(obj)
       case obj
       when GolfGeniusObject
@@ -223,8 +262,19 @@ module GolfGenius
         obj.transform_values { |v| deep_to_h(v) }
       when Array
         obj.map { |v| deep_to_h(v) }
+      when Time
+        obj.iso8601
       else
         obj
+      end
+    end
+
+    def parse_date_attributes!
+      @attributes.each_key do |key|
+        next unless Util.date_attribute?(key)
+
+        val = @attributes[key]
+        @attributes[key] = Util.parse_time(val) if val.is_a?(String)
       end
     end
 

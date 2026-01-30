@@ -60,8 +60,10 @@ class SeasonTest < Minitest::Test
     assert_equal "season_001", season.id
     assert_equal "2026 Season", season.name
     assert_equal true, season.current
-    assert_equal "2026-01-01", season.start_date
-    assert_equal "2026-12-31", season.end_date
+    assert_kind_of Time, season.start_date
+    assert_equal "2026-01-01", season.start_date.strftime("%Y-%m-%d")
+    assert_kind_of Time, season.end_date
+    assert_equal "2026-12-31", season.end_date.strftime("%Y-%m-%d")
   end
 
   def test_season_to_h
