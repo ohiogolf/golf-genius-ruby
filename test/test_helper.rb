@@ -31,6 +31,23 @@ module GolfGenius
       )
     end
 
+    def stub_list(resource_path, response_body, query: nil)
+      stub_api_request(
+        method: :get,
+        path: resource_path,
+        response_body: response_body,
+        query: query
+      )
+    end
+
+    def stub_fetch(resource_path, id, response_body)
+      stub_api_request(
+        method: :get,
+        path: "#{resource_path}/#{id}",
+        response_body: response_body
+      )
+    end
+
     def stub_error(method:, path:, status:, error_body:, query: nil)
       stub_api_request(
         method: method,
