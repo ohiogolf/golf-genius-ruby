@@ -25,6 +25,59 @@ To use the console locally with staging or production, create `.env.staging` or 
 
 ---
 
+## Glossary and object graph
+
+### Terms
+
+| Term | Meaning |
+|------|--------|
+| **Event** | The overall thing you’re running: an outing, championship, league, or trip. Has a name, dates, location, registration, and type (`"event"`, `"league"`, `"trip"`). |
+| **Season** | A time bucket for organizing events (e.g. “2026 Season”). Top-level; events can be filtered by season. |
+| **Category** | A label/group for events (e.g. “Member Events”, “Championships”). Top-level; events can be filtered by category. |
+| **Directory** | A folder/list of events in the customer center (e.g. “All Leagues & Events”). Top-level; an event can appear in multiple directories. |
+| **Round** | One day (or unit) of play within an event. An event can have multiple rounds (Round 1, Round 2, …). Each has a date, status, pairing size, and settings. |
+| **Course** | A course and its tees used for the event (name, tees, pars, ratings). **Courses are defined at the event level only**; an event can have multiple courses. |
+| **Division** | A grouping for play within an event (e.g. flight, tee time block). External divisions from the API; has name, status, position, tee_times. **Event-level only**; use `event.divisions`. |
+| **Tournament** | In the API, a *competition/flight/game within a single round* (e.g. “Individual Gross”, “Net Flight A”), not the whole event. One round can have multiple tournaments (different scoring games). |
+| **Roster** | The list of players/members in an event. Each item is a **RosterMember**. |
+
+### Going up the chain (embedded in event)
+
+When you fetch or list events, the API embeds related data. The gem types these so you get real objects:
+
+- `event.season` → `Season` (or `nil`)
+- `event.category` → `Category` (or `nil`)
+- `event.directories` → `Array<Directory>` (empty if not set)
+
+### Going down the chain (nested resources)
+
+You can call these on an **event instance** (no need to pass the event id again):
+
+- `event.roster(photo: true)` → `Array<RosterMember>`
+- `event.rounds` → `Array<Round>` (each round has `event_id` set so you can call `round.tournaments`)
+- `event.courses` → `Array<Course>`
+- `event.divisions` → `Array<Division>` (external divisions: name, status, position, tee_times)
+- `event.tournaments(round_id)` or `event.tournaments(round)` or `event.tournaments(round: round)` → `Array<Tournament>`
+
+On a **round** (when it came from `event.rounds` and thus has `event_id`):
+
+- `round.tournaments` → `Array<Tournament>`
+
+So you can write: `event.rounds.first.tournaments`.
+
+On a **directory** or **category**:
+
+- `directory.events` → `Array<Event>` (same as `Event.list(directory: directory)`; accepts `page`, `archived`, etc.)
+- `category.events` → `Array<Event>` (same as `Event.list(category: category)`; accepts `page`, `archived`, etc.)
+
+### Courses: event only
+
+**Valid:** `event.courses` — courses (and tees) are defined at the **event** level in the API.
+
+**Not in the API:** `event.rounds.first.courses` — there is no per-round courses endpoint; rounds use the event’s courses. So the gem does not define `Round#courses`.
+
+---
+
 ## Resources (alphabetical)
 
 ### Category
@@ -117,12 +170,12 @@ GolfGenius::Event.roster("event_001", photo: true)
 
 ```ruby
 # => [
-#   #<GolfGenius::GolfGeniusObject id="player_001" name="John Smith" email="john@example.com" handicap=12.5 tee="Blue" photo_url="https://...">,
-#   #<GolfGenius::GolfGeniusObject id="player_002" name="Jane Doe" ...>
+#   #<GolfGenius::RosterMember id="player_001" name="John Smith" email="john@example.com" handicap=12.5 tee="Blue" photo_url="https://...">,
+#   #<GolfGenius::RosterMember id="player_002" name="Jane Doe" ...>
 # ]
 ```
 
-**Event rounds**
+**Event rounds** (each round has `event_id` so you can call `round.tournaments`)
 
 ```ruby
 GolfGenius::Event.rounds("event_001")
@@ -130,12 +183,12 @@ GolfGenius::Event.rounds("event_001")
 
 ```ruby
 # => [
-#   #<GolfGenius::GolfGeniusObject id="round_001" number=1 date="2026-04-15" format="stroke_play" status="completed">,
-#   #<GolfGenius::GolfGeniusObject id="round_002" number=2 date="2026-04-16" status="scheduled">
+#   #<GolfGenius::Round id="round_001" number=1 date="2026-04-15" format="stroke_play" status="completed">,
+#   #<GolfGenius::Round id="round_002" number=2 date="2026-04-16" status="scheduled">
 # ]
 ```
 
-**Event courses** (tees / ratings)
+**Event courses** (tees / ratings; courses are at event level only)
 
 ```ruby
 GolfGenius::Event.courses("event_001")
@@ -143,21 +196,35 @@ GolfGenius::Event.courses("event_001")
 
 ```ruby
 # => [
-#   #<GolfGenius::GolfGeniusObject id="course_001" name="Pine Valley - Championship" tee="Blue" rating=74.5 slope=145 par=72>,
-#   #<GolfGenius::GolfGeniusObject id="course_002" name="Pine Valley - Championship" tee="White" rating=71.2 slope=138 par=72>
+#   #<GolfGenius::Course id="course_001" name="Pine Valley - Championship" tee="Blue" rating=74.5 slope=145 par=72>,
+#   #<GolfGenius::Course id="course_002" name="Pine Valley - Championship" tee="White" rating=71.2 slope=138 par=72>
 # ]
 ```
 
-**Tournaments for a round**
+**Event divisions** (external divisions: name, status, position, tee_times)
 
 ```ruby
-GolfGenius::Event.tournaments("event_001", "round_001")
+GolfGenius::Event.divisions("event_001")
 ```
 
 ```ruby
 # => [
-#   #<GolfGenius::GolfGeniusObject id="tourn_001" name="Flight A - Gross" type="individual" scoring="gross" status="completed">,
-#   #<GolfGenius::GolfGeniusObject id="tourn_002" name="Flight A - Net" scoring="net" status="completed">
+#   #<GolfGenius::Division id="2794531013441653808" name="Division Test" status="not started" position=0 ...>,
+#   #<GolfGenius::Division id="div_002" name="Flight B" status="in progress" position=1 ...>
+# ]
+```
+
+**Tournaments for a round** (pass round id or Round object)
+
+```ruby
+GolfGenius::Event.tournaments("event_001", "round_001")
+# or with an event instance: event.tournaments(round) or event.tournaments(round: round)
+```
+
+```ruby
+# => [
+#   #<GolfGenius::Tournament id="tourn_001" name="Flight A - Gross" type="individual" scoring="gross" status="completed">,
+#   #<GolfGenius::Tournament id="tourn_002" name="Flight A - Net" scoring="net" status="completed">
 # ]
 ```
 
