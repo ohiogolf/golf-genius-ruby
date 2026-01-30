@@ -11,10 +11,8 @@ module GolfGenius
   #   seasons = GolfGenius::Season.list
   #   seasons.each { |s| puts s.name }
   #
-  # @example Fetch a specific season
+  # @example Fetch a season by id
   #   season = GolfGenius::Season.fetch('season_123')
-  #   puts season.name
-  #   puts season.current
   #
   # @see https://www.golfgenius.com/api/v2/docs Golf Genius API Documentation
   class Season < Resource

@@ -25,7 +25,7 @@ class CategoryTest < Minitest::Test
   end
 
   def test_fetch_category
-    stub_fetch("/categories", "cat_001", CATEGORY)
+    stub_api_request(method: :get, path: "/categories", response_body: CATEGORIES, query: { "page" => "1" })
 
     category = GolfGenius::Category.fetch("cat_001")
 

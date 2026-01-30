@@ -52,19 +52,14 @@ class ErrorsTest < Minitest::Test
   end
 
   def test_not_found_error
-    stub_error(
-      method: :get,
-      path: "/events/nonexistent",
-      status: 404,
-      error_body: ERROR_NOT_FOUND
-    )
+    stub_api_request(method: :get, path: "/events", response_body: [], query: { "page" => "1" })
 
     error = assert_raises(GolfGenius::NotFoundError) do
       GolfGenius::Event.fetch("nonexistent")
     end
 
-    assert_equal 404, error.http_status
     assert_includes error.message, "Resource not found"
+    assert_includes error.message, "nonexistent"
   end
 
   def test_authentication_error_401

@@ -34,7 +34,8 @@ GolfGenius::Directory.list.first.name
 ```ruby
 GolfGenius::Season.fetch("season_id")
 GolfGenius::Directory.fetch("directory_id")
-GolfGenius::Event.fetch("event_id")
+GolfGenius::Event.fetch(171716)        # by id
+GolfGenius::Event.fetch("zphsqa")      # by ggid (Event matches on id and ggid)
 ```
 
 **Events with filters** (pass objects or ids; `list()` fetches all pages by default)
@@ -71,7 +72,7 @@ GolfGenius::Event.list_all(season: season)
 client = GolfGenius::Client.new(api_key: "key")
 client.directories.list
 client.events.list(directory: client.directories.list.last)
-client.events.fetch("event_id")
+client.events.fetch(171716)
 ```
 
 ## Console (development)

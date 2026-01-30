@@ -62,15 +62,11 @@ if events.any?
   event = events.first
   puts "Getting details for: #{event.name}"
 
-  # Fetch full event details
-  full_event = GolfGenius::Event.fetch(event.id)
-  puts "  Type: #{full_event.type}"
-  puts "  Date: #{full_event.date}" if full_event.key?(:date)
-
-  # Access nested objects
-  puts "  Season: #{full_event.season.name}" if full_event.key?(:season)
-
-  puts "  Category: #{full_event.category.name}" if full_event.key?(:category)
+  # List already returns full event data; or fetch by id/ggid when you only have an id
+  puts "  Type: #{event.type}"
+  puts "  Date: #{event.date}" if event.key?(:date)
+  puts "  Season: #{event.season.name}" if event.key?(:season)
+  puts "  Category: #{event.category.name}" if event.key?(:category)
 
   # Get event roster
   puts "\nFetching roster..."

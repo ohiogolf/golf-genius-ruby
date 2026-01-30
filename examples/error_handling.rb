@@ -17,7 +17,7 @@ begin
   event = GolfGenius::Event.fetch("invalid_event_id")
   puts "Event found: #{event.name}"
 rescue GolfGenius::NotFoundError => e
-  puts "Error: Event not found (#{e.http_status})"
+  puts "Error: Event not found"
   puts "Message: #{e.message}"
 end
 puts
@@ -94,8 +94,8 @@ begin
   GolfGenius::Event.fetch("nonexistent")
 rescue GolfGenius::GolfGeniusError => e
   puts "Error class: #{e.class.name}"
-  puts "HTTP Status: #{e.http_status}"
-  puts "HTTP Body: #{e.http_body.inspect}"
+  puts "HTTP Status: #{e.http_status}" if e.http_status
+  puts "HTTP Body: #{e.http_body.inspect}" if e.http_body
   puts "HTTP Headers: #{e.http_headers.keys.join(", ")}" if e.http_headers.any?
   puts "Request ID: #{e.request_id || "N/A"}"
   puts "Full message: #{e}"

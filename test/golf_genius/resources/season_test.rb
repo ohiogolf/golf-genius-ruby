@@ -44,7 +44,7 @@ class SeasonTest < Minitest::Test
   end
 
   def test_fetch_season
-    stub_fetch("/seasons", "season_001", SEASON)
+    stub_api_request(method: :get, path: "/seasons", response_body: SEASONS, query: { "page" => "1" })
 
     season = GolfGenius::Season.fetch("season_001")
 

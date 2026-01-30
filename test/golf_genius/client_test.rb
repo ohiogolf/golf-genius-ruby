@@ -43,7 +43,7 @@ class ClientTest < Minitest::Test
   end
 
   def test_client_seasons_fetch
-    stub_fetch("/seasons", "season_001", SEASON)
+    stub_api_request(method: :get, path: "/seasons", response_body: SEASONS, query: { "page" => "1" })
 
     client = GolfGenius::Client.new
     season = client.seasons.fetch("season_001")
@@ -86,7 +86,7 @@ class ClientTest < Minitest::Test
   end
 
   def test_client_events_fetch
-    stub_fetch("/events", "event_001", EVENT)
+    stub_api_request(method: :get, path: "/events", response_body: EVENTS, query: { "page" => "1" })
 
     client = GolfGenius::Client.new
     event = client.events.fetch("event_001")

@@ -4,7 +4,7 @@ module GolfGenius
   # Represents a Golf Genius event.
   # Events are the primary resource, representing golf tournaments, outings, etc.
   #
-  # List parameters (all optional; pass to +list+, +list_all+, +auto_paging_each+):
+  # List parameters (all optional; pass to +list+, +list_all+, +auto_paging_each+, +fetch+):
   # * +:directory+ or +:directory_id+ — Filter to events in this directory (object or id).
   # * +:season+ or +:season_id+ — Filter to events in this season (object or id).
   # * +:category+ or +:category_id+ — Filter to events in this category (object or id).
@@ -22,13 +22,10 @@ module GolfGenius
   #     archived: false
   #   )
   #
-  # @example Archived events only
-  #   archived = GolfGenius::Event.list(directory: dir, archived: true)
-  #
-  # @example Fetch a specific event
-  #   event = GolfGenius::Event.fetch('event_123')
-  #   puts event.name
-  #   puts event.type
+  # @example Fetch a specific event by id or ggid
+  #   event = GolfGenius::Event.fetch(171716)
+  #   event = GolfGenius::Event.fetch('zphsqa')  # by ggid
+  #   event = GolfGenius::Event.fetch(171716, season_id: 'season_123', max_pages: 10)
   #
   # @example Get event roster
   #   roster = GolfGenius::Event.roster('event_123', photo: true)
@@ -51,6 +48,9 @@ module GolfGenius
     extend APIOperations::List
     extend APIOperations::Fetch
     extend APIOperations::NestedResource
+
+    # Match fetch by id or ggid (API returns both)
+    fetch_match_on :id, :ggid
 
     # Nested resource: Event roster (API returns [ { "member" => {...} } ])
     nested_resource :roster, path: "/events/%<parent_id>s/roster", item_key: "member"

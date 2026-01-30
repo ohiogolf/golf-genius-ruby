@@ -42,15 +42,20 @@ GolfGenius::Directory.list
 GolfGenius::Directory.fetch("directory_id")
 ```
 
-**Events (list, filter, fetch)**
+**Events (list, filter, fetch by id or ggid)**
 
 ```ruby
 # list() fetches all pages by default
 GolfGenius::Event.list(directory: dir)
 # Single page only: pass page
 GolfGenius::Event.list(page: 1, directory: dir, season: season, category: cat, archived: false)
-GolfGenius::Event.fetch("event_id")
+
+# Fetch one event by id or ggid (uses list under the hood; Event matches on both)
+GolfGenius::Event.fetch(171716)
+GolfGenius::Event.fetch("zphsqa", season_id: "season_123", max_pages: 10)
 ```
+
+**Fetch** — All resources support `fetch(id, **params)`. Fetch uses the list endpoint and matches `id` (as string) against configured attributes. By default only `:id` is matched; Event also matches `:ggid` (e.g. `Event.fetch("zphsqa")`). Optional params: list filters plus `:max_pages` (default 20). New resources can declare `fetch_match_on :id, :other_field` to match additional attributes.
 
 **List parameters (filters)** — Per the API. Only these resources support list; filters below.
 
@@ -85,7 +90,7 @@ GolfGenius::Event.list_all(season: season)
 client = GolfGenius::Client.new(api_key: "key")
 client.seasons.list
 client.events.list(directory: dir)
-client.events.fetch("event_id")
+client.events.fetch(171716)
 client.events.roster("event_id")
 ```
 

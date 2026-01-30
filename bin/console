@@ -3,7 +3,7 @@
 
 require "bundler/setup"
 
-# Load env files (all gitignored). Order: .env (base) → .env.#{GOLF_GENIUS_ENV} (e.g. staging/production) → .env.local (wins).
+# Load env files (all gitignored). Order: .env (base) → .env.#{GOLF_GENIUS_ENV} → .env.local (wins).
 # Set GOLF_GENIUS_ENV=staging or GOLF_GENIUS_ENV=production to load .env.staging / .env.production.
 root = File.expand_path("..", __dir__)
 require "dotenv"

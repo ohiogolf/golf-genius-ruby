@@ -11,9 +11,8 @@ module GolfGenius
   #   directories = GolfGenius::Directory.list
   #   directories.each { |d| puts "#{d.name} - #{d.event_count} events" }
   #
-  # @example Fetch a specific directory
+  # @example Fetch a directory by id
   #   directory = GolfGenius::Directory.fetch('directory_123')
-  #   puts directory.name
   #
   # @see https://www.golfgenius.com/api/v2/docs Golf Genius API Documentation
   class Directory < Resource

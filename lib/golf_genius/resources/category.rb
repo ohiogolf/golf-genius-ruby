@@ -11,10 +11,8 @@ module GolfGenius
   #   categories = GolfGenius::Category.list
   #   categories.each { |c| puts "#{c.name} - #{c.event_count} events" }
   #
-  # @example Fetch a specific category
+  # @example Fetch a category by id
   #   category = GolfGenius::Category.fetch('category_123')
-  #   puts category.name
-  #   puts category.color
   #
   # @see https://www.golfgenius.com/api/v2/docs Golf Genius API Documentation
   class Category < Resource

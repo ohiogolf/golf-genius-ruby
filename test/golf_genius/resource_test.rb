@@ -146,11 +146,15 @@ class ResourceTest < Minitest::Test
   end
 
   def test_refresh_uses_stored_api_key
-    stub_fetch("/seasons", "season_001", SEASON)
-
     season = GolfGenius::Season.construct_from(SEASON, api_key: TEST_API_KEY)
 
-    stub_fetch("/seasons", "season_001", SEASON.merge("name" => "Updated Name"))
+    # refresh uses list-based fetch (no get-by-ID)
+    stub_api_request(
+      method: :get,
+      path: "/seasons",
+      response_body: [SEASON.merge("name" => "Updated Name")],
+      query: { "page" => "1" }
+    )
 
     season.refresh
 

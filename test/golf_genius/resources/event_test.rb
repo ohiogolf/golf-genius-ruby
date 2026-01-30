@@ -59,7 +59,7 @@ class EventTest < Minitest::Test
   end
 
   def test_fetch_event
-    stub_fetch("/events", "event_001", EVENT)
+    stub_api_request(method: :get, path: "/events", response_body: EVENTS, query: { "page" => "1" })
 
     event = GolfGenius::Event.fetch("event_001")
 
@@ -67,6 +67,17 @@ class EventTest < Minitest::Test
     assert_equal "event_001", event.id
     assert_equal "Spring Championship", event.name
     assert_equal "tournament", event.type
+  end
+
+  def test_fetch_event_raises_when_not_found
+    stub_api_request(method: :get, path: "/events", response_body: [], query: { "page" => "1" })
+
+    error = assert_raises(GolfGenius::NotFoundError) do
+      GolfGenius::Event.fetch("nonexistent")
+    end
+
+    assert_includes error.message, "Resource not found"
+    assert_includes error.message, "nonexistent"
   end
 
   def test_event_nested_season

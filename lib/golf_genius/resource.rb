@@ -12,6 +12,7 @@ module GolfGenius
   #
   #     extend APIOperations::List
   #     extend APIOperations::Fetch
+  #     # fetch_match_on :id, :ggid  # optional; default is :id
   #   end
   #
   # @see https://www.golfgenius.com/api/v2/docs Golf Genius API Documentation
@@ -37,18 +38,24 @@ module GolfGenius
     end
 
     # Refreshes this resource from the API.
-    # Uses the API key that was used to originally fetch this resource.
+    # If the resource class extends {APIOperations::Fetch}, uses list-based fetch (no get-by-ID).
+    # Otherwise attempts GET by ID (API may not support it for all resources).
     #
     # @return [self] The refreshed resource
     # @raise [ConfigurationError] If no API key is available
+    # @raise [NotFoundError] If not found (list-based) or API returns 404 (GET-based)
     def refresh
-      response = APIOperations::Request.execute(
-        method: :get,
-        path: "#{self.class.resource_path}/#{id}",
-        api_key: @api_key
-      )
-
-      @attributes = Util.symbolize_keys(response)
+      if self.class.respond_to?(:fetch_match_fields)
+        found = self.class.fetch(id, api_key: @api_key)
+        @attributes = found.attributes
+      else
+        response = APIOperations::Request.execute(
+          method: :get,
+          path: "#{self.class.resource_path}/#{id}",
+          api_key: @api_key
+        )
+        @attributes = Util.symbolize_keys(response)
+      end
       self
     end
   end

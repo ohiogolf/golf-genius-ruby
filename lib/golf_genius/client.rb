@@ -8,7 +8,7 @@ module GolfGenius
   # @example Basic usage
   #   client = GolfGenius::Client.new(api_key: 'your_api_key')
   #   seasons = client.seasons.list
-  #   event = client.events.fetch('event_123')
+  #   event = client.events.fetch(171716)
   #
   # @example Multiple clients with different API keys
   #   client1 = GolfGenius::Client.new(api_key: 'key_for_org_1')
@@ -74,7 +74,7 @@ module GolfGenius
     #
     # @example
     #   client.events.list(page: 1)
-    #   client.events.fetch('event_123')
+    #   client.events.fetch(171716)  # by id or ggid
     #   client.events.roster('event_123')
     #   client.events.rounds('event_123')
     def events
@@ -101,11 +101,12 @@ module GolfGenius
         @resource_class.list(params.merge(api_key: @api_key))
       end
 
-      # Fetches a single resource by ID.
+      # Fetches a single resource by id (uses list endpoint; match fields configurable per resource).
       #
-      # @param id [String] The resource ID
-      # @param params [Hash] Additional query parameters
-      # @return [Resource] The fetched resource
+      # @param id [String, Integer] Resource id (or ggid for Event)
+      # @param params [Hash] Optional list filters (e.g. season_id, max_pages)
+      # @return [Resource] The matching resource
+      # @raise [NotFoundError] If no resource matches
       def fetch(id, params = {})
         @resource_class.fetch(id, params.merge(api_key: @api_key))
       end

@@ -25,7 +25,7 @@ class DirectoryTest < Minitest::Test
   end
 
   def test_fetch_directory
-    stub_fetch("/directories", "dir_001", DIRECTORY)
+    stub_api_request(method: :get, path: "/directories", response_body: DIRECTORIES, query: { "page" => "1" })
 
     directory = GolfGenius::Directory.fetch("dir_001")
 
