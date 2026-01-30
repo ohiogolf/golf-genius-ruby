@@ -45,4 +45,27 @@ class CategoryTest < Minitest::Test
     assert_equal 15, category.event_count
     assert_equal false, category.archived
   end
+
+  def test_category_events
+    stub_api_request(
+      method: :get,
+      path: "/events",
+      response_body: EVENTS,
+      query: { "category" => "cat_001", "page" => "1" }
+    )
+    stub_api_request(
+      method: :get,
+      path: "/events",
+      response_body: [],
+      query: { "category" => "cat_001", "page" => "2" }
+    )
+
+    category = GolfGenius::Category.construct_from(CATEGORY)
+    events = category.events
+
+    assert_kind_of Array, events
+    assert_equal 2, events.length
+    assert_kind_of GolfGenius::Event, events.first
+    assert_equal "event_001", events.first.id
+  end
 end

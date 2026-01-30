@@ -43,4 +43,27 @@ class DirectoryTest < Minitest::Test
     assert_equal 25, directory.event_count
     assert_equal false, directory.all_events
   end
+
+  def test_directory_events
+    stub_api_request(
+      method: :get,
+      path: "/events",
+      response_body: EVENTS,
+      query: { "directory" => "dir_001", "page" => "1" }
+    )
+    stub_api_request(
+      method: :get,
+      path: "/events",
+      response_body: [],
+      query: { "directory" => "dir_001", "page" => "2" }
+    )
+
+    directory = GolfGenius::Directory.construct_from(DIRECTORY)
+    events = directory.events
+
+    assert_kind_of Array, events
+    assert_equal 2, events.length
+    assert_kind_of GolfGenius::Event, events.first
+    assert_equal "event_001", events.first.id
+  end
 end
