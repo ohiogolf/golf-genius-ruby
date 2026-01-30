@@ -50,4 +50,133 @@ class ErrorsTest < Minitest::Test
     assert_operator GolfGenius::ConnectionError, :<, GolfGenius::GolfGeniusError
     assert_operator GolfGenius::ConfigurationError, :<, GolfGenius::GolfGeniusError
   end
+
+  def test_not_found_error
+    stub_error(
+      method: :get,
+      path: "/events/nonexistent",
+      status: 404,
+      error_body: ERROR_NOT_FOUND
+    )
+
+    error = assert_raises(GolfGenius::NotFoundError) do
+      GolfGenius::Event.fetch("nonexistent")
+    end
+
+    assert_equal 404, error.http_status
+    assert_includes error.message, "Resource not found"
+  end
+
+  def test_authentication_error_401
+    stub_error(
+      method: :get,
+      path: "/seasons",
+      status: 401,
+      error_body: ERROR_UNAUTHORIZED,
+      query: { "page" => "1" }
+    )
+
+    error = assert_raises(GolfGenius::AuthenticationError) do
+      GolfGenius::Season.list
+    end
+
+    assert_equal 401, error.http_status
+    assert_includes error.message, "Unauthorized"
+  end
+
+  def test_authentication_error_403
+    stub_error(
+      method: :get,
+      path: "/seasons",
+      status: 403,
+      error_body: ERROR_UNAUTHORIZED,
+      query: { "page" => "1" }
+    )
+
+    error = assert_raises(GolfGenius::AuthenticationError) do
+      GolfGenius::Season.list
+    end
+
+    assert_equal 403, error.http_status
+  end
+
+  def test_validation_error
+    stub_error(
+      method: :get,
+      path: "/events",
+      status: 422,
+      error_body: ERROR_VALIDATION,
+      query: { "page" => "1" }
+    )
+
+    error = assert_raises(GolfGenius::ValidationError) do
+      GolfGenius::Event.list(page: 1)
+    end
+
+    assert_equal 422, error.http_status
+    assert_includes error.message, "Validation failed"
+  end
+
+  def test_rate_limit_error
+    stub_error(
+      method: :get,
+      path: "/events",
+      status: 429,
+      error_body: ERROR_RATE_LIMIT,
+      query: { "page" => "1" }
+    )
+
+    error = assert_raises(GolfGenius::RateLimitError) do
+      GolfGenius::Event.list(page: 1)
+    end
+
+    assert_equal 429, error.http_status
+    assert_includes error.message, "Rate limit exceeded"
+  end
+
+  def test_server_error
+    stub_error(
+      method: :get,
+      path: "/events",
+      status: 500,
+      error_body: ERROR_SERVER,
+      query: { "page" => "1" }
+    )
+
+    error = assert_raises(GolfGenius::ServerError) do
+      GolfGenius::Event.list(page: 1)
+    end
+
+    assert_equal 500, error.http_status
+  end
+
+  def test_connection_error_timeout
+    stub_timeout(method: :get, path: "/events", query: { "page" => "1" })
+
+    error = assert_raises(GolfGenius::ConnectionError) do
+      GolfGenius::Event.list(page: 1)
+    end
+
+    assert_kind_of GolfGenius::ConnectionError, error
+  end
+
+  def test_connection_error_failure
+    stub_connection_failure(method: :get, path: "/events", query: { "page" => "1" })
+
+    error = assert_raises(GolfGenius::ConnectionError) do
+      GolfGenius::Event.list(page: 1)
+    end
+
+    assert_includes error.message, "Connection"
+  end
+
+  def test_configuration_error_no_api_key
+    GolfGenius.api_key = nil
+
+    error = assert_raises(GolfGenius::ConfigurationError) do
+      GolfGenius::Season.list
+    end
+
+    assert_includes error.message, "API key"
+  end
 end
