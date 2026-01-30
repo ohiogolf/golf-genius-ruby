@@ -41,7 +41,7 @@ class ResourceTest < Minitest::Test
 
     assert_equal "event123", event.id
     assert_equal "Test Event", event.name
-    assert_kind_of GolfGenius::GolfGeniusObject, event.season
+    assert_kind_of GolfGenius::Season, event.season
     assert_equal "season456", event.season.id
     assert_equal "2026 Season", event.season.name
   end
@@ -80,7 +80,8 @@ class ResourceTest < Minitest::Test
 
     event = GolfGenius::Event.construct_from(data)
 
-    round = event.rounds.first
+    # Embedded nested data is accessed via [] (event.rounds would call the API)
+    round = event[:rounds].first
 
     assert_kind_of GolfGenius::GolfGeniusObject, round
     assert_equal "round1", round.id

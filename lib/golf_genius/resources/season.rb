@@ -2,7 +2,7 @@
 
 module GolfGenius
   # Represents a Golf Genius season.
-  # Seasons are used to organize events by time period (e.g., "2026 Season").
+  # Business: A time bucket for the calendar (e.g. "2026 Season"). Used to filter and group events by year or period.
   #
   # List parameters (optional): +:page+ (single page), +:api_key+. The API does not support
   # other filters for listing seasons.
