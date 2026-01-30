@@ -1,0 +1,4435 @@
+FORMAT: 1A
+HOST: https://www.golfgenius.com/
+
+# Golf Genius API
+
+This is the Golf Genius API documentation page. 
+The APIs described below provide programatic access to Golf Genius data. 
+
+## General Considerations
+
+* The IDs returned by the Golf Genius API need to be treated as
+Numeric 22, or String.
+* An API Key is required in order to access the API.
+
+## Getting Started
+
+* Contact Golf Genius Support if you are a Golf Genius user or a third-party provider to users of Golf Genius
+
+## Seasons [/api_v2/{api_key}/seasons]
++ Parameters
+    + api_key (string) - An API Key defined at customer level.
+
+### List All Seasons [GET]
+
+List all seasons that you have set up in the
+customer center. Each season includes the season ID, the name and whether that
+season is marked as current.
+
++ Response 200 (application/json)
+
+        [
+            {
+                "season": {
+                    "id": "2794531013441653799",
+                    "name": "2018",
+                    "current": true
+                }
+            },
+            {
+                "season": {
+                    "id": "2794531013441653800",
+                    "name": "2017",
+                    "current": false
+                }
+            }
+        ]
+
+## Categories [/api_v2/{api_key}/categories]
++ Parameters
+    + api_key (string) - An API Key defined at customer level.
+
+### List All Categories [GET]
+
+List of all categories that have been set up in the 
+customer center. Each category includes the category ID, the 
+name, the color and the number of events associated with the category. 
+The color is returned in hexadecimal format.
+
+Each customer has an implicit category that holds archived events. This
+list is denoted by the associated 'archived' attribute.
+
++ Response 200 (application/json)
+
+        [
+            {
+                "category": {
+                    "id": "2794531013441653801",
+                    "name": "2017 Member Play Days",
+                    "archived": false,
+                    "color": "#ff08dc",
+                    "event_count": 1
+                }
+            },
+            {
+                "category": {
+                    "id": "2794531013441653802",
+                    "name": "Events and Leagues",
+                    "archived": false,
+                    "color": "#9400d3",
+                    "event_count": 15
+                }
+            },
+            {
+                "category": {
+                    "id": "2794531013441653805",
+                    "name": "Winter Series",
+                    "archived": false,
+                    "color": "#9400d3",
+                    "event_count": 8
+                }
+            },
+            {
+                "category": {
+                    "id": "2794531013441653803",
+                    "name": "Archived",
+                    "archived": false,
+                    "color": "",
+                    "event_count": 1
+                }
+            }
+        ]
+
+
+## Directories [/api_v2/{api_key}/directories]
++ Parameters
+    + api_key (string) - An API key defined at customer level.
+
+### List All Directories [GET]
+
+List of all directories that have been set up in the customer's account. Each direcotry includes the directory ID, the name and the number of events associated with the directory.
+
+Each customer has an implicit directory that holds all events. This list is denoted by the associated 'all_events' attribute.
+
++ Response 200 (application/json)
+
+        [
+            {
+                "directory": {
+                    "id": "2794531013441653803",
+                    "name": "All Leagues & Events",
+                    "all_events": true,
+                    "event_count": 120
+                }
+            },
+            {
+                "directory": {
+                    "id": "2794531013441653801",
+                    "name": "2021 Member Outings",
+                    "all_events": false,
+                    "event_count": 7
+                }
+            }
+        ]
+
+## Master Roster [/api_v2/{api_key}/master_roster?page={page}&photo={photo}]
++ Parameters
+    + api_key (string) - An API Key defined at customer level.
+    + page (optional, int) - The number of the page for the results.
+    + photo (optional, boolean) - By default, the API does not return golfers profile pictures. If set to true, we will include the URL to the picture.
+
+### List All Players in a club Master Roster [GET]
+
+Returns the list of golfers in the master roster.
+
++ Response 200 (application/json)
+
+        [
+          {
+            "member": {
+              "created_at": "2018-01-26 15:37:40 +0000",
+              "updated_at": "2018-09-23 02:02:35 +0100",
+              "name": "John Doe",
+              "email": "john@doe.com",
+              "last_name": "John",
+              "first_name": "Doe",
+              "deleted": false,
+              "waitlist": false,
+              "waitlist_type": "regular",
+              "id": "3925233117178153948",
+              "event_id": "3699413901734103812",
+              "member_card_id": "3925233758604675778",
+              "external_id": null,
+              "handicap": {
+                "handicap_network_id": null,
+                "handicap_index": "",
+                "nine_hole_handicap_index": ""
+              },
+              "custom_fields": {
+                "Country": null,
+                "Registration Member or Guest": null,
+                "Gender": null,
+                "Date of Birth": null,
+                "Affiliation": "Lyon Oaks Golf Club",
+                "Pro or Amateur": null,
+                "Address 1": null,
+                "Address 2": null,
+                "City": "Wixom",
+                "State": "MI",
+                "ZIP / Postal Code": null,
+                "Phone": null,
+                "Work Phone": null,
+                "Cell Phone": null,
+                "Riding / Walking / Caddie": null,
+                "Tee": null,
+                "Street Address": "1234 Pontiac Trail",
+                "Zip Code": "48393",
+                "Club Type": "Public",
+                "Alternate Email": null,
+                "GHIN Club": "969",
+                "Phone Number": "2484371488",
+                "Photo": "https://d16y1q4m8qv58a.cloudfront.net/uploads/photo/photo/336925/photo.jpg"
+              }
+            }
+          }
+        ]
+        
+## Master Roster Member [/api_v2/{api_key}/master_roster_member/{email}]
++ Parameters
+    + api_key (string) - An API Key defined at customer level.
+    + email (mandatory, string) - The member`s email we are searching for.
+
+### The member in a club Master Roster [GET]
+
+Returns golfer we are searching for in the master roster.
+
++ Response 200 (application/json)
+
+          {
+            "member": {
+              "created_at": "2018-01-26 15:37:40 +0000",
+              "updated_at": "2018-09-23 02:02:35 +0100",
+              "name": "John Doe",
+              "email": "john@doe.com",
+              "last_name": "John",
+              "first_name": "Doe",
+              "deleted": false,
+              "waitlist": false,
+              "waitlist_type": "regular",
+              "id": "3925233117178153948",
+              "event_id": "3699413901734103812",
+              "member_card_id": "3925233758604675778",
+              "external_id": null,
+              "handicap": {
+                "handicap_network_id": null,
+                "handicap_index": "",
+                "nine_hole_handicap_index": ""
+              },
+              "custom_fields": {
+                "Country": null,
+                "Registration Member or Guest": null,
+                "Gender": null,
+                "Date of Birth": null,
+                "Affiliation": "Lyon Oaks Golf Club",
+                "Pro or Amateur": null,
+                "Address 1": null,
+                "Address 2": null,
+                "City": "Wixom",
+                "State": "MI",
+                "ZIP / Postal Code": null,
+                "Phone": null,
+                "Work Phone": null,
+                "Cell Phone": null,
+                "Riding / Walking / Caddie": null,
+                "Tee": null,
+                "Street Address": "1234 Pontiac Trail",
+                "Zip Code": "48393",
+                "Club Type": "Public",
+                "Alternate Email": null,
+                "GHIN Club": "969",
+                "Phone Number": "2484371488",
+                "Photo": "https://d16y1q4m8qv58a.cloudfront.net/uploads/photo/photo/336925/photo.jpg"
+              }
+            }
+          }
+
+## Player Events [/api_v2/{api_key}/players/{player_id}]
++ Parameters
+    + api_key (string) - An API Key defined at customer level.
+    + player_id (numeric 22) - The ID of the player from Master Roster.
+
+### List Player's Events[GET]
+
+Returns the list containing events IDs along with corresponding player information.
+
++ Response 200 (application/json)
+
+
+        {
+            "member": {
+            "first_name": "John",
+            "last_name": "Doe",
+            "email": "john@doe.com",
+            "external_id": "2500002",
+            "handicap_network_id": "123",
+            "id": "1581844",
+            "custom_fields": {
+                "Registration Member or Guest": null,
+                "Country": null,
+                "Downcase": null,
+                "ZIP / Postal Code": null,
+                "Phone": null,
+                "Zip Code": null,
+                "middle name": null,
+                "club number": "2500002",
+                "Gender": "M",
+                "Date of Birth": "01/02/1948",
+                "Affiliation": null,
+                "State": null,
+                "Cell Phone": null,
+                "Entry Number": "9",
+                "City": null,
+                "CE Member Type": "ACTIVE",
+                "photo": null
+            },
+            "events": [
+                "232052",
+                "225229",
+                "217889",
+                "214111",
+                "339772",
+                "250905",
+                "233202",
+                "339750",
+                "339752",
+                "250772",
+                "44007",
+                "259426",
+                "253926",
+                "200508",
+                "37233",
+                "43586"
+                ]
+            }
+        }
+
+## Events [/api_v2/{api_key}/events?page={page}&season={season_id}&category={category_id}&directory={directory_id}&archived={archived}]
++ Parameters
+    + api_key (string) - An API Key defined at customer level.
+    + page (optional, int) - The number of the page to return. The API returns 100 events per page.
+    + season_id (optional, numeric 22) - If set, only returns events that match this season ID.
+    + category_id (optional, numeric 22) - If set, only returns events that match this category ID.
+    + directory_id (optional, numeric 22) - If set, only returns events that are part of the directory identified by this directory ID.
+    + archived (optional, boolean) - By default, the API does not return archived events. If set to true, we only return the archived events.
+
+### List All Events [GET]
+
+List of events in the customer center. Each event includes the season (if assigned
+to one) and the category.
+
+Events may be filtered by season, category, directory or archived status. All of the filters are optional.
+
+The results are paginated with 100 results per page. 
+
+Additional details: registration status ("invitation_list", "open" or "closed"), start date (earliest round date), end date (latest round date), type ("event", "league" or "trip").
+
++ Response 200 (application/json)
+
+        [
+            {
+                "event": {
+                    "id": "2794531013441653804",
+                    "name": "Tee It Forward - Fall Net Championship",
+                    "deleted": false,
+                    "ggid": "zphsqa",
+                    "season": {
+                        "id": "2794531013441653799",
+                        "name": "Fall 2017",
+                        "current": false
+                    },
+                    "category": {
+                        "id": 2794531013441653805,
+                        "name": "2017 Championships",
+                        "id_str": "2794531013441653805"
+                    },
+                    "directories": [
+                        {
+                            "directory": {
+                                "id": "2794531013441653803",
+                                "name": "All Leagues & Events"
+                            }
+                        }
+                    ],
+                    "registration_status": "open",
+                    "registration_limit": {
+                        "player_limit": 10,
+                        "waitlist_limit": 10
+                    },
+                    "opening_dates": {
+                        "open_for_everyone": "2017-09-01",
+                        "close_for_everyone": "2017-09-05",
+                        "open_for_invitation_list": "2017-09-09"
+                    },
+                    "start_date": "2017-09-01",
+                    "end_date": "2017-09-03",
+                    "type": "event",
+                    "website": "ggs-apievent.golfgenius.com",
+                    "external_id": "1234",
+                    "location": {
+                        "city": "New York",
+                        "state": "New York",
+                        "country": "United States"
+                    },
+                    "description": "<p>This event is going to be organized at <strong>Sungarden</strong>.</p>\r\n\r\n<p>&nbsp;</p>\r\n\r\n<p style=\"text-align: center;\">Please attend!</p>\r\n"
+                }
+            }
+        ]
+
+
+## Event Roster [/api_v2/{api_key}/events/{event_id}/roster?page={page}&photo={photo}]
++ Parameters
+    + api_key (string) - An API Key defined at customer level.
+    + event_id (numeric 22) - The ID of the event.
+    + page (optional, int) - The number of the page to return. The API returns 100 players per page.
+    + photo (optional, boolean) - By default, the API does not return golfers profile pictures. If set to true, we will include the URL to the picture.
+
+    
+
+### List All Players in an Event [GET]
+
+List of golfers in a given event. This API returns the list of golfers in the event roster, 
+together with all of their event-level data, such as name, e-mail, first name, last name, handicap
+index and all of the custom fields.
+
+The results are paginated with 100 results per page.
+
++ Response 200 (application/json)
+
+        [
+            {
+                "member": {
+                    "id": "2794531013441653806",
+                    "event_id": "2794531013441653805",
+                    "created_at": "2017-08-03 10:15:18 -0400",
+                    "updated_at": "2017-08-15 14:39:31 -0400",
+                    "name": "John Doe",
+                    "email": "johndoe@golfgenius.com",
+                    "last_name": "John",
+                    "first_name": "Doe",
+                    "deleted": false,
+                    "waitlist": false,
+                    "waitlist_type": "regular",
+                    "handicap": {
+                        "handicap_network_id": "7169482",
+                        "handicap_index": "14.1",
+                        "nine_hole_handicap_index": ""
+                    },
+                    "custom_fields": {
+                        "Gender": "M",
+                        "Affiliation": "White Manor Country Club",
+                        "Tee": "Forward Tee",
+                        "Date of Birth": "04/08/1959",
+                        "Riding / Walking / Caddie": null,
+                        "Compher Cup Eligible": null,
+                        "service name": null,
+                        "local": "am",
+                        "member type": null,
+                        "state": "PA",
+                        "city": "West Chester",
+                        "address1": "100 East Road",
+                        "middle name": null,
+                        "Entry Number": "37",
+                        "Pro or Amateur": null,
+                        "Team Id": null,
+                        "Registration Member or Guest": null,
+                        "zip": "19380",
+                        "RosterID": "284448",
+                        "Photo": "https://d16y1q4m8qv58a.cloudfront.net/uploads/photo/photo/336925/photo.jpg"
+                    }
+                }
+            }
+        ]
+        
+## Event Rounds [/api_v2/{api_key}/events/{event_id}/rounds]
++ Parameters
+    + api_key (string) - An API Key defined at customer level.
+    + event_id (numeric 22) - The ID of the event.
+
+### List All Event Rounds [GET]
+
+List of rounds in a given event, together with the name, date, status ("not started", 
+"in progress", "completed"), the pairing group size (twosomes - 2, threesomes - 3, foursomes - 4,
+fivesomes - 5, sixsomes - 6), whether this is the most recent round, additional settings (allowing
+handicap updates, tee sheet released to portal, mobile score entry enabled, results relased to
+portal) and the round type ("golf" or "social").
+
+
++ Response 200 (application/json)
+
+        [
+            {
+                "round": {
+                    "id": "2794531013441653808",
+                    "event_id": "2794531013441653805",
+                    "index": 1,
+                    "name": "Round 1",
+                    "date": "2017-08-16",
+                    "status": "in progress",
+                    "pairing_group_size": 4,
+                    "most_recent": true,
+                    "type": "social",
+                    "playing_divisions": [7059198379011646789, 7059198379011646663],
+                    "external_id": "1234",
+                    "settings": {
+                        "allow_handicap_updates": true,
+                        "mobile_score_entry_enabled": true,
+                        "attending_by_default": false,
+                        "teesheet_released": true,
+                        "results_released": true
+                    }
+                }
+            }
+        ]
+        
+## Event Courses and Tees [/api_v2/{api_key}/events/{event_id}/courses]
++ Parameters
+    + api_key (string) - An API Key defined at customer level.
+    + event_id (numeric 22) - The ID of the event.
+
+### List Courses and Tees [GET]
+
+For an event, return the list of selected courses (together with their corresponding tees).
+
+Course data includes the name, tee time interval, pace of play parameters, hole labels,
+abbreviation, shotgun priority, default tees by gender.
+
+Tee data includes the name, abbreviation, hole by hole data for pars, yardage and handicaps,
+slope and rating and associated color (in hexadecimal format).
+
++ Response 200 (applicaton/json)
+
+        {
+            "courses": [
+                {
+                    "id": "2794531013441653810",
+                    "name": "Schuylkill Country Club",
+                    "created_at": "2017-02-22 14:43:52 -0500",
+                    "updated_at": "2018-02-15 05:57:20 -0500",
+                    "default_tee_time_interval": 12,
+                    "shotgun_offset": 5,
+                    "hole_labels": [
+                        "1",
+                        "2",
+                        "3",
+                        "4",
+                        "5",
+                        "6",
+                        "7",
+                        "8",
+                        "9",
+                        "10",
+                        "11",
+                        "12",
+                        "13",
+                        "14",
+                        "15",
+                        "16",
+                        "17",
+                        "18"
+                    ],
+                    "abbreviation": "SCC",
+                    "shotgun_priority": {
+                        "1": "1",
+                        "2": "3",
+                        "3": "5",
+                        "4": "7",
+                        "5": "9",
+                        "6": "11",
+                        "7": "13",
+                        "8": "15",
+                        "9": "17",
+                        "10": "2",
+                        "11": "4",
+                        "12": "6",
+                        "13": "8",
+                        "14": "10",
+                        "15": "12",
+                        "16": "14",
+                        "17": "16",
+                        "18": "18"
+                    },
+                    "tees": [
+                        {
+                            "id": "2794531013441653811",
+                            "name": "Black",
+                            "abbreviation": "BLK",
+                            "hole_data": {
+                                "par": [
+                                    4,
+                                    4,
+                                    5,
+                                    3,
+                                    4,
+                                    3,
+                                    4,
+                                    5,
+                                    4,
+                                    4,
+                                    3,
+                                    4,
+                                    4,
+                                    5,
+                                    4,
+                                    3,
+                                    5,
+                                    4
+                                ],
+                                "yardage": [
+                                    395,
+                                    350,
+                                    492,
+                                    145,
+                                    391,
+                                    196,
+                                    387,
+                                    550,
+                                    343,
+                                    382,
+                                    166,
+                                    340,
+                                    402,
+                                    481,
+                                    446,
+                                    128,
+                                    495,
+                                    347
+                                ],
+                                "handicap": [
+                                    7,
+                                    17,
+                                    5,
+                                    13,
+                                    9,
+                                    15,
+                                    3,
+                                    1,
+                                    11,
+                                    8,
+                                    16,
+                                    14,
+                                    4,
+                                    10,
+                                    2,
+                                    18,
+                                    6,
+                                    12
+                                ]
+                            },
+                            "nine_hole_course": false,
+                            "created_at": "2017-02-22 14:43:52 -0500",
+                            "updated_at": "2018-02-15 05:56:05 -0500",
+                            "color": "#000",
+                            "source_id": "372616",
+                            "slope_and_rating": {
+                                "all18": {
+                                    "rating": 71.3,
+                                    "slope": 131
+                                },
+                                "front9": {
+                                    "rating": 36.5,
+                                    "slope": 128
+                                },
+                                "back9": {
+                                    "rating": 36.8,
+                                    "slope": 130
+                                }
+                            }
+                        },
+                        {
+                            "id": 113919,
+                            "name": "Red",
+                            "abbreviation": "RED",
+                            "hole_data": {
+                                "par": [
+                                    4,
+                                    4,
+                                    5,
+                                    3,
+                                    4,
+                                    3,
+                                    4,
+                                    5,
+                                    4,
+                                    4,
+                                    3,
+                                    4,
+                                    4,
+                                    5,
+                                    4,
+                                    3,
+                                    5,
+                                    4
+                                ],
+                                "yardage": [
+                                    376,
+                                    320,
+                                    480,
+                                    138,
+                                    345,
+                                    179,
+                                    345,
+                                    480,
+                                    334,
+                                    375,
+                                    160,
+                                    326,
+                                    402,
+                                    474,
+                                    436,
+                                    124,
+                                    450,
+                                    342
+                                ],
+                                "handicap": [
+                                    7,
+                                    17,
+                                    5,
+                                    13,
+                                    9,
+                                    15,
+                                    3,
+                                    1,
+                                    11,
+                                    8,
+                                    16,
+                                    14,
+                                    4,
+                                    10,
+                                    2,
+                                    18,
+                                    6,
+                                    12
+                                ]
+                            },
+                            "nine_hole_course": false,
+                            "created_at": "2017-02-22 14:45:23 -0500",
+                            "updated_at": "2018-02-15 05:58:21 -0500",
+                            "color": "#f00",
+                            "source_id": "201774",
+                            "slope_and_rating": {
+                                "all18": {
+                                    "rating": 69,
+                                    "slope": 126
+                                },
+                                "front9": {
+                                    "rating": 34.5,
+                                    "slope": 128
+                                },
+                                "back9": {
+                                    "rating": 34.5,
+                                    "slope": 124
+                                }
+                            }
+                        }
+                    ],
+                    "source_id": "12604",
+                    "source": "USGA Course Rating Directory",
+                    "pace_of_play": {
+                        "hole_by_hole_expected_minutes": [
+                            15,
+                            14,
+                            19,
+                            12,
+                            14,
+                            13,
+                            15,
+                            19,
+                            14,
+                            15,
+                            12,
+                            14,
+                            15,
+                            18,
+                            16,
+                            11,
+                            19,
+                            15
+                        ],
+                        "turn_times": {
+                            "turn_time_hole9_to_hole10": 2,
+                            "turn_time_hole18_to_hole1": 3,
+                            "turn_time_hole9_to_hole1": 2,
+                            "turn_time_hole18_to_hole10": 2
+                        }
+                    },
+                    "default_tee_by_gender": {
+                        "M": "113916"
+                    },
+                    "location": {
+                        "country": "CA",
+                        "state": "CA-AB",
+                        "city": "Calgary",
+                        "address": "1600 Varsity Estates Dr NW"
+                    }
+                }
+            ]
+        }
+
+## Event Round Tournaments [/api_v2/{api_key}/events/{event_id}/rounds/{round_id}/tournaments]
++ Parameters
+    + api_key (string) - An API Key defined at customer level.
+    + event_id (numeric 22) - The ID of the event.
+    + round_id (numeric 22) - The ID of the round.
+
+### List of Event Round Tournaments [GET]
+
+For a round of an event, return the list of tournaments set up, together with the tournament settings.
+
++ Response 200 (application/json)
+
+        [
+            {
+                "event": {
+                    "name": "Individual Net Stableford Overall - Mens",
+                    "created_at": "2017-08-15 09:36:13 -0400",
+                    "scored_at": "2018-02-15 10:26:20 -0500",
+                    "id": "547874",
+                    "score_format": "stableford",
+                    "handicap_format": "usga_net",
+                    "holes_scope": "all",
+                    "score_scope": "pos_player",
+                    "result_scope": "rs_field",
+                    "score_aggregation": "alt_scramble",
+                    "tie_break": "none"
+                }
+            },
+            {
+                "event": {
+                    "name": "Individual Net Stableford - Flighted - Mens",
+                    "created_at": "2017-08-15 08:11:28 -0400",
+                    "scored_at": "2018-02-15 10:26:15 -0500",
+                    "id": "547800",
+                    "score_format": "stableford",
+                    "handicap_format": "usga_net",
+                    "holes_scope": "all",
+                    "score_scope": "pos_player",
+                    "result_scope": "rs_flight",
+                    "score_aggregation": "alt_scramble",
+                    "tie_break": "last9631_holes"
+                }
+            },
+            {
+                "event": {
+                    "name": "Individual Gross Stroke Play",
+                    "created_at": "2018-02-15 10:21:44 -0500",
+                    "scored_at": "2018-02-15 10:26:24 -0500",
+                    "id": "717661",
+                    "score_format": "stroke",
+                    "handicap_format": "gross",
+                    "holes_scope": "all",
+                    "score_scope": "pos_player",
+                    "result_scope": "rs_field",
+                    "score_aggregation": "alt_scramble",
+                    "tie_break": "none"
+                }
+            }
+        ]
+
+## Event Creation [/api_v2/events]
+
+### Create an Event/League [POST]
+
+The event creation API returns the newly created event. This event is automatically linked to the event on the vendor side and depending on the parameters sent, it will automatically pull the event roster or the tee sheet from the vendor site. If dates with external IDs are passed, then we will sync the round tee sheet, otherwise, if an event external ID is sent, we will link and sync the event roster.
+
+This action takes a JSON payload as part of the request. You will be provided an API key for every customer that wants to use the integration. Set this API key as Bearer in the request header.
+
+The JSON's keys are: 
++ name (string) - The Name of the event being created.
++ external_id (optional, string) - Event ExternalID for event roster sync. Roster will be automatically synced if the external id is present and the external event type is not set to "by division".
++ event_type (optional, string) - ("event"/"league"/"trip"/"dcp") If not set, "event" will be used as default.
++ external_event_type (optional, string) - ("regular"/"by division"/"all other") If not set, "regular" will be used as default.
++ category_id (optional, string) - If not set, the default category will be used instead.
++ season_id (optional, string) - If not set, the default season will be used instead.
++ divisions (optional, hash) - Hash containing a collection of the divisions that are to be created for this particular event. Note that the integer identifying each division represents the position of the division.
++ dates (optional, hash) - Hash containing a collection of the dates for Rounds to be created. If external_ids are passed for the rounds dates, each round will be linked automatically to the vendor event and the tee sheet will be synced automatically.
++ webhooks (optional, hash) - Hash containing a collection of webhooks that should automatically be enabled for this particular event. Settings for entries that are missing from the hash will remain unchanged. Note that the Webhook Integration feature must be enabled for the current customer (Admin Center > Edit > Product Versions) otherwise this hash will be ignored.
+
+The JSON's keys for a date entry in the dates hash are:
++ date (string) - The date of this particular round.
++ name (optional, string) - The Name of the round being created. If not set, the round will be named using the given index (e.g. "Round 1").
++ external_id (optional, string) - An ID which links this round to an external round. It is used to automatically sync the tee sheet with the vendor site.
++ enable_mobile_score_entry (optional, boolean) - States whether mobile score entry should be enabled for the created rounds. If not set, it will default to false.
++ attending_by_default (optional, boolean) - States whether members added to the roster of this round will be marked as "Attending" by default. If not set, the setting will default to false.
++ show_pairings_in_league_portal (optional, boolean) - States whether the pairings should be displayed on the portal page of this league for this specific round. If omitted, it will default to false. 
++ playing_divisions (optional, array) - An array containing the index of the divisions that are to be set as playing for the following rounds (e.g. "1"). If the array is empty or the field is not set, the playing division for this round will default to All Golfers.
+
+The JSON's keys for a division entry in the divisions hash are:
++ name (optional, string) - The Name of the division being created. If not set, the division will be named using the position as index (e.g. "Division 1").
++ tee_times (array) - An array containing the tee times that should be filled for the pairings created within this division.
+
+Each entry in the tee times array is a hash which contains the following keys:
++ time (string) - The actual time for this tee time expressed in the following format "%I:%M %p" (e.g. "8:10 AM")
++ starting_hole (optional, integer) - The starting hole for the current tee time. If not set, the default starting hole will be used (based on the played tee).
++ starting_hole_label (optional, string) - The label of the starting hole for the current tee time (e.g. "A"). If not set, the hole label will be omitted.
+
+Each entry in the webhooks hash will have as key the unique identifier for the webhook that should be enabled ("courses"/"pairings"/"players"/"scores"/"matches"/"match_results"/"settings") and the following hash as value:
++ endpoint (string) - The endpoint used when sending data for this webhook.
++ enabled (boolean) - States whether updates should be sent automatically for this webhook.
+
++ Request (application/json)
+    + Headers
+    
+            Authorization: Bearer api-test-key
+    
+    + Body
+
+            {
+                "name": "API-Event-1",
+                "external_id": "123",
+                "event_type": "league",
+                "external_event_type": "regular",
+                "category_id": "4567",
+                "season_id": "4555",
+                "divisions": {
+                    "1": {
+                        "name": "Division Test",
+                        "tee_times": [
+                            {
+                                "time": "8:10 AM",
+                                "starting_hole": 1,
+                                "starting_hole_label": "A"
+                            },
+                            {
+                                "time": "8:15 AM",
+                                "starting_hole": 1,
+                                "starting_hole_label": "A"
+                            }
+                        ]
+                    },
+                    "2": {
+                        "name": "Division Test 2",
+                        "tee_times": [
+                            {
+                                "time": "8:10 AM",
+                                "starting_hole": 1,
+                                "starting_hole_label": "A"
+                            },
+                            {
+                                "time": "8:15 AM",
+                                "starting_hole": 1,
+                                "starting_hole_label": "A"
+                            }
+                        ]
+                    }
+                },
+                "dates": {
+                    "1": { 
+                        "date": "2020-09-21",
+                        "name": "Round 1",
+                        "external_id": "1234",
+                        "enable_mobile_score_entry": true,
+                        "attending_by_default": true,
+                        "show_pairings_in_league_portal": true,
+                        "playing_divisions": ["1", "2"]
+                    },
+                    "2": {
+                        "date": "2020-09-23",
+                        "name": "Round 2",
+                        "external_id": "1235",
+                        "enable_mobile_score_entry": true,
+                        "attending_by_default": true,
+                        "show_pairings_in_league_portal": true,
+                        "playing_divisions": ["1", "2"]
+                    }
+                },
+                "webhooks": {
+                    "pairings": {
+                        "endpoint": "www.x.com/pairings",
+                        "enabled": true
+                    }
+                }
+            }
+
++ Response 200 (application/json)
+
+        {
+            "id": 7059198245062353848,
+            "id_str": "7059198245062353848",
+            "name": "API-Event-1",
+            "deleted": false,
+            "season": {
+                "id": 7859288867297255553,
+                "id_str": "7859288867297255553",
+                "name": "Test Season",
+                "current": true
+            },
+            "category": {
+                "id": 6859248167297262493,
+                "id_str": "6859248167297262493",
+                "name": "Events, Leagues, and Trips"
+            },
+            "type": "league",
+            "external_type": "regular",
+            "GGID": "whkyyu",
+            "divisions": {
+                "1": {
+                    "name": "Division Test 1",
+                    "division_id": 7059198379011646789,
+                    "division_id_str": "7059198379011646789",
+                    "position": 1
+                },
+                "2": {
+                    "name": "Division Test 2",
+                    "division_id": 7059198379011646623,
+                    "division_id_str": "7059198379011646623",
+                    "position": 2
+                }
+            },
+            "rounds": {
+                "1": {
+                    "name": "Round 1",
+                    "round_id": 7059198379011646144,
+                    "round_id_str": "7059198379011646144",
+                    "GGID": "ckbxpe",
+                    "date": "2020-09-21",
+                    "playing_divisions": [7059198379011646789, 7059198379011646663],
+                    "playing_divisions_str": ["7059198379011646789", "7059198379011646663"]
+                },
+                "2": {
+                    "name": "Round 2",
+                    "round_id": 7059198385655423681,
+                    "round_id_str": "7059198385655423681",
+                    "GGID": "xrgahh",
+                    "date": "2020-09-23",
+                    "playing_divisions": [7059198379011646789, 7059198379011646663],
+                    "playing_divisions_str": ["7059198379011646789", "7059198379011646663"]
+                }
+            },
+            "webhooks": {
+                "courses": {
+                    "endpoint": "www.x.com/courses",
+                    "enabled": true
+                },
+                "pairings": {
+                    "endpoint": "www.x.com/pairings",
+                    "enabled": true
+                },
+                "players": {
+                    "endpoint": "www.x.com/players",
+                    "enabled": true
+                },
+                "scores": {
+                    "endpoint": "www.x.com/scores",
+                    "enabled": true
+                },
+                "matches": {
+                    "endpoint": "www.x.com/matches",
+                    "enabled": true
+                },
+                "match_results": {
+                    "endpoint": "www.x.com/match_results",
+                    "enabled": true
+                },
+                "settings": {
+                    "endpoint": "www.x.com/settings",
+                    "enabled": true
+                }
+            }
+        }
+        
++ Response 400 (application/json)
+
+        {
+            "errors": [
+                "Failed to create League using the given parameters."
+            ]
+        }
+
+## Event Update/Deletion [/api_v2/events/{event_id}]
++ Parameters
+    + event_id (numeric 22) - The ID of the event.
+
+### Update an Event/League [PUT]
+
+The event Update API will be used in order to change some of the details for an already existing event.
+
+This action takes a JSON payload as part of the request. You will be provided an API key for every customer that wants to use the integration. Set this API key as Bearer in the request header.
+
+The JSON's keys are: 
++ name (optional, string) - The Name of the event being updated. If not set, the name will remain unchanged.
++ external_id (optional, string) - Event ExternalID for event roster sync. If not set, the external id will remain unchanged.
++ external_event_type (optional, string) - ("regular"/"by division"/"all other") If not set, the event type will remain unchanged. Roster will be automatically synced if the external id is present and the external event type is not set to "by division".
++ category_id (optional, string) - If not set, the category will remain unchanged.
++ season_id (optional, string) - If not set, the season will remain unchanged.
++ webhooks (optional, hash) - Hash containing a collection of webhooks that should automatically be enabled for this particular event. Settings for entries that are missing from the hash will remain unchanged. Note that the Webhook Integration feature must be enabled for the current customer (Admin Center > Edit > Product Versions) otherwise this hash will be ignored.
+
+Each entry in the webhooks hash will have as key the unique identifier for the webhook that should be enabled ("courses"/"pairings"/"players"/"scores"/"matches"/"match_results"/"settings") and the following hash as value:
++ endpoint (string) - The endpoint used when sending data for this webhook.
++ enabled (boolean) - States whether updates should be sent automatically for this webhook.
+
+
++ Request (application/json)
+    + Headers
+    
+            Authorization: Bearer api-test-key
+    
+    + Body
+
+            {
+                "name": "API-Event-1",
+                "external_id": "1234",
+                "external_event_type": "regular",
+                "category_id": "4567",
+                "season_id": "4555",
+                "webhooks": {
+                    "pairings": {
+                        "endpoint": "www.x.com/pairings",
+                        "enabled": true
+                    }
+                }
+            }
+            
++ Response 200 (application/json)
+
+        {
+            "id": 7059198245062353848,
+            "id_str": "7059198245062353848",
+            "name": "API-Event-1",
+            "deleted": false,
+            "season": {
+                "id": 7859288867297255553,
+                "id_str": "7859288867297255553",
+                "name": "Test Season",
+                "current": true
+            },
+            "category": {
+                "id": 6859248167297262493,
+                "id_str": "6859248167297262493",
+                "name": "Events, Leagues, and Trips"
+            },
+            "type": "league",
+            "external_type": "regular",
+            "GGID": "whkyyu",
+            "divisions": {
+                "1": {
+                    "name": "Division Test 1",
+                    "division_id": 7059198379011646789,
+                    "division_id_str": "7059198379011646789",
+                    "position": 1
+                },
+                "2": {
+                    "name": "Division Test 2",
+                    "division_id": 7059198379011646623,
+                    "division_id_str": "7059198379011646623",
+                    "position": 2
+                }
+            },
+            "rounds": {
+                "1": {
+                    "name": "Round 1",
+                    "round_id": 7059198379011646144,
+                    "round_id_str": "7059198379011646144",
+                    "GGID": "ckbxpe",
+                    "date": "2020-09-21",
+                    "playing_divisions": [7059198379011646789, 7059198379011646663],
+                    "playing_divisions_str": ["7059198379011646789", "7059198379011646663"]
+                },
+                "2": {
+                    "name": "Round 2",
+                    "round_id": 7059198385655423681,
+                    "round_id_str": "7059198385655423681",
+                    "GGID": "xrgahh",
+                    "date": "2020-09-23",
+                    "playing_divisions": [7059198379011646789, 7059198379011646663]
+                    "playing_divisions_str": ["7059198379011646789", "7059198379011646663"]
+                }
+            },
+            "webhooks": {
+                "courses": {
+                    "endpoint": "www.x.com/courses",
+                    "enabled": true
+                },
+                "pairings": {
+                    "endpoint": "www.x.com/pairings",
+                    "enabled": true
+                },
+                "players": {
+                    "endpoint": "www.x.com/players",
+                    "enabled": true
+                },
+                "scores": {
+                    "endpoint": "www.x.com/scores",
+                    "enabled": true
+                },
+                "matches": {
+                    "endpoint": "www.x.com/matches",
+                    "enabled": true
+                },
+                "match_results": {
+                    "endpoint": "www.x.com/match_results",
+                    "enabled": true
+                },
+                "settings": {
+                    "endpoint": "www.x.com/settings",
+                    "enabled": true
+                }
+            }
+        }
+        
++ Response 400 (application/json)
+
+        {
+            "errors": [
+                "Failed to update League using the given parameters."
+            ]
+        }
+        
+
+### Delete/Archive an Event/League [DELETE]
+
+Soft delete or archive an already existing event. 
+
+Upon soft deletion, the event will completely vanish from the manager's dashboard but it can be restored at any point by any GolfGenius Support Manager.
+
+This action takes a JSON payload as part of the request. You will be provided an API key for every customer that wants to use the integration. Set this API key as Bearer in the request header.
+
+The JSON's keys are: 
++ archive (optional, boolean) - States whether the event should be archived instead of soft deleted. If not set, the event will be soft deleted by default.
+
+
++ Request (application/json)
+    + Headers
+    
+            Authorization: Bearer api-test-key
+    
+    + Body
+
+            {
+                "archive": false
+            }
+            
++ Response 200 (application/json)
+
+        {
+            "id": 7059198245062353848,
+            "id_str": "7059198245062353848",
+            "name": "API-Event-1",
+            "deleted": true,
+            "season": {
+                "id": 7859288867297255553,
+                "id_str": "7859288867297255553",
+                "name": "Test Season",
+                "current": true
+            },
+            "category": {
+                "id": 6859248167297262493,
+                "id_str": "6859248167297262493",
+                "name": "Events, Leagues, and Trips"
+            },
+            "type": "league",
+            "external_type": "regular",
+            "GGID": "whkyyu",
+            "divisions": {
+                "1": {
+                    "name": "Division Test 1",
+                    "division_id": 7059198379011646789,
+                    "division_id_str": "7059198379011646789",
+                    "position": 1
+                },
+                "2": {
+                    "name": "Division Test 2",
+                    "division_id": 7059198379011646623,
+                    "division_id_str": "7059198379011646623",
+                    "position": 2
+                }
+            },
+            "rounds": {
+                "1": {
+                    "name": "Round 1",
+                    "round_id": 7059198379011646144,
+                    "round_id_str": "7059198379011646144",
+                    "GGID": "ckbxpe",
+                    "date": "2020-09-21",
+                    "playing_divisions": [7059198379011646789, 7059198379011646663],
+                    "playing_divisions_str": ["7059198379011646789", "7059198379011646663"]
+                },
+                "2": {
+                    "name": "Round 2",
+                    "round_id": 7059198385655423681,
+                    "round_id_str": "7059198385655423681",
+                    "GGID": "xrgahh",
+                    "date": "2020-09-23",
+                    "playing_divisions": [7059198379011646789, 7059198379011646663]
+                    "playing_divisions_str": ["7059198379011646789", "7059198379011646663"]
+                }
+            },
+        }
+        
++ Response 400 (application/json)
+
+        {
+            "errors": [
+                "Failed to delete League."
+            ]
+        }
+        
+
+## Event Round Creation [/api_v2/events/{event_id}/rounds]
++ Parameters
+    + event_id (numeric 22) - The ID of the event.
+
+### Create an Event Round [POST]
+
+The round creation API will return the newly created round. If an external ID is provided, the round tee sheet will automatically be synced with the vendor site (only if the external event type of the given event is set to "regular").
+
+This action takes a JSON payload as part of the request. You will be provided an API key for every customer that wants to use the integration. Set this API key as Bearer in the request header.
+
+The JSON's keys are:
++ name (string) - The Name of the round being created.
++ external_id (optional, string) - The external id for the round being created. If set, the tee sheet will automatically be synced with the vendor site.
++ date (string) - The Date of the round being created.
++ enable_mobile_score_entry (optional, string) - States whether mobile score entry should be enabled for the round being created. If not set, it will default to false.
++ attending_by_default (optional, boolean) - States whether members added to the roster of this round will be marked as "Attending" by default. If not set, the setting will default to false.
++ show_pairings_in_league_portal (optional, boolean) - States whether the pairings should be displayed on the portal page of this league for this specific round. If omitted, it will default to false.
++ playing_divisions (optional, array) - An array containing the ids of the divisions that should be set as playing divisions for this round. If the array is empty or it is not set, the default All Golfers division will be used.
+
++ Request (application/json)
+    + Headers
+    
+            Authorization: Bearer api-test-key
+    
+    + Body
+
+            {
+                "name": "Round Test",
+                "external_id": "1234",
+                "date": "2020-09-23",
+                "enable_mobile_score_entry": true,
+                "attending_by_default": true,
+                "show_pairings_in_league_portal": true,
+                "playing_divisions": [7059198379011646789, 7059198379011646663]
+            }
+            
++ Response 200 (application/json)
+
+        {
+            "id": 2794531013441653808,
+            "id_str": "2794531013441653808",
+            "GGID": "ckbxpe",
+            "event_id": 2794531013441653805,
+            "event_id_str": "2794531013441653805",
+            "name": "Round Test",
+            "date": "2020-09-23",
+            "status": "not started",
+            "pairing_group_size": 4,
+            "most_recent": true,
+            "type": "social",
+            "playing_divisions": [7059198379011646789, 7059198379011646663],
+            "playing_divisions_str": ["7059198379011646789", "7059198379011646663"],
+            "settings": {
+                "allow_handicap_updates": true,
+                "mobile_score_entry_enabled": true,
+                "attending_by_default": true,
+                "teesheet_released": true,
+                "results_released": true
+            }
+        }
+        
++ Response 400 (application/json)
+
+        {
+            "errors": [
+                "Failed to create Round using the given parameters."
+            ]
+        }
+
+## Event Round Update/Deletion [/api_v2/events/{event_id}/rounds/{round_id}]
++ Parameters
+    + event_id (numeric 22) - The ID of the event.
+    + round_id (numeric 22) - The ID of the round.
+
+### Update an Event Round [PUT]
+
+The round update API will return the updated round. Upon success, the teesheet for the existing rounds and the event roster will be automatically synced if possible (teesheet will be synced only if the external event type of the given event is set to "regular", otherwise only the event roster will be synced).
+
+This action takes a JSON payload as part of the request. You will be provided an API key for every customer that wants to use the integration. Set this API key as Bearer in the request header.
+
+The JSON's keys are:
++ name (optional, string) - The Name of the round being updated. If not set, the name will remain unchanged.
++ external_id (optional, string) - The external id for the round being created. If set, the tee sheet will automatically be synced with the vendor site. If not set, the external id will remain unchanged.
++ date (optional, string) - The Date of the round being updated. If not set, the date will remain unchanged.
++ enable_mobile_score_entry (optional, string) - States whether mobile score entry should be enabled for the round being created. If not set, the setting will remain unchanged.
++ attending_by_default (optional, boolean) - States whether members added to the roster of this round will be marked as "Attending" by default. If not set, the setting will remain unchanged.
++ show_pairings_in_league_portal (optional, boolean) - States whether the pairings should be displayed on the portal page of this league for this specific round. If omitted, it will remain unchanged. 
++ playing_divisions (optional, array) - An array containing the ids of the divisions that should be set as playing divisions for this round. If the array is empty, the default All Golfers division will be used. If not set, the playing divisions will remain unchanged.
+
++ Request (application/json)
+    + Headers
+    
+            Authorization: Bearer api-test-key
+    
+    + Body
+
+            {
+                "name": "Round Test",
+                "external_id": "1234",
+                "date": "2020-09-23",
+                "enable_mobile_score_entry": true,
+                "attending_by_default": true,
+                "show_pairings_in_league_portal": true,
+                "playing_divisions": [7059198379011646789, 7059198379011646663]
+            }
+            
++ Response 200 (application/json)
+
+        {
+            "id": 2794531013441653808,
+            "id_str": "2794531013441653808",
+            "GGID": "ckbxpe",
+            "event_id": 2794531013441653805,
+            "event_id_str": "2794531013441653805",
+            "name": "Round Test",
+            "date": "2020-09-23",
+            "status": "not started",
+            "pairing_group_size": 4,
+            "most_recent": true,
+            "type": "social",
+            "playing_divisions": [7059198379011646789, 7059198379011646663],
+            "playing_divisions_str": ["7059198379011646789", "7059198379011646663"],
+            "settings": {
+                "allow_handicap_updates": true,
+                "mobile_score_entry_enabled": true,
+                "attending_by_default": true,
+                "teesheet_released": true,
+                "results_released": true
+            }
+        }
+        
++ Response 400 (application/json)
+
+        {
+            "errors": [
+                "Failed to update Round using the given parameters."
+            ]
+        }
+
+### Delete an Event Round [DELETE]
+
+The round deletion API will delete a given round. 
+
+This action takes a JSON payload as part of the request. You will be provided an API key for every customer that wants to use the integration. Set this API key as Bearer in the request header.
+
++ Request (application/json)
+    + Headers
+    
+            Authorization: Bearer api-test-key
+    
++ Response 200 (application/json)
+
+        {
+        }
+
++ Response 400 (application/json)
+
+        {
+            "errors": [
+                "Failed to delete Round."
+            ]
+        }
+
+## Event Division Creation [/api_v2/events/{event_id}/divisions]
++ Parameters
+    + event_id (numeric 22) - The ID of the event.
+
+### Create an Event Division [POST]
+
+The division update API will return the newly created division. Upon success, the teesheet for the existing rounds and the event roster will be automatically synced if possible (teesheet will be synced only if the external event type of the given event is set to "regular", otherwise only the event roster will be synced).
+
+Note that the divisions updated through the API are a special type named external divisions, which cannot be updated by managers using GolfGenius. External divisions can only be updated or created using the GolfGenius API. 
+
+This action takes a JSON payload as part of the request. You will be provided an API key for every customer that wants to use the integration. Set this API key as Bearer in the request header.
+
+The JSON's keys are:
++ name (string) - The Name of the division being created.
++ position (optional, integer) - The position of the division within the division list for this event. If not set, 0 will de used by default.
++ tee_times (array) - An array containing the tee times that should be filled for the pairings created within this division.
+
+Each entry in the tee times array is a hash which contains the following keys:
++ time (string) - The actual time for this tee time expressed in the following format "%I:%M %p" (e.g. "8:10 AM")
++ starting_hole (optional, integer) - The starting hole for the current tee time. If not set, the default starting hole will be used (based on the played tee).
++ starting_hole_label (optional, string) - The label of the starting hole for the current tee time (e.g. "A"). If not set, the hole label will be omitted.
+
++ Request (application/json)
+    + Headers
+    
+            Authorization: Bearer api-test-key
+            
+    + Body
+
+            {
+                "name": "Division Test",
+                "position": 0,
+                "tee_times": [
+                    {
+                        "time": "8:10 AM",
+                        "starting_hole": 1,
+                        "starting_hole_label": "A"
+                    },
+                    {
+                        "time": "8:15 AM",
+                        "starting_hole": 1,
+                        "starting_hole_label": "A"
+                    }
+                ]
+            }
+
++ Response 200 (application/json)
+
+        {
+            "id": 3103815,
+            "id_str": "3103815",
+            "event_id": 403326,
+            "event_id_str": "403326",
+            "name": "Division Test",
+            "position": 0,
+            "external_tee_times": [
+                {
+                    "time": "8:10 AM",
+                    "starting_hole": 1,
+                    "starting_hole_label": "A"
+                },
+                {
+                    "time": "8:15 AM",
+                    "starting_hole": 1,
+                    "starting_hole_label": "A"
+                }
+            ]
+        }
+
++ Response 400 (application/json)
+
+        {
+            "errors": [
+                "Failed to create Division using the given parameters."
+            ]
+        }
+
+## Event Division Update/Deletion [/api_v2/events/{event_id}/divisions/{division_id}]
++ Parameters
+    + event_id (numeric 22) - The ID of the event.
+    + division_id (numeric 22) - The ID of the division.
+
+### Update an Event Division [PUT]
+
+The division update API will return the updated division. Upon success, the teesheet for the existing rounds and the event roster will be automatically synced if possible (teesheet will be synced only if the external event type of the given event is set to "regular", otherwise only the event roster will be synced).
+
+Note that the divisions updated through the API are a special type named external divisions, which cannot be updated by managers using GolfGenius. External divisions can only be updated or created using the GolfGenius API. 
+
+This action takes a JSON payload as part of the request. You will be provided an API key for every customer that wants to use the integration. Set this API key as Bearer in the request header.
+
+The JSON's keys are:
++ name (optional, string) - The Name of the division being updated. If not set, the name will remain unchanged.
++ position (optional, integer) - The position of the division within the division list for this event. If not set, the position will remain unchanged.
++ tee_times (optional, array) - An array containing the tee times that should be filled for the pairings created within this division. If not set, the tee times array will remain unchanged.
+
+Each entry in the tee times array is a hash which contains the following keys:
++ time (string) - The actual time for this tee time expressed in the following format "%I:%M %p" (e.g. "8:10 AM")
++ starting_hole (optional, integer) - The starting hole for the current tee time. If not set, the default starting hole will be used (based on the played tee).
++ starting_hole_label (optional, string) - The label of the starting hole for the current tee time (e.g. "A"). If not set, the hole label will be omitted.
+
++ Request (application/json)
+    + Headers
+    
+            Authorization: Bearer api-test-key
+
+    + Body
+
+            {
+                "name": "Division Test",
+                "position": 0,
+                "tee_times": [
+                    {
+                        "time": "8:10 AM",
+                        "starting_hole": 1,
+                        "starting_hole_label": "A"
+                    },
+                    {
+                        "time": "8:15 AM",
+                        "starting_hole": 1,
+                        "starting_hole_label": "A"
+                    }
+                ]
+            }
+
++ Response 200 (application/json)
+
+        {
+            "id": 3103815,
+            "id_str": "3103815",
+            "event_id": 403326,
+            "event_id_str": "403326",
+            "name": "Division Test",
+            "position": 0,
+            "external_tee_times": [
+                {
+                    "time": "8:10 AM",
+                    "starting_hole": 1,
+                    "starting_hole_label": "A"
+                },
+                {
+                    "time": "8:15 AM",
+                    "starting_hole": 1,
+                    "starting_hole_label": "A"
+                }
+            ]
+        }
+
++ Response 400 (application/json)
+
+        {
+            "errors": [
+                "Failed to update Division using the given parameters."
+            ]
+        }
+
+### Delete an Event Division [DELETE]
+
+The division deletion API will delete a given division. Upon success, the teesheet for the existing rounds and the event roster will be automatically synced (if possible).
+
+Note that a division cannot be deleted if any of the following criteria holds true:
++ it is the default All Golfers division.
++ it is not an external division (divisions created manually in golfgenius cannot be deleted using the api).
++ it is a playing division in any of the rounds for the given event.
++ it is used in tournaments, round robin schedules or bracket tournaments.
+
++ Request (application/json)
+    + Headers
+    
+            Authorization: Bearer api-test-key
+
++ Response 200 (application/json)
+
+        {
+        }
+
++ Response 400 (application/json)
+
+        {
+            "errors": [
+                "Division cannot be deleted because it is a playing division."
+            ]
+        }
+
+## Event Divisions [/api_v2/{api_key}/events/{event_id}/divisions]
++ Parameters
+    + api_key (string) - An API Key defined at customer level.
+    + event_id (numeric 22) - The ID of the event.
+
+### List all Event Divisions [GET]
+
+The division get API will return the list of external divisions for this particular event. 
+
+Note that the divisions created through this API are a special type of divisions named external divisions, which cannot be updated by managers using GolfGenius. External divisions can only be updated or created using the GolfGenius API. 
+
++ Response 200 (application/json)
+
+        [
+            {
+                "division": {
+                    "id": 2794531013441653808,
+                    "id_str": "2794531013441653808",
+                    "event_id": 2794531013441653805,
+                    "event_id_str": "2794531013441653805",
+                    "name": "Division Test",
+                    "status": "not started",
+                    "position": 0,
+                    "tee_times": [
+                        {
+                            "time": "8:10 AM",
+                            "starting_hole": 1,
+                            "starting_hole_label": "A"
+                        },
+                        {
+                            "time": "8:15 AM",
+                            "starting_hole": 1,
+                            "starting_hole_label": "A"
+                        }
+                    ]
+                }
+            }
+        ]
+
+## Event Roster Registration Creation [/api_v2/events/{event_id}/members]
++ Parameters
+    + event_id (numeric 22) - The ID of the event.
+
+### Create a Member Registration [POST]
+
+The event roster registration API will return the id of the member within the event roster upon success.
+
+This action takes a JSON payload as part of the request. You will be provided an API key for every customer that wants to use the integration. Set this API key as Bearer in the request header.
+
+The JSON's keys are:
++ external_id (string) - The external unique identifier for the member that is being registered.
++ last_name (string) - The last name of the member.
++ first_name (optional, string) - The first name of the member.
++ email (optional, string) - The email of the member.
++ gender (optional, string) - ("M"/"F"/"unknown") The gender of the member.
++ handicap_index (optional, number) - The handicap index of the member.
++ handicap_network_id (optional, string) - The handicap network id of the member (if the member should belong to the master roster).
++ rounds (array) - An array of the rounds that the member should attend. Note that all rounds that the player is about to attend must be specified in this array (if applicable, division ids and team ids must also be specified)
++ custom_fields (optional, hash) - A hash of custom fields that should be imported for the current member. Note that all custom fields will be imported as strings. The keys of the hash will represent the name of the custom fields while the values will represent the data of the custom fields. 
+
+The JSON's keys for a round entry in the rounds array are:
++ round_id (numeric 22) - The id of the round within the event that the member should attend.
++ team_id (optional, integer) - A unique identifier that is used in order to group players into teams within their allocated division. Ignored if division id is not set.
++ division_id (optional, numeric 22) - The id of the division within the event that the member should be part of. If not set, the member will be part of no division (besides the default "All Golfers" division).
+
+
++ Request (application/json)
+    + Headers
+    
+            Authorization: Bearer api-test-key
+            
+    + Body
+
+            {
+                "external_id": "1234",
+                "last_name": "Doe",
+                "first_name": "John",
+                "email": "jon.doe@gmail.com",
+                "gender": "M",
+                "handicap_index": -5.0,
+                "handicap_network_id": "12345678",
+                "rounds": [
+                    {
+                        "round_id": 1694531015551658972,
+                        "team_id": 1,
+                        "division_id": 2794531013441653808
+                    },
+                    {
+                        "round_id": 4494577715551234979,
+                        "team_id": 1,
+                        "division_id": 2794531013441653808
+                    }
+                ],
+                "custom_fields": {
+                    "Affiliation": "None"
+                }
+            }
+
++ Response 200 (application/json)
+
+        {
+            "member_id": 9104532013557652102,
+            "member_id_str": "9104532013557652102",
+            "external_id": "1234",
+            "last_name": "Doe",
+            "first_name": "John",
+            "email": "john.doe@gmail.com",
+            "gender": "M",
+            "handicap_index": "+5.0",
+            "handicap_network_id": "12345678",
+            "rounds": [
+                {
+                    "round_id": 1694531015551658972,
+                    "round_id_str": "1694531015551658972",
+                    "team_id": 1,
+                    "division_id": 2794531013441653808,
+                    "division_id_str": "2794531013441653808"
+                },
+                {
+                    "round_id": 4494577715551234979,
+                    "round_id_str": "4494577715551234979",
+                    "team_id": 1,
+                    "division_id": 2794531013441653808,
+                    "division_id_str": "2794531013441653808"
+                }
+            ],
+            "custom_fields": {
+                "Affiliation": "None",
+                "Entry Number": "1",
+                "Registration Member or Guest": "member"
+            }
+        }
+
++ Response 400 (application/json)
+
+
+        {
+            "errors": [
+                "Failed to register Member using the given parameters."
+            ]
+        }
+
+## Event Roster Registration Update/Deletion [/api_v2/events/{event_id}/members/{member_id}]
++ Parameters
+    + event_id (numeric 22) - The ID of the event.
+    + member_id (numeric 22) - The ID of the member.
+
+### Update a Member Registration [PUT]
+
+The event roster registration API will return the id of the member within the event roster upon success.
+
+This action takes a JSON payload as part of the request. You will be provided an API key for every customer that wants to use the integration. Set this API key as Bearer in the request header.
+
+The JSON's keys are:
++ external_id (optional, string) - The external unique identifier for the member that is being registered. If not set, it will remain unchanged.
++ first_name (optional, string) - The first name of the member. If not set, the first name will remain unchanged.
++ last_name (optional, string) - The last name of the member. If not set, the last name will remain unchanged.
++ email (optional, string) - The email of the member. If not set, the email will remain unchanged.
++ gender (optional, string) - ("M"/"F"/"unknown") The gender of the member. If not set, the gender will remain unchanged.
++ handicap_index (optional, string) - The handicap index of the member. If not set, the handicap index will remain unchanged.
++ handicap_network_id (optional, string) - The handicap network id of the member (if the member should belong to the master roster). If not set, the handicap network id will remain unchanged.
++ rounds (optional, array) - An array of the rounds that the member should attend. Note that the member will be attending only the rounds present in this array and will be removed from any others (if applicable, division ids and team ids must also be specified). If not set, no changes will be made to the rounds attended by the member. 
++ custom_fields (optional, hash) - A hash of custom fields that should be imported for the current member. Note that all custom fields will be imported as strings. The keys of the hash will represent the name of the custom fields while the values will represent the data of the custom fields. If any custom fields are not included in the hash, their value will remain unchanged. 
+
+The JSON's keys for a round entry in the rounds array are:
++ round_id (numeric 22) - The id of the round within the event that the member should attend.
++ team_id (optional, integer) - A unique identifier that is used in order to group players into teams within their allocated division. Ignored if division id is not set.
++ division_id (optional, numeric 22) - The id of the division within the event that the member should be part of. If not set, the member will be part of no division (besides the default "All Golfers" division).
+
+
++ Request (application/json)
+    + Headers
+    
+            Authorization: Bearer api-test-key
+            
+    + Body
+
+            {
+                "external_id": "1234",
+                "last_name": "Doe",
+                "first_name": "John",
+                "email": "jon.doe@gmail.com",
+                "gender": "M",
+                "handicap_index": -5.0,
+                "handicap_network_id": "12345678",
+                "rounds": [
+                    {
+                        "round_id": 1694531015551658972,
+                        "team_id": 1,
+                        "division_id": 2794531013441653808
+                    },
+                    {
+                        "round_id": 4494577715551234979,
+                        "team_id": 1,
+                        "division_id": 2794531013441653808
+                    }
+                ],
+                "custom_fields": {
+                    "Affiliation": "None"
+                }
+            }
+
++ Response 200 (application/json)
+
+        {
+            "member_id": 9104532013557652102,
+            "member_id_str": "9104532013557652102",
+            "external_id": "1234",
+            "last_name": "Doe",
+            "first_name": "John",
+            "email": "john.doe@gmail.com",
+            "gender": "M",
+            "handicap_index": "+5.0",
+            "handicap_network_id": "12345678",
+            "rounds": [
+                {
+                    "round_id": 1694531015551658972,
+                    "round_id_str": "1694531015551658972",
+                    "team_id": 1,
+                    "division_id": 2794531013441653808,
+                    "division_id_str": "2794531013441653808"
+                },
+                {
+                    "round_id": 4494577715551234979,
+                    "round_id_str": "4494577715551234979",
+                    "team_id": 1,
+                    "division_id": 2794531013441653808,
+                    "division_id_str": "2794531013441653808"
+                }
+            ],
+            "custom_fields": {
+                "Affiliation": "None",
+                "Entry Number": "1",
+                "Registration Member or Guest": "member"
+            }
+        }
+
++ Response 400 (application/json)
+
+
+        {
+            "errors": [
+                "Failed to re-register Member using the given parameters."
+            ]
+        }
+
+### Delete a Member Registration [DELETE]
+
+The event roster registration API will delete a member from the event roster (if the member is currently registered).
+
+You will be provided an API key for every customer that wants to use the integration. Set this API key as Bearer in the request header.
+
++ Request (application/json)
+    + Headers
+    
+            Authorization: Bearer api-test-key
+
++ Response 200 (application/json)
+
+        {
+        }
+
++ Response 400 (application/json)
+
+
+        {
+            "errors": [
+                "Failed to de-register Member since the member does not exist."
+            ]
+        }
+
+## Round Tee Sheet Registration Creation [/api_v2/events/{event_id}/rounds/{round_id}/pairing_groups]
++ Parameters
+    + event_id (numeric 22) - The ID of the event.
+    + round_id (numeric 22) - The ID of the round.
+
+### Create a Pairing Group Registration [POST]
+
+The round tee sheet registration will return the id of the pairing group (foursome) and an array containing the ids of the players along with their member id.
+
+This action takes a JSON payload as part of the request. You will be provided an API key for every customer that wants to use the integration. Set this API key as Bearer in the request header.
+
+The JSON's keys are:
++ players (hash) - A hash containing the players in the given foursome.
++ tee_time (optional, hash) -  A hash representing information about the tee time for the current pairing. 
+
+Each player entry key is represented by the position of the player in the foursome. The JSON's keys for a player entry are the following:
++ external_id (string) - The external unique identifier for the member that is being registered.
++ last_name (string) - The last name of the member.
++ first_name (optional, string) - The first name of the member.
++ email (optional, string) - The email of the member.
++ gender (optional, string) - ("M"/"F"/"unknown") The gender of the member.
++ handicap_index (optional, number) - The handicap index of the member. 
++ handicap_network_id (optional, string) - The handicap network id of the member (if the member should belong to the master roster).
++ player_state (optional, string) - ("confirmed"/"waitlisted"/"invited"/"not_attending") The state of the player in round roster.
++ custom_fields (optional, hash) - A hash of custom fields that should be imported for the current member. Note that all custom fields will be imported as strings. The keys of the hash will represent the name of the custom fields while the values will represent the data of the custom fields.
+
+The JSON's keys for a tee time entry are the following:
++ time (string) - The actual time for this tee time expressed in the following format "%I:%M %p" (e.g. "8:10 AM")
++ starting_hole (optional, integer) - The starting hole for the current tee time. If not set, the default starting hole will be used (based on the played tee).
++ starting_hole_label (optional, string) - The label of the starting hole for the current tee time (e.g. "A"). If not set, the hole label will be omitted.
++ add_to_pairing (optional, boolean) - Whether the players should be added to the pairings or not. However, in order to have the players added to the pairings, besides this parameter set to 'true', they need to have their player_state as "confirmed" or the parameter not present.
+
++ Request (application/json)
+    + Headers
+    
+            Authorization: Bearer api-test-key
+            
+    + Body
+
+            {
+                "players": {
+                    "1": {
+                        "external_id": "1235",
+                        "last_name": "Doe",
+                        "first_name": "Jane",
+                        "email": "jane.doe@gmail.com",
+                        "gender": "F",
+                        "handicap_index": -5.0,
+                        "handicap_network_id": "12345679",
+                        "custom_fields": {
+                            "Affiliation": "None"
+                        }
+                    },
+                    "2": {
+                        "external_id": "1234",
+                        "last_name": "Doe",
+                        "first_name": "John",
+                        "email": "jon.doe@gmail.com",
+                        "gender": "M",
+                        "handicap_index": 5.0,
+                        "handicap_network_id": "12345678",
+                        "custom_fields": {
+                            "Affiliation": "None"
+                        }
+                    }
+                },
+                "tee_time": {
+                    "time": "8:10 AM",
+                    "starting_hole": 1,
+                    "starting_hole_label": "A"
+                }
+            }
+
++ Response 200 (application/json)
+
+        {
+            "pairing_group": {
+                "pairing_group_id": 2909534463578552102,
+                "pairing_group_id_str": "2909534463578552102",
+                "tee_time": {
+                    "time": "8:10 AM",
+                    "starting_hole": 1,
+                    "starting_hole_label": "A"
+                }
+            },
+            "players": {
+                "1": {
+                    "member_id": 71045552014557652144,
+                    "member_id_str": "71045552014557652144",
+                    "external_id": "1235",
+                    "last_name": "Doe",
+                    "first_name": "Jane",
+                    "email": "jane.doe@gmail.com",
+                    "gender": "F",
+                    "handicap_index": "+5.0",
+                    "handicap_network_id": "12345679",
+                    "custom_fields": {
+                        "Affiliation": "None",
+                        "Entry Number": "1",
+                        "Registration Member or Guest": "member"
+                    },
+                    "player_id": 71045552014557652122,
+                    "player_id_str": "71045552014557652122"
+                },
+                "2": {
+                    "member_id": 9104532013557652102,
+                    "member_id_str": "9104532013557652102",
+                    "external_id": "1234",
+                    "last_name": "Doe",
+                    "first_name": "John",
+                    "email": "john.doe@gmail.com",
+                    "gender": "M",
+                    "handicap_index": "5.0",
+                    "handicap_network_id": "12345678",
+                    "custom_fields": {
+                        "Affiliation": "None",
+                        "Entry Number": "2",
+                        "Registration Member or Guest": "member"
+                    },
+                    "player_id": 9104532013557652111,
+                    "player_id_str": "9104532013557652111"
+                }
+            }
+        }
+
++ Response 400 (application/json)
+
+
+        {
+            "errors": [
+                "Failed to register Pairing Group using the given parameters."
+            ]
+        }
+
+## Round Tee Sheet Registration Update/Deletion [/api_v2/events/{event_id}/rounds/{round_id}/pairing_groups/{pairing_group_id}]
++ Parameters
+    + event_id (numeric 22) - The ID of the event.
+    + round_id (numeric 22) - The ID of the round.
+    + pairing_group_id (numeric 22) - The ID of the pairing group/foursome.
+
+### Update a Pairing Group Registration [PUT]
+
+The round tee sheet registration will return the id of the pairing group (foursome) and an array containing the ids of the players along with their member id.
+
+This action takes a JSON payload as part of the request. You will be provided an API key for every customer that wants to use the integration. Set this API key as Bearer in the request header.
+
+The JSON's keys are:
++ players (optional, hash) - A hash containing the players in the given foursome. If not set, the players will remain unchanged.
++ tee_time (optional, hash) -  A hash representing information about the tee time for the current pairing. If not set, the tee time will remain unchanged.
+
+Each player entry key is represented by the position of the player in the foursome. The JSON's keys for a player entry are the following:
++ member_id (optional, numeric 22) - The ID of the member that is being re-registered. If not set, it is assumed the player is new.
++ external_id (string) - The external unique identifier for the member that is being registered.
++ first_name (string) - The first name of the member.
++ last_name (string) - The last name of the member.
++ email (optional, string) - The email of the member.
++ gender (optional, string) - ("M"/"F"/"unknown") The gender of the member.
++ handicap_index (optional, number) - The handicap index of the member. 
++ handicap_network_id (optional, string) - The handicap network id of the member (if the member should belong to the master roster).
++ player_state (optional, string) - ("confirmed"/"waitlisted"/"invited"/"not_attending") The state of the player in round roster.
++ custom_fields (optional, hash) - A hash of custom fields that should be imported for the current member. Note that all custom fields will be imported as strings. The keys of the hash will represent the name of the custom fields while the values will represent the data of the custom fields.
+
+The JSON's keys for a tee time entry are the following:
++ time (string) - The actual time for this tee time expressed in the following format "%I:%M %p" (e.g. "8:10 AM")
++ starting_hole (optional, integer) - The starting hole for the current tee time. If not set, the default starting hole will be used (based on the played tee).
++ starting_hole_label (optional, string) - The label of the starting hole for the current tee time (e.g. "A"). If not set, the hole label will be omitted.
++ add_to_pairing (optional, boolean) - Whether the players should be added to the pairings or not. However, in order to have the players added to the pairings, besides this parameter set to 'true', they need to have their player_state as "confirmed" or the parameter not present.
+
++ Request (application/json)
+    + Headers
+    
+            Authorization: Bearer api-test-key
+            
+    + Body
+
+            {
+                "players": {
+                    "1": {
+                        "external_id": "1235",
+                        "first_name": "Jane",
+                        "last_name": "Doe",
+                        "email": "jane.doe@gmail.com",
+                        "gender": "F",
+                        "handicap_index": -5.0,
+                        "handicap_network_id": "12345679",
+                        "custom_fields": {
+                            "Affiliation": "None"
+                        }
+                    },
+                    "2": {
+                        "external_id": "1234",
+                        "first_name": "John",
+                        "last_name": "Doe",
+                        "email": "jon.doe@gmail.com",
+                        "gender": "M",
+                        "handicap_index": 5.0,
+                        "handicap_network_id": "12345678",
+                        "custom_fields": {
+                            "Affiliation": "None"
+                        }
+                    }
+                },
+                "tee_time": {
+                    "time": "8:10 AM",
+                    "starting_hole": 1,
+                    "starting_hole_label": "A"
+                }
+            }
+
++ Response 200 (application/json)
+
+        {
+            "pairing_group": {
+                "pairing_group_id": 2909534463578552102,
+                "pairing_group_id_str": "2909534463578552102",
+                "tee_time": {
+                    "time": "8:10 AM",
+                    "starting_hole": 1,
+                    "starting_hole_label": "A"
+                }
+            },
+            "players": {
+                "1": {
+                    "member_id": 71045552014557652144,
+                    "member_id_str": "71045552014557652144"
+                    "external_id": "1235",
+                    "last_name": "Doe",
+                    "first_name": "Jane",
+                    "email": "jane.doe@gmail.com",
+                    "gender": "F",
+                    "handicap_index": "+5.0",
+                    "handicap_network_id": "12345679",
+                    "custom_fields": {
+                        "Affiliation": "None",
+                        "Entry Number": "1",
+                        "Registration Member or Guest": "member"
+                    },
+                    "player_id": 71045552014557652122,
+                    "player_id_str": "71045552014557652122"
+                },
+                "2": {
+                    "member_id": 9104532013557652102,
+                    "member_id_str": "9104532013557652102",
+                    "external_id": "1234",
+                    "last_name": "Doe",
+                    "first_name": "John",
+                    "email": "john.doe@gmail.com",
+                    "gender": "M",
+                    "handicap_index": "5.0",
+                    "handicap_network_id": "12345678",
+                    "custom_fields": {
+                        "Affiliation": "None",
+                        "Entry Number": "2",
+                        "Registration Member or Guest": "member"
+                    },
+                    "player_id": 9104532013557652111,
+                    "player_id_str": "9104532013557652111"
+                }
+            }
+        }
+
++ Response 400 (application/json)
+
+
+        {
+            "errors": [
+                "Failed to register Pairing Group using the given parameters."
+            ]
+        }
+
+### Delete a Pairing Group Registration [DELETE]
+
+The event roster registration API will delete a pairing group from the tee sheet.
+
+You will be provided an API key for every customer that wants to use the integration. Set this API key as Bearer in the request header.
+
++ Request (application/json)
+    + Headers
+    
+            Authorization: Bearer api-test-key
+
++ Response 200 (application/json)
+
+        {
+        }
+
++ Response 400 (application/json)
+
+
+        {
+            "errors": [
+                "Failed to de-register Pairing Group since the pairing group does not exist."
+            ]
+        }
+
+## Round Tee Sheet and Scores [/api_v2/{api_key}/events/{event_id}/rounds/{round_id}/tee_sheet?include_all_custom_fields={include_all_custom_fields}]
++ Parameters
+    + api_key (string) - An API Key defined at customer level.
+    + event_id (numeric 22) - The ID of the event.
+    + round_id (numeric 22) - The ID of the round.
+    + include_all_custom_fields (optional, boolean) - By default, the API does not return all the golfers custom fields, only integration specific ones if available. If set to true, we will include all the golfers custom fields.
+
+### Round Tee Sheet and Scores [GET]
+
+The round tee sheet and scores API returns the tee sheet structure, players and their scores.
+
+Notes about response:
++ The tee may be different for each of the players. This is reflected in the tee object at the player level.
++ The extra holes at the pairing group denotes any playoff holes set up for the group.
++ Each player includes a player roster id field, which can be used to identify the corresponding player in the event roster
++ The score array is modeled as an array of scores. The typical length is 21, and is filled in as follows: positions 1 - 18 are hole by hole scores, positions 19 and 20 are filled in with nine hole totals if the round is using nine hole total score entry, position 21 is filled in with the 18 hole total if the round is using 18 hole totals
++ The scoring regime array is used in alt-shot, scramble, 3-3-3 and 6-6-6 tournaments to denote which positions will expect scores to be filled in
++ The course handicap will be the course handicap calculated using the default round tournament and will match the course handicap displayed on mobile phones
++ The hole by hole handicap shots will be calculated using the above course handicap and player tee, and will match the data on mobile phones
++ The playoff scores array includes any playoff scores filled in for the player
+
++ Response 200 (application/json)
+
+        [
+            {
+                "pairing_group": {
+                    "players": [
+                        {
+                            "name": "Wood, Tim",
+                            "last_name": "Wood",
+                            "position": 0,
+                            "tee": {
+                                "name": "Black",
+                                "abbreviation": "BLK",
+                                "hole_data": {
+                                    "par": [
+                                        4,
+                                        4,
+                                        5,
+                                        3,
+                                        4,
+                                        3,
+                                        4,
+                                        5,
+                                        4,
+                                        4,
+                                        3,
+                                        4,
+                                        4,
+                                        5,
+                                        4,
+                                        3,
+                                        5,
+                                        4
+                                    ],
+                                    "yardage": [
+                                        395,
+                                        350,
+                                        492,
+                                        145,
+                                        391,
+                                        196,
+                                        387,
+                                        550,
+                                        343,
+                                        382,
+                                        166,
+                                        340,
+                                        402,
+                                        481,
+                                        446,
+                                        128,
+                                        495,
+                                        347
+                                    ],
+                                    "handicap": [
+                                        7,
+                                        17,
+                                        5,
+                                        13,
+                                        9,
+                                        15,
+                                        3,
+                                        1,
+                                        11,
+                                        8,
+                                        16,
+                                        14,
+                                        4,
+                                        10,
+                                        2,
+                                        18,
+                                        6,
+                                        12
+                                    ]
+                                },
+                                "nine_hole_course": false,
+                                "created_at": "2017-02-22 14:43:52 -0500",
+                                "updated_at": "2018-02-15 05:56:05 -0500",
+                                "color": "#000",
+                                "id": "113916",
+                                "slope_and_rating": {
+                                    "all18": {
+                                        "rating": 71.3,
+                                        "slope": 131
+                                    },
+                                    "front9": {
+                                        "rating": 36.5,
+                                        "slope": 128
+                                    },
+                                    "back9": {
+                                        "rating": 36.8,
+                                        "slope": 130
+                                    }
+                                },
+                                "course_id": "12749",
+                                "parent_id": "113912",
+                                "hole_labels": [
+                                    "1",
+                                    "2",
+                                    "3",
+                                    "4",
+                                    "5",
+                                    "6",
+                                    "7",
+                                    "8",
+                                    "9",
+                                    "10",
+                                    "11",
+                                    "12",
+                                    "13",
+                                    "14",
+                                    "15",
+                                    "16",
+                                    "17",
+                                    "18"
+                                ]
+                            },
+                            "seed": "8",
+                            "member_card_id": "7334554",
+                            "player_roster_id": "5482877",
+                            "handicap_network_id": "5398235",
+                            "player_round_id": "21836274",
+                            "player_GGID": "kkhixnr",
+                            "external_id": "762648",
+                            "team_name": "California",
+                            "custom_fields": [
+                                {
+                                    "name": "club number",
+                                    "value": "54321"
+                                }
+                            ],
+                            "score_array": [
+                                5,
+                                4,
+                                5,
+                                3,
+                                5,
+                                4,
+                                5,
+                                5,
+                                4,
+                                4,
+                                3,
+                                4,
+                                4,
+                                5,
+                                4,
+                                3,
+                                6,
+                                4,
+                                null,
+                                null,
+                                null
+                            ],
+                            "scoring_regime_array": [
+                                "editable",
+                                "editable",
+                                "editable",
+                                "editable",
+                                "editable",
+                                "editable",
+                                "editable",
+                                "editable",
+                                "editable",
+                                "editable",
+                                "editable",
+                                "editable",
+                                "editable",
+                                "editable",
+                                "editable",
+                                "editable",
+                                "editable",
+                                "editable",
+                                "visible",
+                                "visible",
+                                "visible"
+                            ],
+                            "handicap_index": "6.9",
+                            "nine_hole_handicap_index": "",
+                            "course_handicap": "8",
+                            "handicap_dots_by_hole": [
+                                1,
+                                0,
+                                1,
+                                0,
+                                0,
+                                0,
+                                1,
+                                1,
+                                0,
+                                1,
+                                0,
+                                0,
+                                1,
+                                0,
+                                1,
+                                0,
+                                1,
+                                0
+                            ],
+                            "playoff_scores": null
+                        },
+                        {
+                            "name": "Erskine, William",
+                            "last_name": "Erskine",
+                            "position": 1,
+                            "tee": {
+                                "name": "Black",
+                                "abbreviation": "BLK",
+                                "hole_data": {
+                                    "par": [
+                                        4,
+                                        4,
+                                        5,
+                                        3,
+                                        4,
+                                        3,
+                                        4,
+                                        5,
+                                        4,
+                                        4,
+                                        3,
+                                        4,
+                                        4,
+                                        5,
+                                        4,
+                                        3,
+                                        5,
+                                        4
+                                    ],
+                                    "yardage": [
+                                        395,
+                                        350,
+                                        492,
+                                        145,
+                                        391,
+                                        196,
+                                        387,
+                                        550,
+                                        343,
+                                        382,
+                                        166,
+                                        340,
+                                        402,
+                                        481,
+                                        446,
+                                        128,
+                                        495,
+                                        347
+                                    ],
+                                    "handicap": [
+                                        7,
+                                        17,
+                                        5,
+                                        13,
+                                        9,
+                                        15,
+                                        3,
+                                        1,
+                                        11,
+                                        8,
+                                        16,
+                                        14,
+                                        4,
+                                        10,
+                                        2,
+                                        18,
+                                        6,
+                                        12
+                                    ]
+                                },
+                                "nine_hole_course": false,
+                                "created_at": "2017-02-22 14:43:52 -0500",
+                                "updated_at": "2018-02-15 05:56:05 -0500",
+                                "color": "#000",
+                                "id": "113916",
+                                "slope_and_rating": {
+                                    "all18": {
+                                        "rating": 71.3,
+                                        "slope": 131
+                                    },
+                                    "front9": {
+                                        "rating": 36.5,
+                                        "slope": 128
+                                    },
+                                    "back9": {
+                                        "rating": 36.8,
+                                        "slope": 130
+                                    }
+                                },
+                                "course_id": "12749",
+                                "parent_id": "113912", 
+                                "hole_labels": [
+                                    "1",
+                                    "2",
+                                    "3",
+                                    "4",
+                                    "5",
+                                    "6",
+                                    "7",
+                                    "8",
+                                    "9",
+                                    "10",
+                                    "11",
+                                    "12",
+                                    "13",
+                                    "14",
+                                    "15",
+                                    "16",
+                                    "17",
+                                    "18"
+                                ]
+                            },
+                            "player_roster_id": "5482891",
+                            "handicap_network_id": "",
+                            "player_round_id": "21836288",
+                            "player_GGID": "khxiske",
+                            "external_id": "756338",
+                            "group_number": 0,
+                            "team_name": "California",
+                            "custom_fields": [
+                                {
+                                    "name": "club number",
+                                    "value": "12345"
+                                }
+                            ],
+                            "score_array": [
+                                7,
+                                6,
+                                6,
+                                4,
+                                5,
+                                5,
+                                5,
+                                4,
+                                5,
+                                4,
+                                3,
+                                4,
+                                6,
+                                5,
+                                5,
+                                4,
+                                6,
+                                5,
+                                null,
+                                null,
+                                null
+                            ],
+                            "scoring_regime_array": [
+                                "editable",
+                                "editable",
+                                "editable",
+                                "editable",
+                                "editable",
+                                "editable",
+                                "editable",
+                                "editable",
+                                "editable",
+                                "editable",
+                                "editable",
+                                "editable",
+                                "editable",
+                                "editable",
+                                "editable",
+                                "editable",
+                                "editable",
+                                "editable",
+                                "visible",
+                                "visible",
+                                "visible"
+                            ],
+                            "handicap_index": "11.2",
+                            "nine_hole_handicap_index": "",
+                            "course_handicap": "13",
+                            "handicap_dots_by_hole": [
+                                1,
+                                0,
+                                1,
+                                1,
+                                1,
+                                0,
+                                1,
+                                1,
+                                1,
+                                1,
+                                0,
+                                0,
+                                1,
+                                1,
+                                1,
+                                0,
+                                1,
+                                1
+                            ],
+                            "playoff_scores": null
+                        }
+                    ],
+                    "id": "2550909",
+                    "hole": 1,
+                    "tee_time": "8:30 AM",
+                    "date": "2021-10-01",
+                    "extra_holes": []
+                }
+            }
+        ]
+
+## Tournament Results  [/api_v2/{api_key}/events/{event_id}/rounds/{round_id}/tournaments/{tournament_id}.{format}]
++ Parameters
+    + api_key (string) - An API Key defined at customer level.
+    + event_id (numeric 22) - The ID of the event.
+    + round_id (numeric 22) - The ID of the round.
+    + tournament_id (numeric 22) - The ID of the tournament.
+    + format (string) - One of 'html' or 'json'. HTML is strongly recommended.
+
+### Tournament Results [GET]
+
+The tournament results API endpoint is provided in two formats: html and json.
+
+We strongly recommend the HTML
+format due to the large number of formats supported by the Golf Genius platform. By using the HTML format,
+the partner development team receives preformatted leaderboards, identical to the ones that are being displayed
+on the website, portal, TV display and mobile phones. 
+
+Alternatively, one can use the JSON format to see
+structured data, but extra care needs to be taken in order to properly display all tournament formats,
+including but not limited to: flighted tournaments, multi-round, 6/6/6, gross/net elimination, match play,
+and others.
+
++ Response 200 (application/html)
+
+        <div class='table-responsive'>
+            <table class='result_scope' data-event-id='717661' name=''>
+                <tr class='header thead' style=''>
+                    <th class='pos' style=''>Pos.</th>
+                    <th class='name'>
+        Player
+        </th>
+                    <th class='score'>To Par
+                        <br/>Gross
+                    </th>
+                    <th class='total'>Thru</th>
+                    <th class='total'>Total
+                        <br/>Gross
+                    </th>
+                </tr>
+                <tr class='aggregate-row odd' data-aggregate-id='250104714' data-aggregate-name='Wood, Tim' data-display-embed='true' data-display-tv='true' data-display-website='true'>
+                    <td class='pos' style=''>
+        1
+        </td>
+                    <td class='name'>
+                        <a class="open-aggregate-details" data-remote="true" href="/tournaments2/details/250104714">Wood, Tim
+        </a>
+                        <div class='affiliation'>Schuylkill Country Club</div>
+                    </td>
+                    <td class='not-colored score' data-blue='' data-green='' data-red='' style='color: ;'>
+        +5
+        </td>
+                    <td class='thru'>
+        F
+        </td>
+                    <td class='not-colored total' data-blue='' data-green='' data-red='' style='color: ;'>
+        77
+        </td>
+                </tr>
+                <tr class='expanded hidden' data-display-embed='true' data-display-tv='true' data-display-website='true' data-expanded-aggregate-name='Wood, Tim'>
+                    <td colspan='5'>&nbsp;</td>
+                </tr>
+                <tr class='aggregate-row even' data-aggregate-id='250104716' data-aggregate-name='DeAngelis, Joseph' data-display-embed='true' data-display-tv='true' data-display-website='true'>
+                    <td class='pos' style=''>
+        2
+        </td>
+                    <td class='name'>
+                        <a class="open-aggregate-details" data-remote="true" href="/tournaments2/details/250104716">DeAngelis, Joseph
+        </a>
+                        <div class='affiliation'>Jericho National Golf Club</div>
+                    </td>
+                    <td class='not-colored score' data-blue='' data-green='' data-red='' style='color: ;'>
+        +6
+        </td>
+                    <td class='thru'>
+        F
+        </td>
+                    <td class='not-colored total' data-blue='' data-green='' data-red='' style='color: ;'>
+        78
+        </td>
+                </tr>
+                <tr style='height: 1px;'></tr>
+            </table>
+        </div>
+
++ Response 200 (application/json)
+
+        {
+            "event": {
+                "name": "Individual Gross Stroke Play",
+                "adjusted": false,
+                "rounds": [
+                    {
+                        "id": 279453101,
+                        "id_str": "279453101",
+                        "name": "R1",
+                        "date": "2021-05-20",
+                        "in_progress": false
+                    },
+                    {
+                        "id": 279453102,
+                        "id_str": "279453102",
+                        "name": "R2",
+                        "date": "2021-05-21",
+                        "in_progress": false
+                    }
+                ],
+                "scopes": [
+                    {
+                        "id": 16456343,
+                        "id_str": "16456343",
+                        "aggregates": [
+                            {
+                                "id": 250104714,
+                                "id_str": "250104714",
+                                "member_ids": ["1"],
+                                "points_summary_team_id": 46684337,
+                                "member_card_ids": [
+                                    {
+                                        "member_id": 1324785,
+                                        "member_id_str": "1324785",
+                                        "member_card_id": 634282945,
+                                        "member_card_id_str": "634282945"
+                                    }
+                                ],
+                                "scorecard_statuses": [
+                                    {
+                                        "member_card_id": 111,
+                                        "member_card_id_str": "111",
+                                        "status": "completed"
+                                    }
+                                ],
+                                "tour_id": "215",
+                                "team_id": "20",
+                                "position": "1",
+                                "name": "Wood, Tim",
+                                "affiliation": "Schuylkill Country Club",
+                                "seed": "14"
+                                "score": "+5",
+                                "thru": "F",
+                                "total": "77",
+                                "net_scores": [
+                                    3,
+                                    3,
+                                    2,
+                                    2,
+                                    5,
+                                    2,
+                                    5,
+                                    4,
+                                    6,
+                                    6,
+                                    5,
+                                    5,
+                                    3,
+                                    3,
+                                    4,
+                                    3,
+                                    6,
+                                    2
+                                ],
+                                "gross_scores": [
+                                    4,
+                                    4,
+                                    3,
+                                    3,
+                                    6,
+                                    3,
+                                    6,
+                                    5,
+                                    6,
+                                    6,
+                                    6,
+                                    6,
+                                    3,
+                                    4,
+                                    5,
+                                    4,
+                                    7,
+                                    3
+                                ],
+                                "net_extra_holes": [
+                                    {
+                                        "hole_no": 0,
+                                        "score": 4
+                                    },
+                                    {
+                                        "hole_no": 1,
+                                        "score": 4
+                                    },
+                                ],
+                                "gross_extra_holes": [
+                                    {
+                                        "hole_no": 0,
+                                        "score": 4
+                                    },
+                                    {
+                                        "hole_no": 1,
+                                        "score": 5
+                                    },
+                                ],
+                                "to_par_net": [
+                                    -1,
+                                    -2,
+                                    -1,
+                                    -3,
+                                    1,
+                                    -2,
+                                    1,
+                                    0,
+                                    3,
+                                    2,
+                                    1,
+                                    1,
+                                    0,
+                                    -1,
+                                    0,
+                                    -1,
+                                    3,
+                                    -2
+                                ],
+                                "to_par_gross": [
+                                    0,
+                                    -1,
+                                    0,
+                                    -2,
+                                    2,
+                                    -1,
+                                    2,
+                                    1,
+                                    3,
+                                    2,
+                                    2,
+                                    2,
+                                    0,
+                                    0,
+                                    1,
+                                    0,
+                                    4,
+                                    -1
+                                ],
+                                "stableford_points": [
+                                    3,
+                                    4,
+                                    3,
+                                    5,
+                                    1,
+                                    4,
+                                    1,
+                                    2,
+                                    0,
+                                    0,
+                                    1,
+                                    1,
+                                    2,
+                                    3,
+                                    2,
+                                    3,
+                                    0,
+                                    4
+                                ],
+                                "totals": {
+                                    "net_scores": {
+                                        "out": 32,
+                                        "in": 37,
+                                        "total": 69
+                                    },
+                                    "gross_scores": {
+                                        "out": 40,
+                                        "in": 44,
+                                        "total": 84
+                                    },
+                                    "to_par_net": {
+                                        "out": -4,
+                                        "in": 3,
+                                        "total": -1
+                                    },
+                                    "to_par_gross": {
+                                        "out": 4,
+                                        "in": 10,
+                                        "total": 14
+                                    },
+                                    "stableford_points": {
+                                        "out": 23,
+                                        "in": 16,
+                                        "total": 39
+                                    },
+                                    "with_previous_rounds": {
+                                        "net_scores": {
+                                            "out": 77,
+                                            "in": 72,
+                                            "total": 149
+                                        },
+                                        "gross_scores": {
+                                            "out": 92,
+                                            "in": 86,
+                                            "total": 178
+                                        },
+                                        "to_par_net": {
+                                            "out": 3,
+                                            "in": 3,
+                                            "total": 6
+                                        },
+                                        "to_par_gross": {
+                                            "out": 18,
+                                            "in": 17,
+                                            "total": 35
+                                        },
+                                        "stableford_points": {
+                                            "out": 34,
+                                            "in": 37,
+                                            "total": 71
+                                        }
+                                    }
+                                },
+                                "previous_rounds_scores": [
+                                    {
+                                        "round_id": 279453101,
+                                        "round_id_str": "279453101",
+                                        "net_scores": [
+                                            5,
+                                            6,
+                                            4,
+                                            5,
+                                            6,
+                                            6,
+                                            4,
+                                            4,
+                                            5,
+                                            6,
+                                            3,
+                                            2,
+                                            7,
+                                            2,
+                                            5,
+                                            2,
+                                            6,
+                                            2
+                                        ],
+                                        "gross_scores": [
+                                            6,
+                                            7,
+                                            5,
+                                            6,
+                                            7,
+                                            7,
+                                            5,
+                                            4,
+                                            5,
+                                            6,
+                                            4,
+                                            3,
+                                            7,
+                                            3,
+                                            6,
+                                            3,
+                                            7,
+                                            3
+                                        ],
+                                        "net_extra_holes": [
+                                            {
+                                                "hole_no": 0,
+                                                "score": 4
+                                            },
+                                            {
+                                                "hole_no": 1,
+                                                "score": 4
+                                            },
+                                        ],
+                                        "gross_extra_holes": [
+                                            {
+                                                "hole_no": 0,
+                                                "score": 4
+                                            },
+                                            {
+                                                "hole_no": 1,
+                                                "score": 5
+                                            },
+                                        ],
+                                        "to_par_net": [
+                                            1,
+                                            1,
+                                            1,
+                                            0,
+                                            1,
+                                            1,
+                                            0,
+                                            0,
+                                            2,
+                                            2,
+                                            -1,
+                                            -2,
+                                            4,
+                                            -2,
+                                            1,
+                                            -2,
+                                            3,
+                                            -3
+                                        ],
+                                        "to_par_gross": [
+                                            2,
+                                            2,
+                                            2,
+                                            1,
+                                            2,
+                                            2,
+                                            1,
+                                            0,
+                                            2,
+                                            2,
+                                            0,
+                                            -1,
+                                            4,
+                                            -1,
+                                            2,
+                                            -1,
+                                            4,
+                                            -2
+                                        ],
+                                        "stableford_points": [
+                                            1,
+                                            1,
+                                            1,
+                                            2,
+                                            1,
+                                            1,
+                                            2,
+                                            2,
+                                            0,
+                                            0,
+                                            3,
+                                            4,
+                                            0,
+                                            4,
+                                            1,
+                                            4,
+                                            0,
+                                            5
+                                        ],
+                                        "totals": {
+                                            "net_scores": {
+                                                "out": 45,
+                                                "in": 35,
+                                                "total": 80
+                                            },
+                                            "gross_scores": {
+                                                "out": 52,
+                                                "in": 42,
+                                                "total": 94
+                                            },
+                                            "to_par_net": {
+                                                "out": 7,
+                                                "in": 0,
+                                                "total": 7
+                                            },
+                                            "to_par_gross": {
+                                                "out": 14,
+                                                "in": 7,
+                                                "total": 21
+                                            },
+                                            "stableford_points": {
+                                                "out": 11,
+                                                "in": 21,
+                                                "total": 32
+                                            }
+                                        }
+                                    }
+                                ]
+                            },
+                            {
+                                "id": 250104716,
+                                "id_str": "250104716",
+                                "member_ids": ["2"],
+                                "points_summary_team_id": 46684338,
+                                "member_card_ids": [
+                                    {
+                                        "member_id": 2,
+                                        "member_id_str": "2",
+                                        "member_card_id": 112
+                                        "member_card_id_str": "112"
+                                    }
+                                ],
+                                "scorecard_statuses": [
+                                    {
+                                        "member_card_id": 112,
+                                        "member_card_id_str": "112",
+                                        "status": "completed"
+                                    }
+                                ],
+                                "tour_id": "215",
+                                "team_id": "20",
+                                "position": "2",
+                                "name": "DeAngelis, Joseph",
+                                "affiliation": "Jericho National Golf Club",
+                                "score": "+6",
+                                "thru": "F",
+                                "total": "78",
+                                "net_scores": [
+                                    5,
+                                    6,
+                                    3,
+                                    4,
+                                    5,
+                                    2,
+                                    4,
+                                    5,
+                                    4,
+                                    5,
+                                    4,
+                                    5,
+                                    7,
+                                    5,
+                                    4,
+                                    4,
+                                    5,
+                                    3
+                                ],
+                                "gross_scores": [
+                                    6,
+                                    7,
+                                    3,
+                                    5,
+                                    6,
+                                    3,
+                                    4,
+                                    5,
+                                    4,
+                                    5,
+                                    5,
+                                    5,
+                                    7,
+                                    6,
+                                    4,
+                                    5,
+                                    5,
+                                    4
+                                ],
+                                "to_par_net": [
+                                    1,
+                                    1,
+                                    0,
+                                    -1,
+                                    1,
+                                    -2,
+                                    0,
+                                    1,
+                                    1,
+                                    1,
+                                    0,
+                                    1,
+                                    4,
+                                    1,
+                                    0,
+                                    0,
+                                    2,
+                                    -1
+                                ],
+                                "to_par_gross": [
+                                    2,
+                                    2,
+                                    0,
+                                    0,
+                                    2,
+                                    -1,
+                                    0,
+                                    1,
+                                    1,
+                                    1,
+                                    1,
+                                    1,
+                                    4,
+                                    2,
+                                    0,
+                                    1,
+                                    2,
+                                    0
+                                ],
+                                "stableford_points": [
+                                    1,
+                                    1,
+                                    2,
+                                    3,
+                                    1,
+                                    4,
+                                    2,
+                                    1,
+                                    1,
+                                    1,
+                                    2,
+                                    1,
+                                    0,
+                                    1,
+                                    2,
+                                    2,
+                                    0,
+                                    3
+                                ],
+                                "totals": {
+                                    "net_scores": {
+                                        "out": 38,
+                                        "in": 42,
+                                        "total": 80
+                                    },
+                                    "gross_scores": {
+                                        "out": 43,
+                                        "in": 46,
+                                        "total": 89
+                                    },
+                                    "to_par_net": {
+                                        "out": 2,
+                                        "in": 8,
+                                        "total": 10
+                                    },
+                                    "to_par_gross": {
+                                        "out": 7,
+                                        "in": 12,
+                                        "total": 19
+                                    },
+                                    "stableford_points": {
+                                        "out": 16,
+                                        "in": 12,
+                                        "total": 28
+                                    },
+                                    "with_previous_rounds": {
+                                        "net_scores": {
+                                            "out": 75,
+                                            "in": 77,
+                                            "total": 152
+                                        },
+                                        "gross_scores": {
+                                            "out": 84,
+                                            "in": 85,
+                                            "total": 169
+                                        },
+                                        "to_par_net": {
+                                            "out": 1,
+                                            "in": 8,
+                                            "total": 9
+                                        },
+                                        "to_par_gross": {
+                                            "out": 10,
+                                            "in": 16,
+                                            "total": 26
+                                        },
+                                        "stableford_points": {
+                                            "out": 37,
+                                            "in": 30,
+                                            "total": 67
+                                        }
+                                    }
+                                },
+                                "previous_rounds_scores": [
+                                    {
+                                        "round_id": 279453101,
+                                        "net_scores": [
+                                            3,
+                                            6,
+                                            7,
+                                            6,
+                                            2,
+                                            2,
+                                            5,
+                                            3,
+                                            3,
+                                            4,
+                                            4,
+                                            4,
+                                            3,
+                                            3,
+                                            3,
+                                            5,
+                                            3,
+                                            6
+                                        ],
+                                        "gross_scores": [
+                                            3,
+                                            7,
+                                            7,
+                                            7,
+                                            3,
+                                            3,
+                                            5,
+                                            3,
+                                            3,
+                                            4,
+                                            5,
+                                            4,
+                                            3,
+                                            4,
+                                            3,
+                                            6,
+                                            3,
+                                            7
+                                        ],
+                                        "to_par_net": [
+                                            -1,
+                                            1,
+                                            4,
+                                            1,
+                                            -3,
+                                            -3,
+                                            1,
+                                            -1,
+                                            0,
+                                            0,
+                                            0,
+                                            0,
+                                            0,
+                                            -1,
+                                            -1,
+                                            1,
+                                            0,
+                                            1
+                                        ],
+                                        "to_par_gross": [
+                                            -1,
+                                            2,
+                                            4,
+                                            2,
+                                            -2,
+                                            -2,
+                                            1,
+                                            -1,
+                                            0,
+                                            0,
+                                            1,
+                                            0,
+                                            0,
+                                            0,
+                                            -1,
+                                            2,
+                                            0,
+                                            2
+                                        ],
+                                        "stableford_points": [
+                                            3,
+                                            1,
+                                            0,
+                                            1,
+                                            5,
+                                            5,
+                                            1,
+                                            3,
+                                            2,
+                                            2,
+                                            2,
+                                            2,
+                                            2,
+                                            3,
+                                            3,
+                                            1,
+                                            2,
+                                            1
+                                        ],
+                                        "totals": {
+                                            "net_scores": {
+                                                "out": 37,
+                                                "in": 35,
+                                                "total": 72
+                                            },
+                                            "gross_scores": {
+                                                "out": 41,
+                                                "in": 39,
+                                                "total": 80
+                                            },
+                                            "to_par_net": {
+                                                "out": -1,
+                                                "in": 0,
+                                                "total": -1
+                                            },
+                                            "to_par_gross": {
+                                                "out": 3,
+                                                "in": 4,
+                                                "total": 7
+                                            },
+                                            "stableford_points": {
+                                                "out": 21,
+                                                "in": 18,
+                                                "total": 39
+                                            }
+                                        }
+                                    }
+                                ]
+                            }
+                        ]
+                    }
+                ],
+                "season_points": [
+                  {
+                    "position": 2,
+                    "total_points": 120.0,
+                    "member_card_id": 711189,
+                    "member_card_id_str": "711189",
+                    "season_point_category_id": "2124"
+                  },
+                  {
+                    "position": 3,
+                    "total_points": 96.0,
+                    "member_card_id": 3163884,
+                    "member_card_id_str": "3163884",
+                    "season_point_category_id": "2124"
+                  },
+                  {
+                    "position": 4,
+                    "total_points": 77.0,
+                    "member_card_id": 5439674,
+                    "member_card_id_str": "5439674",
+                    "season_point_category_id": "2124"
+                  }
+                ],
+                "column_visibility": {
+                    "position": true,
+                    "name": true,
+                    "affiliation": true,
+                    "score": true,
+                    "thru": true,
+                    "total": true,
+                    "purse": false,
+                    "points": false,
+                    "details": false
+                },
+                "column_names": {
+                    "position": "Pos",
+                    "name": "Player",
+                    "affiliation": "Affiliation",
+                    "score": "To Par<br/>Gross",
+                    "thru": "Thru",
+                    "total": "Total<br/>Gross"
+                },
+                "horizontal_leaderboard": false
+            }
+        }
+
+## Tournament Results General Purpose XML [/v2tournaments/{tournament_id}.xml]
++ Parameters
+    + tournament_id (numeric 22) - ID of the tournament.
+
+### Tournament Results [GET]
+
+A general purpose XML file (same structure as the JSON) that can be used for any tournament format.
+
++ Response 200 (application/xml)
+
+        <event>
+            <id type="integer">999999</id>
+            <name>36 Holes Individual Stroke Play</name>
+            <adjusted type="boolean">false</adjusted>
+            <rounds type="array">
+                <round>
+                    <name>R1</name>
+                    <date type="date">2018-05-23</date>
+                    <in-progress type="boolean">false</in-progress>
+                </round>
+                <round>
+                    <name>R2</name>
+                    <date type="date">2018-05-24</date>
+                    <in-progress type="boolean">false</in-progress>
+                </round>
+            </rounds>
+            <scopes type="array">
+                <scope>
+                    <id type="integer">20353573</id>
+                    <cut-list-position type="integer">73</cut-list-position>
+                    <aggregates type="array">
+                        <aggregate>
+                            <id type="integer">319067478</id>
+                            <member-ids type="array">
+                                <member-id type="integer">7689456</member-id>
+                            </member-ids>
+                            <position>1</position>
+                            <name>Hyland, Michael</name>
+                            <affiliation>Little Mill Country Club</affiliation>
+                            <score>+1</score>
+                            <total>143</total>
+                            <disposition/>
+                            <disposition-cause/>
+                            <rounds type="array">
+                                <round>
+                                    <name>R1</name>
+                                    <total>70</total>
+                                </round>
+                                <round>
+                                    <name>R2</name>
+                                    <total>73</total>
+                                </round>
+                            </rounds>
+                        </aggregate>
+                    </aggregates>
+                </scope>
+            </scopes>
+            <column-visibility>
+                <position type="boolean">true</position>
+                <name type="boolean">true</name>
+                <affiliation type="boolean">true</affiliation>
+                <score type="boolean">true</score>
+                <thru type="boolean">false</thru>
+                <total type="boolean">true</total>
+                <purse type="boolean">false</purse>
+                <points type="boolean">false</points>
+                <details type="boolean">false</details>
+            </column-visibility>
+            <column-names>
+                <position>Pos</position>
+                <name>Player</name>
+                <affiliation>Affiliation</affiliation>
+                <score>Total<br/>To Par<br/>Gross</score>
+                <total>Total<br/>Gross</total>
+            </column-names>
+            <horizontal-leaderboard type="boolean">true</horizontal-leaderboard>
+        </event>
+
+## Tournament Results Restricted Purpose XML [/v2tournaments/{tournament_id}/show_individual_gross.xml]
++ Parameters
+    + tournament_id (numeric 22) - ID of the tournament.
+
+### Tournament Results [GET]
+
+A restricted purpose XML file that is only valid for player v. field gross tournaments. This format will be used by the European PGA Tour as a plug-in replacement to the XML file provided by their current tournament provider.
+
++ Response 200 (application/xml)
+
+        <Event>
+            <Tournament>
+                <Name>36 Holes Individual Stroke Play</Name>
+                <Players>
+                    <FirstName>Michael</FirstName>
+                    <LastName>Hyland</LastName>
+                    <Country/>
+                    <IDother>999999</IDother>
+                    <TourID>215</TourID>
+                    <TeamID>20</TeamID>
+                    <MemberCardID>111</MemberCardID>
+                    <Totals>
+                    <Status>OK</Status>
+                    <Round>
+                        <No>1</No>
+                        <TeeTime> 1:20 PM</TeeTime>
+                        <Scores>
+                            <Hole>1</Hole>
+                            <Strokes>4</Strokes>
+                        </Scores>
+                        <Scores>
+                            <Hole>2</Hole>
+                            <Strokes>4</Strokes>
+                        </Scores>
+                        <Scores>
+                            <Hole>3</Hole>
+                            <Strokes>4</Strokes>
+                        </Scores>
+                    </Round>
+                    </Totals>
+                </Players>
+            </Tournament>
+        </Event>
+    
+## Player Points Summary [/api_v2/{api_key}/events/{event_id}/rounds/{round_id}/player_points]
++ Parameters
+    + api_key (string) - An API Key defined at customer level.
+    + event_id (numeric 22) - The ID of the event.
+    + round_id (numeric 22) - The ID of the round.
+### Player Points summary [GET]
+
+For a specific event and round, return a list of total points for each awarded player. The list is sorted by total points in descending order.
+
++ Response 200 (applicaton/json)
+
+        {
+          "players": [
+            {
+              "player_id": "113916",
+              "member_id": "2794531013441653806",
+              "name": "John Doe",
+              "round_points": "2.0",
+              "total_points": "2.5"
+            },
+            {
+              "player_id": "113918",
+              "member_id": "2794531013441653809",
+              "name": "Tim Wood",
+              "round_points": "1.5",
+              "total_points": "1.75"
+            }
+          ]
+        }
+    
+## Team Points Summary [/api_v2/{api_key}/events/{event_id}/rounds/{round_id}/team_points]
++ Parameters
+    + api_key (string) - An API Key defined at customer level.
+    + event_id (numeric 22) - The ID of the event.
+    + round_id (numeric 22) - The ID of the round.
+### Team Points summary [GET]
+For a specific event and round, return a list of total points for each awarded team. The list is sorted by total points in descending order.
+
++ Response 200 (applicaton/json)
+
+        {
+          "teams": [
+            {
+              "id": "113916",
+              "name": "Team 1",
+              "round_points": "2.0",
+              "total_points": "2.5"
+            },
+            {
+              "id": "113918",
+              "name": "Team 2",
+              "round_points": "1.5",
+              "total_points": "1.75"
+            }
+          ]
+        }
+    
+## UK Handicaps - Get Rounds [/api_v2/{api_key}/uk_handicaps/competitions]
++ Parameters
+    + api_key (string) - An API Key defined at customer level.
+
+### List of all Rounds for a specific customer [GET]
+
+For a customer, return a list of all the Rounds of a specific customer. 
+
++ Response 200 (application/json)
+
+        [
+            {
+                "round": {
+                    "name": "Round 1",
+                    "date": "2013-06-03",
+                    "holes": 18,
+                    "ggid": "33vw57",
+                    "competition": "stroke",
+                    "type_of_play": "individual"
+                }
+            },
+            {
+                "round": {
+                    "name": "Round 2",
+                    "date": "2013-06-10",
+                    "holes": 18,
+                    "ggid": "56ps15",
+                    "competition": "stroke",
+                    "type_of_play": "teams"
+                }
+            }
+        ]
+
+## UK Handicaps - Get Round Data [/api_v2/{api_key}/uk_handicaps/competitions/display?id={id}&ggid={ggid}]
++ Parameters
+    + api_key (string) - An API Key defined at customer level.
+    + ggid (string) - the GGID of the Round, can use regular ID instead.
+    + id (int) - the ID of the round, can be used instead of GGID.
+
+### Data for a specific Round [GET]
+
+For a Round, return the data required for handicapping purposes in the United Kingdom and Ireland. 
+
++ Response 200 (application/json)
+
+        [
+            {"round": {
+                "name": "Final Round",
+                "date": "2017-04-23",
+                "holes": 18,
+                "player_groups": [
+                    {
+                        "players": [
+                            {
+                                "first_name": "John",
+                                "last_name": "Doe",
+                                "national_player_id": "9497340"
+                            }
+                        ],
+                        "SSS": 36,
+                        "Front9SSS": 36.3,
+                        "Back9SSS": 36,
+                        "pars": [
+                            null,
+                            null,
+                            null,
+                            null,
+                            null,
+                            null,
+                            null,
+                            null,
+                            null,
+                            4,
+                            3,
+                            5,
+                            4,
+                            4,
+                            3,
+                            4,
+                            4,
+                            5
+                        ],
+                        "team": "",
+                        "stroke_indexes": [
+                            -1,
+                            -1,
+                            -1,
+                            -1,
+                            -1,
+                            -1,
+                            -1,
+                            -2,
+                            -2,
+                            -1,
+                            -1,
+                            -1,
+                            -1,
+                            -1,
+                            -1,
+                            -1,
+                            -2,
+                            -2
+                        ],
+                        "scores": [
+                            4,
+                            4,
+                            4,
+                            4,
+                            4,
+                            4,
+                            4,
+                            4,
+                            4,
+                            4,
+                            4,
+                            4,
+                            4,
+                            4,
+                            4,
+                            4,
+                            4,
+                            4,
+                            null,
+                            null,
+                            null
+                        ]
+                    }
+                ]
+            }}
+        ]
+
+## Season Points Categories [/api_v2/{api_key}/season_points/categories]
++ Parameters
+    + api_key (string) - An API Key defined at customer level.
+
+### List All Season Points Categories [GET]
+
+For a specific customer, this API will respond with all the currently unarchived season points categories.
+
++ Response 200 (application/json)
+
+        [
+          {
+            "category": {
+              "name": "M4 - Senior Net - 2021 Oliver Cup Matches",
+              "id": "895"
+            }
+          },
+          {
+            "category": {
+              "name": "M5 - Silver Scratch - 2021 Oliver Cup Matches",
+              "id": "898"
+            }
+          },
+          {
+            "category": {
+              "name": "W2 - Women's Net Player of the Year",
+              "id": "2936"
+            }
+          },
+          {
+            "category": {
+              "name": "M2 - Net - 2021 POY/Haase Whalen Cup",
+              "id": "3056"
+            }
+          }
+        ]
+
+## Season Points Categories Players Data [/api_v2/{api_key}/season_points/categories/{category_id}]
++ Parameters
+    + api_key (string) - An API Key defined at customer level.
+    + category_id (number) - The ID of the season point category
+
+### List Players Data for a Season Points Category [GET]
+
+For a specific customer and season points category, this API will respond with data related to all players belonging to that season points category.
+
++ Response 200 (application/json)
+
+        {
+            "season_points": [
+                {
+                  "member_card_id": "710585",
+                  "current_rank": "35",
+                  "previous_rank": "34",
+                  "number_of_events": 2,
+                  "total_points": 33.5,
+                  "points_behind_leader": 562.5,
+                  "number_of_wins": 0,
+                  "second_place_finishes": 0,
+                  "third_place_finishes": 0,
+                  "top_ten_finishes": 2
+                },
+                {
+                  "member_card_id": "710432",
+                  "current_rank": "18",
+                  "previous_rank": "17",
+                  "number_of_events": 4,
+                  "total_points": 101.0,
+                  "points_behind_leader": 495.0,
+                  "number_of_wins": 0,
+                  "second_place_finishes": 0,
+                  "third_place_finishes": 1,
+                  "top_ten_finishes": 1
+                },
+                {
+                  "member_card_id": "711249",
+                  "current_rank": "20",
+                  "previous_rank": "19",
+                  "number_of_events": 2,
+                  "total_points": 97.0,
+                  "points_behind_leader": 499.0,
+                  "number_of_wins": 0,
+                  "second_place_finishes": 1,
+                  "third_place_finishes": 0,
+                  "top_ten_finishes": 0
+                }
+            ]
+        }
+
+
+## Course Statistics [/api_v2/{api_key}/events/{event_id}/courses/{course_id}/course_statistics?round_id={round_id}&tee_id={tee_id}]
++ Parameters
+    + api_key (string) - An API Key defined at customer level.
+    + event_id (numeric 22) - The id of the event.
+    + course_id (numeric 22) - The id of course.
+    + round_id (optional, numeric 22) - The id of the round. If not sent, then we return the course statistics considering all the rounds.
+    + tee_id (optional, numeric 22) - The id of the tee. If not sent, then we return the course statistics considering all the tees.
+
+### Course Statistics [GET]
+
+The Course Statistics API returns the contents of the "Hole by Hole Course Statistics" table in JSON format.
+
+  The shot statistics such as Fairway Hit, Lowest score on a Hole, a.s.o. are available when there is at least one round with shot tracking enabled. Otherwise, these fields are not included in the response.
+
+  If the tee_id parameter is sent in the request, then the response will include it as well. If it's not sent, then the response will include a list with all the tees that were used for computing the statistics:
+
+  - When tee_id is not sent:
+    - tee_id: null
+    - tee_id_str: "" (empty string)
+    - all_tee_ids (array of numeric 22)
+    - all_tee_ids_str (array of strings)
+  - When tee_id is sent:
+    - tee_id (numeric 22)
+    - tee_id_str (string)
+    - all_tee_ids: [] (empty array of numeric 22)
+    - all_tee_ids_str: [] (empty array of strings)
+    
++ Response 200 (application/json)
+
+        {
+            "course_id": 8174846760955460681,
+            "course_id_str": "8174846760955460681",
+            "tee_id": 8174846967248108950,
+            "tee_id_str": "8174846967248108950",
+            "all_tee_ids": [8174846967248108950, 8174846966073703824, 8174846970200898981],
+            "all_tee_ids_str": ["8174846967248108950", "8174846966073703824", "8174846970200898981"],
+            "out_stats": 
+            {
+                "distance_unit": "yards",
+                "distance_range": "3608",
+                "par": "36",
+                "average": "42.25",
+                "rank": "",
+                "eagles": "1",
+                "birdies": "7",
+                "pars": "6",
+                "bogeys": "12",
+                "double_bogeys": "8",
+                "others": "2",
+                "fairway_hits_fraction": "9/24",
+                "fairway_hits_percent": "25.00%",
+                "putts_per_green_in_regulation": "0.78",
+                "greens_in_regulation_fraction": "9/36",
+                "greens_in_regulation_percentage": "25.00%",
+                "sand_saves_fraction": "1/13",
+                "sand_saves_percentage": "3.70%",
+                "low": "3",
+                "high": "6"
+            },
+            "in_stats": 
+            {
+                "distance_unit": "yards",
+                "distance_range": "3576",
+                "par": "36",
+                "average": "39",
+                "rank": "",
+                "eagles": "2",
+                "birdies": "10",
+                "pars": "6",
+                "bogeys": "10",
+                "double_bogeys": "8",
+                "others": "0",
+                "fairway_hits_fraction": "10/28",
+                "fairway_hits_percent": "27.78%",
+                "putts_per_green_in_regulation": "0.94",
+                "greens_in_regulation_fraction": "13/36",
+                "greens_in_regulation_percentage": "36.11%",
+                "sand_saves_fraction": "3/12",
+                "sand_saves_percentage": "22.22%",
+                "low": "3",
+                "high": "6"
+            },
+            "total_stats": 
+            {
+                "distance_unit": "yards",
+                "distance_range": "7184",
+                "par": "72",
+                "average": "81.25",
+                "rank": "",
+                "eagles": "3",
+                "birdies": "17",
+                "pars": "12",
+                "bogeys": "22",
+                "double_bogeys": "16",
+                "others": "2",
+                "fairway_hits_fraction": "19/52",
+                "fairway_hits_percent": "26.39%",
+                "putts_per_green_in_regulation": "0.86",
+                "greens_in_regulation_fraction": "22/72",
+                "greens_in_regulation_percentage": "30.56%",
+                "sand_saves_fraction": "4/25",
+                "sand_saves_percentage": "12.96%",
+                "low": "3",
+                "high": "6"
+            },
+            "holes": 
+            [
+                {
+                    "hole_no": "1",
+                    "hole_stats": 
+                    {
+                        "distance_unit": "yards",
+                        "distance_range": "400",
+                        "par": "4",
+                        "average": "4.25",
+                        "rank": "12",
+                        "eagles": "0",
+                        "birdies": "2",
+                        "pars": "0",
+                        "bogeys": "1",
+                        "double_bogeys": "1",
+                        "others": "0",
+                        "fairway_hits_fraction": "1/4",
+                        "fairway_hits_percent": "25.00%",
+                        "putts_per_green_in_regulation": "1.0",
+                        "greens_in_regulation_fraction": "2/4",
+                        "greens_in_regulation_percentage": "50.00%",
+                        "sand_saves_fraction": "0/1",
+                        "sand_saves_percentage": "0.00%",
+                        "low": "3",
+                        "high": "6"
+                    }
+                },
+                {
+                    "hole_no": "2",
+                    "hole_stats": 
+                    {
+                        "distance_unit": "yards",
+                        "distance_range": "431",
+                        "par": "4",
+                        "average": "5.00",
+                        "rank": "6",
+                        "eagles": "0",
+                        "birdies": "1",
+                        "pars": "0",
+                        "bogeys": "1",
+                        "double_bogeys": "2",
+                        "others": "0",
+                        "fairway_hits_fraction": "N/A",
+                        "fairway_hits_percent": "0.00%",
+                        "putts_per_green_in_regulation": "0",
+                        "greens_in_regulation_fraction": "0/4",
+                        "greens_in_regulation_percentage": "0.00%",
+                        "sand_saves_fraction": "0/1",
+                        "sand_saves_percentage": "0.00%",
+                        "low": "3",
+                        "high": "6"
+                    }
+                },
+                {
+                    "hole_no": "3",
+                    "hole_stats": 
+                    {
+                        "distance_unit": "yards",
+                        "distance_range": "549",
+                        "par": "5",
+                        "average": "4.50",
+                        "rank": "15",
+                        "eagles": "1",
+                        "birdies": "1",
+                        "pars": "1",
+                        "bogeys": "1",
+                        "double_bogeys": "0",
+                        "others": "0",
+                        "fairway_hits_fraction": "2/4",
+                        "fairway_hits_percent": "50.00%",
+                        "putts_per_green_in_regulation": "1.0",
+                        "greens_in_regulation_fraction": "1/4",
+                        "greens_in_regulation_percentage": "25.00%",
+                        "sand_saves_fraction": "0/1",
+                        "sand_saves_percentage": "0.00%",
+                        "low": "3",
+                        "high": "6"
+                    }
+                },
+                {
+                    "hole_no": "4",
+                    "hole_stats": 
+                    {
+                        "distance_unit": "yards",
+                        "distance_range": "425",
+                        "par": "4",
+                        "average": "5.75",
+                        "rank": "1",
+                        "eagles": "0",
+                        "birdies": "0",
+                        "pars": "0",
+                        "bogeys": "1",
+                        "double_bogeys": "3",
+                        "others": "0",
+                        "fairway_hits_fraction": "0/4",
+                        "fairway_hits_percent": "0.00%",
+                        "putts_per_green_in_regulation": "2.0",
+                        "greens_in_regulation_fraction": "1/4",
+                        "greens_in_regulation_percentage": "25.00%",
+                        "sand_saves_fraction": "0/3",
+                        "sand_saves_percentage": "0.00%",
+                        "low": "5",
+                        "high": "6"
+                    }
+                },
+                {
+                    "hole_no": "5",
+                    "hole_stats": 
+                    {
+                        "distance_unit": "yards",
+                        "distance_range": "390",
+                        "par": "4",
+                        "average": "4.50",
+                        "rank": "11",
+                        "eagles": "0",
+                        "birdies": "1",
+                        "pars": "1",
+                        "bogeys": "1",
+                        "double_bogeys": "1",
+                        "others": "0",
+                        "fairway_hits_fraction": "3/4",
+                        "fairway_hits_percent": "75.00%",
+                        "putts_per_green_in_regulation": "1.0",
+                        "greens_in_regulation_fraction": "1/4",
+                        "greens_in_regulation_percentage": "25.00%",
+                        "sand_saves_fraction": "0/1",
+                        "sand_saves_percentage": "0.00%",
+                        "low": "3",
+                        "high": "6"
+                    }
+                },
+                {
+                    "hole_no": "6",
+                    "hole_stats": 
+                    {
+                        "distance_unit": "yards",
+                        "distance_range": "198",
+                        "par": "3",
+                        "average": "3.75",
+                        "rank": "10",
+                        "eagles": "0",
+                        "birdies": "0",
+                        "pars": "1",
+                        "bogeys": "3",
+                        "double_bogeys": "0",
+                        "others": "0",
+                        "fairway_hits_fraction": "N/A",
+                        "fairway_hits_percent": "0.00%",
+                        "putts_per_green_in_regulation": "0",
+                        "greens_in_regulation_fraction": "0/4",
+                        "greens_in_regulation_percentage": "0.00%",
+                        "sand_saves_fraction": "N/A",
+                        "sand_saves_percentage": "0.00%",
+                        "low": "3",
+                        "high": "4"
+                    }
+                },
+                {
+                    "hole_no": "7",
+                    "hole_stats": 
+                    {
+                        "distance_unit": "yards",
+                        "distance_range": "574",
+                        "par": "5",
+                        "average": "5.75",
+                        "rank": "8",
+                        "eagles": "0",
+                        "birdies": "0",
+                        "pars": "1",
+                        "bogeys": "3",
+                        "double_bogeys": "0",
+                        "others": "0",
+                        "fairway_hits_fraction": "N/A",
+                        "fairway_hits_percent": "0.00%",
+                        "putts_per_green_in_regulation": "0",
+                        "greens_in_regulation_fraction": "0/4",
+                        "greens_in_regulation_percentage": "0.00%",
+                        "sand_saves_fraction": "0/2",
+                        "sand_saves_percentage": "0.00%",
+                        "low": "5",
+                        "high": "6"
+                    }
+                },
+                {
+                    "hole_no": "8",
+                    "hole_stats": 
+                    {
+                        "distance_unit": "yards",
+                        "distance_range": "210",
+                        "par": "3",
+                        "average": "4.75",
+                        "rank": "2",
+                        "eagles": "0",
+                        "birdies": "0",
+                        "pars": "1",
+                        "bogeys": "1",
+                        "double_bogeys": "0",
+                        "others": "2",
+                        "fairway_hits_fraction": "1/4",
+                        "fairway_hits_percent": "25.00%",
+                        "putts_per_green_in_regulation": "1.0",
+                        "greens_in_regulation_fraction": "1/4",
+                        "greens_in_regulation_percentage": "25.00%",
+                        "sand_saves_fraction": "1/3",
+                        "sand_saves_percentage": "33.33%",
+                        "low": "3",
+                        "high": "6"
+                    }
+                },
+                {
+                    "hole_no": "9",
+                    "hole_stats": 
+                    {
+                        "distance_unit": "yards",
+                        "distance_range": "431",
+                        "par": "4",
+                        "average": "4.00",
+                        "rank": "13",
+                        "eagles": "0",
+                        "birdies": "2",
+                        "pars": "1",
+                        "bogeys": "0",
+                        "double_bogeys": "1",
+                        "others": "0",
+                        "fairway_hits_fraction": "2/4",
+                        "fairway_hits_percent": "50.00%",
+                        "putts_per_green_in_regulation": "1.0",
+                        "greens_in_regulation_fraction": "3/4",
+                        "greens_in_regulation_percentage": "75.00%",
+                        "sand_saves_fraction": "0/1",
+                        "sand_saves_percentage": "0.00%",
+                        "low": "3",
+                        "high": "6"
+                    }
+                },
+                {
+                    "hole_no": "10",
+                    "hole_stats": 
+                    {
+                        "distance_unit": "yards",
+                        "distance_range": "407",
+                        "par": "4",
+                        "average": "3.75",
+                        "rank": "14",
+                        "eagles": "0",
+                        "birdies": "3",
+                        "pars": "0",
+                        "bogeys": "0",
+                        "double_bogeys": "1",
+                        "others": "0",
+                        "fairway_hits_fraction": "N/A",
+                        "fairway_hits_percent": "0.00%",
+                        "putts_per_green_in_regulation": "0",
+                        "greens_in_regulation_fraction": "0/4",
+                        "greens_in_regulation_percentage": "0.00%",
+                        "sand_saves_fraction": "N/A",
+                        "sand_saves_percentage": "0.00%",
+                        "low": "3",
+                        "high": "6"
+                    }
+                },
+                {
+                    "hole_no": "11",
+                    "hole_stats": 
+                    {
+                        "distance_unit": "yards",
+                        "distance_range": "364",
+                        "par": "4",
+                        "average": "5.00",
+                        "rank": "7",
+                        "eagles": "0",
+                        "birdies": "0",
+                        "pars": "1",
+                        "bogeys": "2",
+                        "double_bogeys": "1",
+                        "others": "0",
+                        "fairway_hits_fraction": "1/4",
+                        "fairway_hits_percent": "25.00%",
+                        "putts_per_green_in_regulation": "1.5",
+                        "greens_in_regulation_fraction": "2/4",
+                        "greens_in_regulation_percentage": "50.00%",
+                        "sand_saves_fraction": "1/1",
+                        "sand_saves_percentage": "100.00%",
+                        "low": "4",
+                        "high": "6"
+                    }
+                },
+                {
+                    "hole_no": "12",
+                    "hole_stats": 
+                    {
+                        "distance_unit": "yards",
+                        "distance_range": "563",
+                        "par": "5",
+                        "average": "4.25",
+                        "rank": "16",
+                        "eagles": "2",
+                        "birdies": "0",
+                        "pars": "1",
+                        "bogeys": "1",
+                        "double_bogeys": "0",
+                        "others": "0",
+                        "fairway_hits_fraction": "1/4",
+                        "fairway_hits_percent": "25.00%",
+                        "putts_per_green_in_regulation": "1.0",
+                        "greens_in_regulation_fraction": "2/4",
+                        "greens_in_regulation_percentage": "50.00%",
+                        "sand_saves_fraction": "0/2",
+                        "sand_saves_percentage": "0.00%",
+                        "low": "3",
+                        "high": "6"
+                    }
+                },
+                {
+                    "hole_no": "13",
+                    "hole_stats": 
+                    {
+                        "distance_unit": "yards",
+                        "distance_range": "195",
+                        "par": "3",
+                        "average": "4.25",
+                        "rank": "4",
+                        "eagles": "0",
+                        "birdies": "0",
+                        "pars": "0",
+                        "bogeys": "3",
+                        "double_bogeys": "1",
+                        "others": "0",
+                        "fairway_hits_fraction": "N/A",
+                        "fairway_hits_percent": "0.00%",
+                        "putts_per_green_in_regulation": "0",
+                        "greens_in_regulation_fraction": "0/4",
+                        "greens_in_regulation_percentage": "0.00%",
+                        "sand_saves_fraction": "0/1",
+                        "sand_saves_percentage": "0.00%",
+                        "low": "4",
+                        "high": "5"
+                    }
+                },
+                {
+                    "hole_no": "14",
+                    "hole_stats": 
+                    {
+                        "distance_unit": "yards",
+                        "distance_range": "472",
+                        "par": "4",
+                        "average": "5.25",
+                        "rank": "3",
+                        "eagles": "0",
+                        "birdies": "0",
+                        "pars": "1",
+                        "bogeys": "1",
+                        "double_bogeys": "2",
+                        "others": "0",
+                        "fairway_hits_fraction": "1/4",
+                        "fairway_hits_percent": "25.00%",
+                        "putts_per_green_in_regulation": "2.0",
+                        "greens_in_regulation_fraction": "1/4",
+                        "greens_in_regulation_percentage": "25.00%",
+                        "sand_saves_fraction": "0/2",
+                        "sand_saves_percentage": "0.00%",
+                        "low": "4",
+                        "high": "6"
+                    }
+                },
+                {
+                    "hole_no": "15",
+                    "hole_stats": 
+                    {
+                        "distance_unit": "yards",
+                        "distance_range": "420",
+                        "par": "4",
+                        "average": "4.75",
+                        "rank": "9",
+                        "eagles": "0",
+                        "birdies": "1",
+                        "pars": "0",
+                        "bogeys": "2",
+                        "double_bogeys": "1",
+                        "others": "0",
+                        "fairway_hits_fraction": "2/4",
+                        "fairway_hits_percent": "50.00%",
+                        "putts_per_green_in_regulation": "1.0",
+                        "greens_in_regulation_fraction": "1/4",
+                        "greens_in_regulation_percentage": "25.00%",
+                        "sand_saves_fraction": "0/2",
+                        "sand_saves_percentage": "0.00%",
+                        "low": "3",
+                        "high": "6"
+                    }
+                },
+                {
+                    "hole_no": "16",
+                    "hole_stats": 
+                    {
+                        "distance_unit": "yards",
+                        "distance_range": "208",
+                        "par": "3",
+                        "average": "4.25",
+                        "rank": "5",
+                        "eagles": "0",
+                        "birdies": "0",
+                        "pars": "1",
+                        "bogeys": "1",
+                        "double_bogeys": "2",
+                        "others": "0",
+                        "fairway_hits_fraction": "0/4",
+                        "fairway_hits_percent": "0.00%",
+                        "putts_per_green_in_regulation": "1.0",
+                        "greens_in_regulation_fraction": "1/4",
+                        "greens_in_regulation_percentage": "25.00%",
+                        "sand_saves_fraction": "0/2",
+                        "sand_saves_percentage": "0.00%",
+                        "low": "3",
+                        "high": "5"
+                    }
+                },
+                {
+                    "hole_no": "17",
+                    "hole_stats": 
+                    {
+                        "distance_unit": "yards",
+                        "distance_range": "411",
+                        "par": "4",
+                        "average": "3.25",
+                        "rank": "18",
+                        "eagles": "0",
+                        "birdies": "3",
+                        "pars": "1",
+                        "bogeys": "0",
+                        "double_bogeys": "0",
+                        "others": "0",
+                        "fairway_hits_fraction": "2/4",
+                        "fairway_hits_percent": "50.00%",
+                        "putts_per_green_in_regulation": "1.0",
+                        "greens_in_regulation_fraction": "3/4",
+                        "greens_in_regulation_percentage": "75.00%",
+                        "sand_saves_fraction": "N/A",
+                        "sand_saves_percentage": "0.00%",
+                        "low": "3",
+                        "high": "4"
+                    }
+                },
+                {
+                    "hole_no": "18",
+                    "hole_stats": 
+                    {
+                        "distance_unit": "yards",
+                        "distance_range": "536",
+                        "par": "5",
+                        "average": "4.25",
+                        "rank": "17",
+                        "eagles": "0",
+                        "birdies": "3",
+                        "pars": "1",
+                        "bogeys": "0",
+                        "double_bogeys": "0",
+                        "others": "0",
+                        "fairway_hits_fraction": "3/4",
+                        "fairway_hits_percent": "75.00%",
+                        "putts_per_green_in_regulation": "1.0",
+                        "greens_in_regulation_fraction": "3/4",
+                        "greens_in_regulation_percentage": "75.00%",
+                        "sand_saves_fraction": "2/2",
+                        "sand_saves_percentage": "100.00%",
+                        "low": "4",
+                        "high": "5"
+                    }
+                }
+            ],
+            "score_stats": 
+            {
+                "below_70": "0",
+                "below_par": "0",
+                "par_and_below": "0",
+                "even_par": "0",
+                "over_par": "4",
+                "80_and_over": "2",
+                "3_putts": "1"
+            }
+        }
