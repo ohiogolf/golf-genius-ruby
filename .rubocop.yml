@@ -1,0 +1,118 @@
+plugins:
+  - rubocop-minitest
+
+AllCops:
+  TargetRubyVersion: 3.0
+  NewCops: enable
+  SuggestExtensions: false
+  Exclude:
+    - "vendor/**/*"
+    - "pkg/**/*"
+
+# Allow longer lines in tests and examples
+Layout/LineLength:
+  Max: 120
+  Exclude:
+    - "test/**/*"
+    - "examples/**/*"
+    - "*.gemspec"
+
+# Allow longer methods in tests and API operations
+Metrics/MethodLength:
+  Max: 15
+  Exclude:
+    - "test/**/*"
+    - "lib/golf_genius/api_operations/**/*"
+
+# Allow longer blocks in tests (describe/context blocks)
+Metrics/BlockLength:
+  Exclude:
+    - "test/**/*"
+    - "*.gemspec"
+
+# Allow more ABC complexity in tests and API operations
+Metrics/AbcSize:
+  Max: 25
+  Exclude:
+    - "test/**/*"
+    - "lib/golf_genius/api_operations/**/*"
+
+# Documentation is optional for test files
+# Main module documented in golf_genius.rb
+Style/Documentation:
+  Exclude:
+    - "test/**/*"
+    - "lib/golf_genius/configuration.rb"
+
+# Frozen string literal is already in all files
+Style/FrozenStringLiteralComment:
+  Enabled: true
+  EnforcedStyle: always
+
+# Allow nested style for modules (cleaner for this gem)
+Style/ClassAndModuleChildren:
+  Enabled: false
+
+# Prefer double quotes for consistency
+Style/StringLiterals:
+  EnforcedStyle: double_quotes
+
+Style/StringLiteralsInInterpolation:
+  EnforcedStyle: double_quotes
+
+# Allow trailing comma in multiline (better diffs)
+Style/TrailingCommaInArrayLiteral:
+  EnforcedStyleForMultiline: consistent_comma
+
+Style/TrailingCommaInHashLiteral:
+  EnforcedStyleForMultiline: consistent_comma
+
+# Minitest specific
+Minitest/MultipleAssertions:
+  Max: 10
+
+# Allow test_*_401 style names (HTTP status codes)
+Naming/VariableNumber:
+  Exclude:
+    - "test/**/*"
+
+# Allow longer test classes, fixtures, and API operations
+Metrics/ClassLength:
+  Exclude:
+    - "test/**/*"
+    - "lib/golf_genius/api_operations/**/*"
+
+Metrics/ModuleLength:
+  Exclude:
+    - "test/**/*"
+    - "lib/golf_genius/api_operations/**/*"
+
+# Allow higher complexity for HTTP handling code
+Metrics/CyclomaticComplexity:
+  Exclude:
+    - "lib/golf_genius/api_operations/**/*"
+
+Metrics/PerceivedComplexity:
+  Exclude:
+    - "lib/golf_genius/api_operations/**/*"
+
+# Prefer explicit true/false assertions for clarity in tests
+Minitest/AssertTruthy:
+  Enabled: false
+
+Minitest/RefuteFalse:
+  Enabled: false
+
+# Allow ENV[] in examples (they're meant to be simple)
+Style/FetchEnvVar:
+  Exclude:
+    - "examples/**/*"
+
+# Allow development dependencies in gemspec (common pattern for gems)
+Gemspec/DevelopmentDependencies:
+  Enabled: false
+
+# The bridge file needs the dash in the name
+Naming/FileName:
+  Exclude:
+    - "lib/golf-genius.rb"

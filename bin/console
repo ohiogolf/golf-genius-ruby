@@ -1,0 +1,18 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+require "bundler/setup"
+require "golf_genius"
+
+# Reload the gem's lib so code changes are picked up without restarting the console.
+def reload! # rubocop:disable Naming/PredicateMethod
+  lib = File.expand_path("../lib", __dir__)
+  $LOADED_FEATURES.reject! { |f| f.start_with?(lib) }
+  Object.send(:remove_const, :GolfGenius) if Object.const_defined?(:GolfGenius)
+  require "golf_genius"
+  puts "Reloaded golf_genius."
+  true
+end
+
+require "irb"
+IRB.start(__FILE__)
