@@ -155,7 +155,7 @@ GolfGenius::Event.list(directory: dir)
 ```ruby
 GolfGenius::Event.fetch(171716)
 # or by short ggid:
-GolfGenius::Event.fetch("zphsqa")
+GolfGenius::Event.fetch_by(ggid: "zphsqa")
 ```
 
 ```ruby
@@ -266,6 +266,7 @@ client = GolfGenius::Client.new(api_key: "your_key")
 client.seasons.list
 client.events.list(directory: dir)
 client.events.fetch(171716)
+client.events.fetch_by(ggid: "zphsqa")
 client.events.roster("event_001")
 ```
 
@@ -275,7 +276,7 @@ client.events.roster("event_001")
 
 - **Pagination:** `list` fetches all pages by default. To request a single page, pass `page: 1`. For streaming, use `GolfGenius::Event.auto_paging_each(directory: dir) { |e| ... }`.
 - **Event filters:** `list(directory: dir, season: season, category: cat, archived: true)` — pass resource objects or ids; default is non-archived only.
-- **Fetch:** Event supports lookup by `id` or `ggid`; other resources by `id`. Optional `max_pages` for fetch (default 20).
+- **Fetch:** Use `fetch(id)` or `fetch_by(...)`. Event supports `fetch_by(ggid: ...)`; other resources currently support `id`. Optional `max_pages` for fetch (default 20).
 - **Environment:** Production is `golfgenius.com`. Staging is `ggstest.com`. Set `GOLF_GENIUS_ENV=staging` or `GOLF_GENIUS_BASE_URL` to override.
 - **Debug:** `GolfGenius.debug = true` logs each request and response to `$stdout`. The API key is never logged.
 

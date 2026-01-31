@@ -14,6 +14,7 @@ module GolfGenius
   #
   # @example Fetch a category by id
   #   category = GolfGenius::Category.fetch('category_123')
+  #   category = GolfGenius::Category.fetch_by(id: 'category_123')
   #
   # @example List events in this category
   #   category.events

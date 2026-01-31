@@ -35,7 +35,7 @@ GolfGenius::Directory.list.first.name
 GolfGenius::Season.fetch("season_id")
 GolfGenius::Directory.fetch("directory_id")
 GolfGenius::Event.fetch(171716)        # by id
-GolfGenius::Event.fetch("zphsqa")      # by ggid (Event matches on id and ggid)
+GolfGenius::Event.fetch_by(ggid: "zphsqa")  # by ggid
 ```
 
 **Events with filters** (pass objects or ids; `list()` fetches all pages by default)
