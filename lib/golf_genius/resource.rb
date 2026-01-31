@@ -12,7 +12,7 @@ module GolfGenius
   #
   #     extend APIOperations::List
   #     extend APIOperations::Fetch
-  #     # fetch_match_on :id, :ggid  # optional; default is :id
+  #     # fetch_match_on :id, :ggid  # optional; used by fetch_by
   #   end
   #
   # @see https://www.golfgenius.com/api/v2/docs Golf Genius API Documentation
@@ -56,6 +56,7 @@ module GolfGenius
         )
         @attributes = Util.symbolize_keys(response)
       end
+      self.class.define_attribute_methods!(@attributes.keys)
       self
     end
   end

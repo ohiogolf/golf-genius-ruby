@@ -7,6 +7,19 @@ module GolfGenius
   # @api private
   module Util
     class << self
+      # Converts a string key to snake_case for Ruby attribute access.
+      # Examples: "GGID" => "ggid", "handicapNetworkId" => "handicap_network_id".
+      def snake_case_key(key)
+        str = key.to_s
+        return str if str.empty?
+
+        snake = str
+                .gsub(/([A-Z]+)([A-Z][a-z])/, "\\1_\\2")
+                .gsub(/([a-z\d])([A-Z])/, "\\1_\\2")
+                .tr("-", "_")
+        snake.downcase
+      end
+
       # Converts keys in a hash to symbols recursively.
       #
       # @param hash [Hash, Array, Object] The object to process
@@ -14,7 +27,8 @@ module GolfGenius
       def symbolize_keys(hash)
         case hash
         when Hash
-          hash.transform_keys(&:to_sym).transform_values { |v| symbolize_keys(v) }
+          hash.transform_keys { |k| snake_case_key(k).to_sym }
+              .transform_values { |v| symbolize_keys(v) }
         when Array
           hash.map { |v| symbolize_keys(v) }
         else
@@ -143,7 +157,7 @@ module GolfGenius
   end
 
   # Generic Golf Genius object for API responses.
-  # Provides dynamic attribute access via method_missing.
+  # Provides attribute accessors defined from the API response keys.
   #
   # @example Accessing attributes
   #   obj = GolfGeniusObject.construct_from(id: "123", name: "Test")
@@ -152,9 +166,12 @@ module GolfGenius
   #
   # @example Converting to hash
   #   obj.to_h # => {id: "123", name: "Test"}
+  # rubocop:disable Metrics/ClassLength
   class GolfGeniusObject
     # @return [Hash] The raw attributes hash
     attr_reader :attributes
+    # @return [Hash] The raw API attributes before normalization
+    attr_reader :raw_attributes
 
     # Creates a new GolfGeniusObject from attributes.
     #
@@ -162,10 +179,12 @@ module GolfGenius
     # @param api_key [String, nil] The API key used to fetch this object
     def initialize(attributes = {}, api_key: nil)
       @api_key = api_key
+      @raw_attributes = attributes.is_a?(Hash) ? attributes.dup : attributes
       # Symbolize keys first, then convert nested structures
       symbolized = Util.symbolize_keys(attributes)
       @attributes = convert_nested_values(symbolized)
       parse_date_attributes!
+      self.class.define_attribute_methods!(@attributes.keys)
     end
 
     # Constructs a new object from attributes.
@@ -177,11 +196,40 @@ module GolfGenius
       new(attributes, api_key: api_key)
     end
 
+    # Defines attribute reader and predicate methods for the provided keys.
+    #
+    # @param keys [Enumerable<Symbol, String>, Hash] Attribute keys or alias map
+    def self.define_attribute_methods!(keys)
+      pairs = normalize_attribute_pairs(keys)
+
+      pairs.each do |method_key, attribute_key|
+        method_name = method_key.to_sym
+        attr_name = attribute_key.to_sym
+        next if method_name.to_s.empty?
+        next if method_defined?(method_name) || private_method_defined?(method_name)
+
+        define_method(method_name) { @attributes[attr_name] }
+
+        predicate = :"#{method_name}?"
+        next if method_name.to_s.end_with?("?")
+        next if method_defined?(predicate) || private_method_defined?(predicate)
+
+        define_method(predicate) { Util.coerce_boolean?(@attributes[attr_name]) }
+      end
+    end
+
     # Converts the object to a plain Ruby hash, recursively converting nested objects.
     #
+    # @param raw [Boolean] Return the raw API attributes without normalization (default: false)
     # @return [Hash] The attributes as a plain hash
-    def to_h
-      deep_to_h(@attributes)
+    def to_h(raw: false)
+      return deep_to_h_value(@raw_attributes, aliases: false) if raw
+
+      alias_map = self.class.attribute_aliases_by_attr
+      @attributes.each_with_object({}) do |(key, value), out|
+        display_key = alias_map[key] || key
+        out[display_key] = deep_to_h_value(value, aliases: true)
+      end
     end
 
     # Alias for to_h.
@@ -193,9 +241,10 @@ module GolfGenius
 
     # Returns a JSON representation of the object.
     #
+    # @param raw [Boolean] Return the raw API attributes without normalization (default: false)
     # @return [String] JSON string
-    def to_json(*args)
-      to_h.to_json(*args)
+    def to_json(raw: false, **args)
+      to_h(raw: raw).to_json(**args)
     end
 
     # Returns a human-readable string representation (compact, scalar attributes only).
@@ -207,7 +256,8 @@ module GolfGenius
         next if value.is_a?(GolfGeniusObject)
         next if value.is_a?(Array) || value.is_a?(Hash)
 
-        "#{key}=#{value.inspect}"
+        display_key = self.class.attribute_aliases_by_attr[key] || key
+        "#{display_key}=#{value.inspect}"
       end
       "#<#{self.class} #{pairs.join(" ")}>"
     end
@@ -228,40 +278,51 @@ module GolfGenius
       @attributes[key.to_sym]
     end
 
-    def method_missing(method_name, *args)
-      if @attributes.key?(method_name)
-        @attributes[method_name]
-      elsif method_name.end_with?("?") && args.empty?
-        base = method_name.to_s.chomp("?").to_sym
-        @attributes.key?(base) ? Util.coerce_boolean?(@attributes[base]) : super
-      else
-        super
-      end
-    end
-
-    def respond_to_missing?(method_name, include_private = false)
-      return true if @attributes.key?(method_name)
-      return true if method_name.end_with?("?") && @attributes.key?(method_name.to_s.chomp("?").to_sym)
-
-      super
-    end
-
     protected
 
     # @return [String, nil] The API key used to fetch this object
     attr_reader :api_key
 
+    def typed_value_object(attr_key, klass)
+      raw = @attributes[attr_key]
+      return nil if raw.nil?
+      return raw if raw.is_a?(klass)
+
+      attrs = raw.respond_to?(:to_h) ? raw.to_h : raw
+      return raw unless attrs.is_a?(Hash) && !attrs.empty?
+
+      klass.construct_from(attrs, api_key: api_key)
+    end
+
+    class << self
+      def attribute_aliases_by_attr
+        @attribute_aliases_by_attr ||= {}
+      end
+
+      private
+
+      def normalize_attribute_pairs(keys)
+        return Array(keys).map { |key| [key, key] } unless keys.is_a?(Hash)
+
+        normalized = keys.each_with_object({}) do |(method_key, attribute_key), out|
+          out[method_key.to_sym] = attribute_key.to_sym
+        end
+        attribute_aliases_by_attr.merge!(normalized.invert)
+        normalized
+      end
+    end
+
     private
 
     # Recursively converts a hash to plain Ruby hashes. Time values become ISO8601 strings for JSON.
-    def deep_to_h(obj)
+    def deep_to_h_value(obj, aliases: true)
       case obj
       when GolfGeniusObject
-        deep_to_h(obj.attributes)
+        obj.to_h
       when Hash
-        obj.transform_values { |v| deep_to_h(v) }
+        obj.transform_values { |v| deep_to_h_value(v, aliases: aliases) }
       when Array
-        obj.map { |v| deep_to_h(v) }
+        obj.map { |v| deep_to_h_value(v, aliases: aliases) }
       when Time
         obj.iso8601
       else
@@ -299,4 +360,5 @@ module GolfGenius
       end
     end
   end
+  # rubocop:enable Metrics/ClassLength
 end
