@@ -79,6 +79,9 @@ module GolfGenius
 
         private
 
+        # Returns a cached Faraday connection, rebuilding when configuration changes.
+        #
+        # @return [Faraday::Connection] The configured Faraday connection
         def connection
           current_version = GolfGenius.configuration.version
 
@@ -91,6 +94,9 @@ module GolfGenius
           @connection
         end
 
+        # Builds a Faraday connection with retry and JSON middleware.
+        #
+        # @return [Faraday::Connection] The configured Faraday connection
         def build_connection
           config = GolfGenius.configuration
 
@@ -110,6 +116,11 @@ module GolfGenius
           end
         end
 
+        # Handles an HTTP response and raises the appropriate error type.
+        #
+        # @param response [Faraday::Response] The response to process
+        # @return [Hash, Array] Parsed JSON body for successful responses
+        # @raise [AuthenticationError, NotFoundError, ValidationError, RateLimitError, ServerError, APIError]
         def handle_response(response)
           Util.log(:info, "GolfGenius API Response: #{response.status}")
           Util.log(:debug, "Response body: #{response.body.inspect}")
@@ -162,6 +173,10 @@ module GolfGenius
           end
         end
 
+        # Extracts an error message from a response body.
+        #
+        # @param response [Faraday::Response] The response to inspect
+        # @return [String] A human-friendly error message
         def error_message(response)
           body = response.body
           if body.is_a?(Hash) && body["error"]

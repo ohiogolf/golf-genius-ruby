@@ -82,6 +82,9 @@ module GolfGenius
 
     private
 
+    # Determines the default base URL based on environment variables.
+    #
+    # @return [String] The configured base URL
     def default_base_url_from_env
       url = ENV.fetch("GOLF_GENIUS_BASE_URL", nil)
       return url.strip if url.to_s.strip != ""
@@ -91,6 +94,9 @@ module GolfGenius
       DEFAULT_BASE_URL
     end
 
+    # Increments the configuration version to invalidate cached connections.
+    #
+    # @return [Integer] The new version value
     def increment_version
       @version += 1
     end

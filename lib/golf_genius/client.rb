@@ -215,6 +215,10 @@ module GolfGenius
         @resource_class.tee_sheet(event_id, round_id, params.merge(api_key: @api_key))
       end
 
+      # Ensures this proxy points at the Event resource class.
+      #
+      # @raise [NoMethodError] When the resource does not support event-specific methods
+      # @return [void]
       def ensure_event_resource!
         return if @resource_class == Event
 

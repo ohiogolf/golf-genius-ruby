@@ -145,6 +145,11 @@ module GolfGenius
 
     private
 
+    # Returns a typed association for an embedded attribute.
+    #
+    # @param attr_key [Symbol] The attribute key to access
+    # @param klass [Class] The class to construct if needed
+    # @return [Object, nil] Instance of +klass+ or nil
     def typed_association(attr_key, klass)
       raw = @attributes[attr_key]
       return nil if raw.nil?
@@ -156,11 +161,19 @@ module GolfGenius
       klass.construct_from(attrs, api_key: api_key)
     end
 
+    # Normalizes directory list data into Directory objects.
+    #
+    # @param raw [Array, Hash, Object] Raw directories data
+    # @return [Array<Directory>] Array of directories
     def normalize_directories(raw)
       arr = raw.is_a?(Array) ? raw : Array(raw)
       arr.filter_map { |item| normalize_directory_item(item) }
     end
 
+    # Normalizes a single directory list item.
+    #
+    # @param item [Hash, Directory, nil] Raw list item
+    # @return [Directory, nil] Directory instance or nil when empty
     def normalize_directory_item(item)
       return if item.nil?
       return item if item.is_a?(Directory)

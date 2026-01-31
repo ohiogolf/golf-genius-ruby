@@ -9,6 +9,9 @@ module GolfGenius
     class << self
       # Converts a string key to snake_case for Ruby attribute access.
       # Examples: "GGID" => "ggid", "handicapNetworkId" => "handicap_network_id".
+      #
+      # @param key [String, Symbol] The key to convert
+      # @return [String] The snake_cased key
       def snake_case_key(key)
         str = key.to_s
         return str if str.empty?
@@ -122,12 +125,18 @@ module GolfGenius
       end
 
       # Returns true if the attribute key looks like a date/time (e.g. created_at, date, start_date).
+      #
+      # @param key [String, Symbol] Attribute name to test
+      # @return [Boolean] True if the key represents a date/time attribute
       def date_attribute?(key)
         s = key.to_s
         s == "date" || s.end_with?("_at") || s.end_with?("_date")
       end
 
       # Coerces a value to true or false for predicate methods (e.g. deleted? -> deleted).
+      #
+      # @param value [Object] Value to coerce
+      # @return [Boolean] Coerced boolean value
       def coerce_boolean?(value)
         case value
         when true then true
@@ -283,6 +292,11 @@ module GolfGenius
     # @return [String, nil] The API key used to fetch this object
     attr_reader :api_key
 
+    # Returns a typed association for an embedded attribute.
+    #
+    # @param attr_key [Symbol] The attribute key to access
+    # @param klass [Class] The class to construct if needed
+    # @return [Object, nil] Instance of +klass+ or nil
     def typed_value_object(attr_key, klass)
       raw = @attributes[attr_key]
       return nil if raw.nil?
@@ -315,6 +329,10 @@ module GolfGenius
     private
 
     # Recursively converts a hash to plain Ruby hashes. Time values become ISO8601 strings for JSON.
+    #
+    # @param obj [Object] Object to convert
+    # @param aliases [Boolean] Whether to use attribute aliases (unused for raw conversion)
+    # @return [Object] Converted value
     def deep_to_h_value(obj, aliases: true)
       case obj
       when GolfGeniusObject
@@ -330,6 +348,9 @@ module GolfGenius
       end
     end
 
+    # Parses string values for date/time attributes in place.
+    #
+    # @return [void]
     def parse_date_attributes!
       @attributes.each_key do |key|
         next unless Util.date_attribute?(key)
@@ -341,12 +362,19 @@ module GolfGenius
 
     # Convert nested hashes and arrays to GolfGeniusObjects.
     # This only converts the VALUES in the hash, not the hash itself.
+    #
+    # @param hash [Hash] The hash with nested values
+    # @return [Hash] Hash with nested values converted
     def convert_nested_values(hash)
       hash.transform_values do |value|
         convert_value(value)
       end
     end
 
+    # Converts nested hashes and arrays to GolfGeniusObject instances.
+    #
+    # @param value [Object] The value to convert
+    # @return [Object] Converted value
     def convert_value(value)
       case value
       when Hash
