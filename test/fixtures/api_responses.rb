@@ -103,7 +103,7 @@ module GolfGenius
 
     EVENT = EVENTS.first.freeze
 
-    # Sample event roster response
+    # Sample event roster response (scalar values)
     EVENT_ROSTER = [
       {
         "id" => "player_001",
@@ -127,6 +127,76 @@ module GolfGenius
         "email" => "bob@example.com",
         "handicap" => 18.0,
         "tee" => "Blue",
+        "photo_url" => nil,
+      },
+    ].freeze
+
+    # Sample event roster response (detailed handicap + tee)
+    EVENT_ROSTER_WITH_DETAILS = [
+      {
+        "id" => "player_001",
+        "name" => "John Smith",
+        "email" => "john@example.com",
+        "handicap" => {
+          "handicap_network_id" => "123",
+          "handicap_index" => "12.5",
+          "nine_hole_handicap_index" => "",
+        },
+        "tee" => {
+          "id" => "tee_001",
+          "name" => "Blue",
+          "abbreviation" => "BLUE",
+          "nine_hole_course" => false,
+          "created_at" => "2025-01-05 09:30:00 -0500",
+          "updated_at" => "2025-02-10 12:45:00 -0500",
+          "color" => "#0055AA",
+          "course_id" => "course_001",
+          "parent_id" => "course_001",
+        },
+        "photo_url" => "https://example.com/photos/john.jpg",
+      },
+      {
+        "id" => "player_002",
+        "name" => "Jane Doe",
+        "email" => "jane@example.com",
+        "handicap" => {
+          "handicap_network_id" => "456",
+          "handicap_index" => "8.2",
+          "nine_hole_handicap_index" => "",
+        },
+        "tee" => {
+          "id" => "tee_002",
+          "name" => "White",
+          "abbreviation" => "WHT",
+          "nine_hole_course" => false,
+          "created_at" => "2025-01-05 09:30:00 -0500",
+          "updated_at" => "2025-02-10 12:45:00 -0500",
+          "color" => "#E0E0E0",
+          "course_id" => "course_001",
+          "parent_id" => "course_001",
+        },
+        "photo_url" => "https://example.com/photos/jane.jpg",
+      },
+      {
+        "id" => "player_003",
+        "name" => "Bob Wilson",
+        "email" => "bob@example.com",
+        "handicap" => {
+          "handicap_network_id" => "789",
+          "handicap_index" => "18.0",
+          "nine_hole_handicap_index" => "",
+        },
+        "tee" => {
+          "id" => "tee_001",
+          "name" => "Blue",
+          "abbreviation" => "BLUE",
+          "nine_hole_course" => false,
+          "created_at" => "2025-01-05 09:30:00 -0500",
+          "updated_at" => "2025-02-10 12:45:00 -0500",
+          "color" => "#0055AA",
+          "course_id" => "course_001",
+          "parent_id" => "course_001",
+        },
         "photo_url" => nil,
       },
     ].freeze
@@ -214,6 +284,114 @@ module GolfGenius
         "type" => "individual",
         "scoring" => "net",
         "status" => "completed",
+      },
+    ].freeze
+
+    # Sample master roster response (API returns [ { "member" => {...} } ])
+    MASTER_ROSTER = [
+      {
+        "member" => {
+          "id" => "player_001",
+          "name" => "John Smith",
+          "email" => "john@example.com",
+          "first_name" => "John",
+          "last_name" => "Smith",
+          "deleted" => false,
+          "handicap" => {
+            "handicap_network_id" => "123",
+            "handicap_index" => "12.5",
+            "nine_hole_handicap_index" => "",
+          },
+          "tee" => {
+            "id" => "tee_001",
+            "name" => "Blue",
+            "abbreviation" => "BLUE",
+            "nine_hole_course" => false,
+            "created_at" => "2025-01-05 09:30:00 -0500",
+            "updated_at" => "2025-02-10 12:45:00 -0500",
+            "color" => "#0055AA",
+            "course_id" => "course_001",
+            "parent_id" => "course_001",
+          },
+          "custom_fields" => {
+            "Affiliation" => "Pine Valley Golf Club",
+            "Gender" => "M",
+          },
+        },
+      },
+      {
+        "member" => {
+          "id" => "player_002",
+          "name" => "Jane Doe",
+          "email" => "jane@example.com",
+          "first_name" => "Jane",
+          "last_name" => "Doe",
+          "deleted" => false,
+        },
+      },
+    ].freeze
+
+    # Sample master roster member response
+    MASTER_ROSTER_MEMBER = {
+      "member" => {
+        "id" => "player_001",
+        "name" => "John Smith",
+        "email" => "john@example.com",
+        "first_name" => "John",
+        "last_name" => "Smith",
+        "deleted" => false,
+      },
+    }.freeze
+
+    # Sample player events response
+    PLAYER_EVENTS = {
+      "member" => {
+        "id" => "player_001",
+        "name" => "John Smith",
+        "email" => "john@example.com",
+      },
+      "events" => %w[event_001 event_002],
+    }.freeze
+
+    # Sample tee sheet response (API returns [ { "pairing_group" => {...} } ])
+    TEE_SHEET = [
+      {
+        "pairing_group" => {
+          "id" => "group_001",
+          "hole" => 1,
+          "tee_time" => " 8:30 AM ",
+          "date" => "2026-04-15",
+          "players" => [
+            {
+              "name" => "Wood, Tim",
+              "position" => 0,
+              "player_roster_id" => "player_001",
+              "score_array" => [4, 4, 5, 3, 5, 4, 5, 5, 4, 4, 3, 4, 4, 5, 4, 3, 6, 4],
+            },
+            {
+              "name" => "Erskine, William",
+              "position" => 1,
+              "player_roster_id" => "player_002",
+              "score_array" => [7, 6, 6, 4, 5, 5, 5, 4, 5, 4, 3, 4, 6, 5, 5, 4, 6, 5],
+            },
+          ],
+        },
+      },
+      {
+        "pairing_group" => {
+          "id" => "group_002",
+          "hole" => 10,
+          "tee_time" => "8:40 AM",
+          "date" => "2026-04-15",
+          "players" => [
+            {
+              "name" => "Player, Three",
+              "position" => 0,
+              "player_roster_id" => "player_003",
+              "score_array" => [5, 5, 4, 4, 5, 3, 4, 5, 4, 5, 4, 4, 5, 5, 4, 3, 5, 4],
+            },
+          ],
+        },
       },
     ].freeze
 

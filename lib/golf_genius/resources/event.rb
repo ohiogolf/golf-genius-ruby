@@ -26,7 +26,7 @@ module GolfGenius
   #
   # @example Fetch a specific event by id or ggid
   #   event = GolfGenius::Event.fetch(171716)
-  #   event = GolfGenius::Event.fetch('zphsqa')  # by ggid
+  #   event = GolfGenius::Event.fetch_by(ggid: 'zphsqa')  # by ggid
   #   event = GolfGenius::Event.fetch(171716, season_id: 'season_123', max_pages: 10)
   #
   # @example Get event roster (class or instance)
@@ -34,9 +34,10 @@ module GolfGenius
   #   roster = event.roster(photo: true, waitlist: false)  # confirmed only (filtered client-side)
   #   roster.each { |player| puts player.name; puts player.photo_url }
   #
-  # @example Get event rounds, divisions, and tournaments (class or instance)
+  # @example Get event rounds, divisions, tee sheet, and tournaments (class or instance)
   #   rounds = GolfGenius::Event.rounds('event_123')
   #   divisions = event.divisions
+  #   tee_sheet = event.tee_sheet('round_456')
   #   round = event.rounds.first
   #   tournaments = round.tournaments  # Round has event_id when from event.rounds
   #   tournaments = event.tournaments('round_456')
@@ -99,6 +100,16 @@ module GolfGenius
                          path: "/events/%<event_id>s/rounds/%<round_id>s/tournaments",
                          parent_ids: %i[event_id round_id],
                          resource_class: Tournament,
+                         paginated: true,
+                         page_size: 100
+
+    # Deeply nested resource: Tee sheet and scores for a specific round.
+    # Returns an array of pairing groups (API returns [ { "pairing_group" => {...} } ]).
+    deep_nested_resource :tee_sheet,
+                         path: "/events/%<event_id>s/rounds/%<round_id>s/tee_sheet",
+                         parent_ids: %i[event_id round_id],
+                         item_key: "pairing_group",
+                         resource_class: TeeSheetGroup,
                          paginated: true,
                          page_size: 100
 

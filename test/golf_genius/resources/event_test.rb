@@ -69,6 +69,17 @@ class EventTest < Minitest::Test
     assert_equal "tournament", event.type
   end
 
+  def test_fetch_event_by_ggid
+    events_with_ggid = [EVENT.merge("ggid" => "zphsqa")]
+    stub_api_request(method: :get, path: "/events", response_body: events_with_ggid, query: { "page" => "1" })
+
+    event = GolfGenius::Event.fetch_by(ggid: "zphsqa")
+
+    assert_kind_of GolfGenius::Event, event
+    assert_equal "event_001", event.id
+    assert_equal "zphsqa", event.ggid
+  end
+
   def test_fetch_event_raises_when_not_found
     stub_api_request(method: :get, path: "/events", response_body: [], query: { "page" => "1" })
 
@@ -114,7 +125,7 @@ class EventTest < Minitest::Test
     stub_api_request(
       method: :get,
       path: "/events/event_001/roster",
-      response_body: EVENT_ROSTER,
+      response_body: EVENT_ROSTER_WITH_DETAILS,
       query: { "page" => "1" }
     )
 
@@ -125,20 +136,25 @@ class EventTest < Minitest::Test
     assert_kind_of GolfGenius::RosterMember, roster.first
     assert_equal "player_001", roster.first.id
     assert_equal "John Smith", roster.first.name
-    assert_in_delta(12.5, roster.first.handicap)
+    assert_kind_of GolfGenius::Handicap, roster.first.handicap
+    assert_equal "12.5", roster.first.handicap.index
+    assert_kind_of GolfGenius::Tee, roster.first.tee
+    assert_equal "Blue", roster.first.tee.name
   end
 
   def test_event_roster_with_params
     stub_api_request(
       method: :get,
       path: "/events/event_001/roster",
-      response_body: EVENT_ROSTER,
+      response_body: EVENT_ROSTER_WITH_DETAILS,
       query: { "page" => "1", "photo" => "true" }
     )
 
     roster = GolfGenius::Event.roster("event_001", photo: true)
 
     assert_equal 3, roster.length
+    assert_kind_of GolfGenius::Handicap, roster.first.handicap
+    assert_kind_of GolfGenius::Tee, roster.first.tee
   end
 
   def test_event_roster_paginates_all_pages
@@ -203,11 +219,26 @@ class EventTest < Minitest::Test
     assert(confirmed.all? { |m| m.waitlist == false })
   end
 
-  def test_event_instance_roster
+  def test_event_roster_scalar_values
     stub_api_request(
       method: :get,
       path: "/events/event_001/roster",
       response_body: EVENT_ROSTER,
+      query: { "page" => "1" }
+    )
+
+    roster = GolfGenius::Event.roster("event_001")
+
+    assert_equal 3, roster.length
+    assert_in_delta(12.5, roster.first.handicap)
+    assert_equal "Blue", roster.first.tee
+  end
+
+  def test_event_instance_roster
+    stub_api_request(
+      method: :get,
+      path: "/events/event_001/roster",
+      response_body: EVENT_ROSTER_WITH_DETAILS,
       query: { "page" => "1" }
     )
 
@@ -238,6 +269,52 @@ class EventTest < Minitest::Test
 
     assert_kind_of Array, courses
     assert_equal 2, courses.length
+  end
+
+  def test_event_tee_sheet
+    stub_api_request(
+      method: :get,
+      path: "/events/event_001/rounds/round_001/tee_sheet",
+      response_body: TEE_SHEET,
+      query: { "page" => "1" }
+    )
+    stub_api_request(
+      method: :get,
+      path: "/events/event_001/rounds/round_001/tee_sheet",
+      response_body: [],
+      query: { "page" => "2" }
+    )
+
+    tee_sheet = GolfGenius::Event.tee_sheet("event_001", "round_001")
+
+    assert_kind_of Array, tee_sheet
+    assert_equal 2, tee_sheet.length
+    assert_kind_of GolfGenius::TeeSheetGroup, tee_sheet.first
+    assert_equal "group_001", tee_sheet.first.id
+    assert_equal 1, tee_sheet.first.hole
+    assert_equal "8:30 AM", tee_sheet.first.tee_time
+    assert_kind_of Array, tee_sheet.first.players
+    assert_kind_of GolfGenius::TeeSheetPlayer, tee_sheet.first.players.first
+    assert_equal "Wood, Tim", tee_sheet.first.players.first.name
+  end
+
+  def test_event_tee_sheet_with_params
+    stub_api_request(
+      method: :get,
+      path: "/events/event_001/rounds/round_001/tee_sheet",
+      response_body: TEE_SHEET,
+      query: { "include_all_custom_fields" => "true", "page" => "1" }
+    )
+    stub_api_request(
+      method: :get,
+      path: "/events/event_001/rounds/round_001/tee_sheet",
+      response_body: [],
+      query: { "include_all_custom_fields" => "true", "page" => "2" }
+    )
+
+    tee_sheet = GolfGenius::Event.tee_sheet("event_001", "round_001", include_all_custom_fields: true)
+
+    assert_equal 2, tee_sheet.length
   end
 
   def test_event_divisions
@@ -335,6 +412,32 @@ class EventTest < Minitest::Test
     assert_equal 2, tournaments.length
     assert_kind_of GolfGenius::Tournament, tournaments.first
     assert_equal "tourn_001", tournaments.first.id
+  end
+
+  def test_round_tee_sheet_from_event_rounds
+    stub_api_request(method: :get, path: "/events/event_001/rounds", response_body: EVENT_ROUNDS, query: { "page" => "1" })
+    stub_api_request(method: :get, path: "/events/event_001/rounds/round_001/tee_sheet", response_body: TEE_SHEET, query: { "page" => "1" })
+    stub_api_request(method: :get, path: "/events/event_001/rounds/round_001/tee_sheet", response_body: [], query: { "page" => "2" })
+
+    event = GolfGenius::Event.construct_from(EVENT)
+    round = event.rounds.first
+
+    assert_kind_of GolfGenius::Round, round
+    assert_equal "event_001", round[:event_id]
+
+    tee_sheet = round.tee_sheet
+
+    assert_kind_of Array, tee_sheet
+    assert_equal 2, tee_sheet.length
+    assert_kind_of GolfGenius::TeeSheetGroup, tee_sheet.first
+    assert_equal "group_001", tee_sheet.first.id
+  end
+
+  def test_round_tee_sheet_raises_without_event_id
+    round = GolfGenius::Round.construct_from({ "id" => "round_001" })
+
+    error = assert_raises(ArgumentError) { round.tee_sheet }
+    assert_match(/event_id/, error.message)
   end
 
   def test_round_tournaments_raises_without_event_id

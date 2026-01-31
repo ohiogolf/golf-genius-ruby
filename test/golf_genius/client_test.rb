@@ -74,6 +74,60 @@ class ClientTest < Minitest::Test
     assert_kind_of GolfGenius::Directory, directories.first
   end
 
+  def test_client_players_list
+    stub_api_request(method: :get, path: "/master_roster", response_body: MASTER_ROSTER, query: { "page" => "1" })
+    stub_api_request(method: :get, path: "/master_roster", response_body: [], query: { "page" => "2" })
+
+    client = GolfGenius::Client.new
+    players = client.players.list
+
+    assert_equal 2, players.length
+    assert_kind_of GolfGenius::Player, players.first
+  end
+
+  def test_client_players_fetch_by_with_email
+    stub_api_request(method: :get, path: "/master_roster_member/jane%40example.com", response_body: MASTER_ROSTER_MEMBER)
+
+    client = GolfGenius::Client.new
+    player = client.players.fetch_by(email: "jane@example.com")
+
+    assert_equal "player_001", player.id
+  end
+
+  def test_client_players_fetch_by_with_id
+    stub_api_request(method: :get, path: "/master_roster", response_body: MASTER_ROSTER, query: { "page" => "1" })
+
+    client = GolfGenius::Client.new
+    player = client.players.fetch_by(id: "player_001")
+
+    assert_equal "player_001", player.id
+  end
+
+  def test_client_players_fetch_by_with_non_email_or_id_key
+    client = GolfGenius::Client.new
+
+    assert_raises(ArgumentError) do
+      client.players.fetch_by(last_name: "Doe")
+    end
+  end
+
+  def test_client_players_fetch_by_with_both_id_and_email_raises
+    client = GolfGenius::Client.new
+
+    assert_raises(ArgumentError) do
+      client.players.fetch_by(id: "player_001", email: "jane@example.com")
+    end
+  end
+
+  def test_client_players_events
+    stub_api_request(method: :get, path: "/players/player_001", response_body: PLAYER_EVENTS)
+
+    client = GolfGenius::Client.new
+    summary = client.players.events("player_001")
+
+    assert_equal %w[event_001 event_002], summary.events
+  end
+
   def test_client_events_list
     stub_api_request(method: :get, path: "/events", response_body: EVENTS, query: { "page" => "1" })
     stub_api_request(method: :get, path: "/events", response_body: [], query: { "page" => "2" })
@@ -93,6 +147,18 @@ class ClientTest < Minitest::Test
 
     assert_kind_of GolfGenius::Event, event
     assert_equal "event_001", event.id
+  end
+
+  def test_client_events_fetch_by_ggid
+    events_with_ggid = [EVENT.merge("ggid" => "zphsqa")]
+    stub_api_request(method: :get, path: "/events", response_body: events_with_ggid, query: { "page" => "1" })
+
+    client = GolfGenius::Client.new
+    event = client.events.fetch_by(ggid: "zphsqa")
+
+    assert_kind_of GolfGenius::Event, event
+    assert_equal "event_001", event.id
+    assert_equal "zphsqa", event.ggid
   end
 
   def test_client_events_roster
@@ -149,6 +215,27 @@ class ClientTest < Minitest::Test
     tournaments = client.events.tournaments("event_001", "round_001")
 
     assert_equal 2, tournaments.length
+  end
+
+  def test_client_events_tee_sheet
+    stub_api_request(
+      method: :get,
+      path: "/events/event_001/rounds/round_001/tee_sheet",
+      response_body: TEE_SHEET,
+      query: { "page" => "1" }
+    )
+    stub_api_request(
+      method: :get,
+      path: "/events/event_001/rounds/round_001/tee_sheet",
+      response_body: [],
+      query: { "page" => "2" }
+    )
+
+    client = GolfGenius::Client.new
+    tee_sheet = client.events.tee_sheet("event_001", "round_001")
+
+    assert_equal 2, tee_sheet.length
+    assert_equal "group_001", tee_sheet.first.id
   end
 
   def test_client_auto_paging_each
