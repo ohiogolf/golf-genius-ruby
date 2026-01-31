@@ -9,5 +9,18 @@ module GolfGenius
   #   roster = event.roster(photo: true)
   #   roster.each { |m| puts "#{m.name}: #{m.photo_url}" }
   class RosterMember < GolfGeniusObject
+    # Returns the member's handicap information as a Handicap object (if present).
+    #
+    # @return [Handicap, nil]
+    def handicap
+      typed_value_object(:handicap, Handicap)
+    end
+
+    # Returns the member's tee information as a Tee object (if present).
+    #
+    # @return [Tee, nil]
+    def tee
+      typed_value_object(:tee, Tee)
+    end
   end
 end
