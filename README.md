@@ -1,6 +1,6 @@
 # Golf Genius Ruby
 
-Ruby client for the [Golf Genius API v2](https://www.golfgenius.com/api/v2/docs). Read-only access to seasons, categories, directories, and events.
+Ruby client for the [Golf Genius API v2](https://www.golfgenius.com/api/v2/docs). Read-only access to seasons, categories, directories, events, and players.
 
 Supported Ruby: 3.1+
 
