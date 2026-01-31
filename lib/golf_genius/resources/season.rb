@@ -13,6 +13,7 @@ module GolfGenius
   #
   # @example Fetch a season by id
   #   season = GolfGenius::Season.fetch('season_123')
+  #   season = GolfGenius::Season.fetch_by(id: 'season_123')
   #
   # @see https://www.golfgenius.com/api/v2/docs Golf Genius API Documentation
   class Season < Resource

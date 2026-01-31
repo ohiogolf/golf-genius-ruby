@@ -14,6 +14,7 @@ module GolfGenius
   #
   # @example Fetch a directory by id
   #   directory = GolfGenius::Directory.fetch('directory_123')
+  #   directory = GolfGenius::Directory.fetch_by(id: 'directory_123')
   #
   # @example List events in this directory
   #   directory.events
