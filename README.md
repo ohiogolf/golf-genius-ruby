@@ -73,7 +73,9 @@ event.rounds.first.tournaments
 # => [#<GolfGenius::Tournament id="tourn_001" ...>, ...]
 tournament = event.rounds.first.tournaments.first
 tournament.results
-# => #<GolfGenius::TournamentResults title="Flight A - Gross" ...>
+# => #<GolfGenius::TournamentResults title="Flight A - Gross" ...>   # default format: :json
+tournament.results(format: :html)
+# => "<div class='table-responsive'>..."
 ```
 
 ### Event Filters
@@ -367,9 +369,14 @@ round.tee_sheet
 ```ruby
 tournament = event.rounds.first.tournaments.first
 tournament.results
-# => #<GolfGenius::TournamentResults title="Flight A - Gross" ...>
+# => #<GolfGenius::TournamentResults title="Flight A - Gross" ...>   # default format: :json
 event.tournament_results(round.id, tournament.id)
-# => #<GolfGenius::TournamentResults title="Flight A - Gross" ...>
+# => #<GolfGenius::TournamentResults title="Flight A - Gross" ...>   # default format: :json
+
+tournament.results(format: :html)
+# => "<div class='table-responsive'>..."
+event.tournament_results(round.id, tournament.id, format: :html)
+# => "<div class='table-responsive'>..."
 ```
 
 ---
