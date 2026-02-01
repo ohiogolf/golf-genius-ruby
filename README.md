@@ -150,7 +150,7 @@ Common exceptions include:
 
 | Term | Meaning |
 |------|--------|
-| **Event** | The overall thing you’re running: an outing, championship, league, or trip. Has a name, dates, location, registration, and type (`"event"`, `"league"`, `"trip"`). |
+| **Event** | The overall thing you’re running: an outing, championship, league, or trip. Has a name, dates, location, registration, and type (`"event"`, `"league"`, `"trip"`). In the Golf Genius web UI, these are often shown under `leagues/<id>` URLs, but they map to the same event records. |
 | **Season** | A time bucket for organizing events (e.g. “2026 Season”). Top-level; events can be filtered by season. |
 | **Category** | A label/group for events (e.g. “Member Events”, “Championships”). Top-level; events can be filtered by category. |
 | **Directory** | A folder/list of events in the customer center (e.g. “All Leagues & Events”). Top-level; an event can appear in multiple directories. |
