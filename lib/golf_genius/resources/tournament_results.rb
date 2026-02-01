@@ -1,31 +1,32 @@
 # frozen_string_literal: true
 
 module GolfGenius
-  # Represents a tournament within a round (e.g. flight, scoring type).
-  # Business: One competition or flight within a single round (e.g. "Gross", "Net Flight A"); defines how that
-  # game is scored and ranked. Returned by {Event#tournaments} / {Event.tournaments} or round.tournaments; not a
-  # top-level API resource.
-  #
-  # @example
-  #   tournaments = event.tournaments(round_id)
-  #   tournaments.each { |t| puts "#{t.name} #{t.scoring}" }
-  class Tournament < GolfGeniusObject
-    # Returns the cached event for this tournament, if loaded.
+  # Represents tournament results for a specific round tournament.
+  # Business: Raw results payload returned by the tournament results endpoint.
+  class TournamentResults < GolfGeniusObject
+    # Returns the cached event for these results, if loaded.
     #
     # @return [Event, nil]
     def event
       @event || fetch_event
     end
 
-    # Returns the cached round for this tournament, if loaded.
+    # Returns the cached round for these results, if loaded.
     #
     # @return [Round, nil]
     def round
       @round || fetch_round
     end
 
-    # Lazily fetches and caches the event for this tournament.
-    # Requires event_id (set when tournament comes from event.tournaments or round.tournaments).
+    # Returns the cached tournament for these results, if loaded.
+    #
+    # @return [Tournament, nil]
+    def tournament
+      @tournament || fetch_tournament
+    end
+
+    # Lazily fetches and caches the event for these results.
+    # Requires event_id.
     #
     # @param params [Hash] Optional request params (e.g. api_key)
     # @return [Event]
@@ -35,7 +36,7 @@ module GolfGenius
 
       event_id = self[:event_id] || self["event_id"]
       if event_id.nil? || event_id.to_s.empty?
-        raise ArgumentError, "Tournament has no event_id (load via event.tournaments to get it)"
+        raise ArgumentError, "TournamentResults has no event_id (load via event.tournament_results to get it)"
       end
 
       params = params.dup
@@ -43,7 +44,7 @@ module GolfGenius
       @event = Event.fetch(event_id, params)
     end
 
-    # Lazily fetches and caches the round for this tournament.
+    # Lazily fetches and caches the round for these results.
     # Requires event_id and round_id.
     #
     # @param params [Hash] Optional request params (e.g. api_key)
@@ -53,7 +54,7 @@ module GolfGenius
     def fetch_round(params = {})
       return @round if @round
 
-      event_id, round_id = validate_parent_ids!(%i[event_id round_id], "Tournament")
+      event_id, round_id = validate_parent_ids!(%i[event_id round_id], "TournamentResults")
       params = params.dup
       params[:api_key] ||= (respond_to?(:api_key, true) ? send(:api_key) : nil)
       @round = Event.rounds(event_id, params).find { |round| round.id.to_s == round_id.to_s }
@@ -62,17 +63,25 @@ module GolfGenius
       raise NotFoundError, "Round not found: #{round_id}"
     end
 
-    # Returns tournament results for this tournament.
-    # Requires event_id and round_id.
+    # Lazily fetches and caches the tournament for these results.
+    # Requires event_id, round_id, and tournament_id.
     #
     # @param params [Hash] Optional request params (e.g. api_key)
-    # @return [TournamentResults]
-    # @raise [ArgumentError] if event_id or round_id is missing
-    def results(params = {})
-      event_id, round_id = validate_parent_ids!(%i[event_id round_id], "Tournament")
+    # @return [Tournament]
+    # @raise [ArgumentError] if event_id, round_id, or tournament_id is missing
+    # @raise [NotFoundError] if the tournament is not found
+    def fetch_tournament(params = {})
+      return @tournament if @tournament
+
+      event_id, round_id, tournament_id = validate_parent_ids!(%i[event_id round_id tournament_id], "TournamentResults")
       params = params.dup
       params[:api_key] ||= (respond_to?(:api_key, true) ? send(:api_key) : nil)
-      Event.tournament_results(event_id, round_id, id, params)
+      @tournament = Event.tournaments(event_id, round_id, params).find do |tournament|
+        tournament.id.to_s == tournament_id.to_s
+      end
+      return @tournament if @tournament
+
+      raise NotFoundError, "Tournament not found: #{tournament_id}"
     end
 
     private
@@ -81,7 +90,7 @@ module GolfGenius
       keys.map do |key|
         value = self[key] || self[key.to_s]
         if value.nil? || value.to_s.empty?
-          raise ArgumentError, "#{label} has no #{key} (load via event.tournaments to get it)"
+          raise ArgumentError, "#{label} has no #{key} (load via event.tournament_results to get it)"
         end
 
         value

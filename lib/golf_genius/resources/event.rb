@@ -195,6 +195,7 @@ module GolfGenius
                          path: "/events/%<event_id>s/rounds/%<round_id>s/tournaments",
                          parent_ids: %i[event_id round_id],
                          inject_parent: true,
+                         inject_parent_object: :event,
                          item_key: "event",
                          resource_class: Tournament,
                          paginated: true,
@@ -206,10 +207,22 @@ module GolfGenius
                          path: "/events/%<event_id>s/rounds/%<round_id>s/tee_sheet",
                          parent_ids: %i[event_id round_id],
                          inject_parent: true,
+                         inject_parent_object: :event,
                          item_key: "pairing_group",
                          resource_class: TeeSheetGroup,
                          paginated: true,
                          page_size: 100
+
+    # Deeply nested resource: Tournament results for a specific tournament and round.
+    # JSON format only (HTML/XML not yet supported).
+    deep_nested_resource :tournament_results,
+                         path: "/events/%<event_id>s/rounds/%<round_id>s/tournaments/%<tournament_id>s.json",
+                         parent_ids: %i[event_id round_id tournament_id],
+                         inject_parent: true,
+                         inject_parent_object: :event,
+                         returns: :object,
+                         item_key: "event",
+                         resource_class: TournamentResults
 
     # API returns 100 events per page
     def self.expected_page_size(params)

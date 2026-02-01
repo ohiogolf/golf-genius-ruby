@@ -215,6 +215,18 @@ module GolfGenius
         @resource_class.tee_sheet(event_id, round_id, params.merge(api_key: @api_key))
       end
 
+      # Gets tournament results for a round tournament (Event-specific).
+      #
+      # @param event_id [String] The event ID
+      # @param round_id [String] The round ID
+      # @param tournament_id [String] The tournament ID
+      # @param params [Hash] Query parameters
+      # @return [TournamentResults]
+      def tournament_results(event_id, round_id, tournament_id, params = {})
+        ensure_event_resource!
+        @resource_class.tournament_results(event_id, round_id, tournament_id, params.merge(api_key: @api_key))
+      end
+
       # Ensures this proxy points at the Event resource class.
       #
       # @raise [NoMethodError] When the resource does not support event-specific methods
