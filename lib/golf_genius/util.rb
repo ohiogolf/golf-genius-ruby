@@ -268,6 +268,7 @@ module GolfGenius
         display_key = self.class.attribute_aliases_by_attr[key] || key
         "#{display_key}=#{value.inspect}"
       end
+      pairs = reorder_inspect_pairs(pairs)
       "#<#{self.class} #{pairs.join(" ")}>"
     end
 
@@ -285,6 +286,16 @@ module GolfGenius
     # @return [Object, nil] The attribute value
     def [](key)
       @attributes[key.to_sym]
+    end
+
+    private
+
+    def reorder_inspect_pairs(pairs)
+      id_index = pairs.index { |pair| pair.start_with?("id=") }
+      return pairs if id_index.nil? || id_index.zero?
+
+      id_pair = pairs.delete_at(id_index)
+      [id_pair, *pairs]
     end
 
     protected
