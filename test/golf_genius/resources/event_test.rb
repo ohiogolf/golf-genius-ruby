@@ -496,6 +496,21 @@ class EventTest < Minitest::Test
     assert_equal "tourn_001", tournaments.first.id
   end
 
+  def test_round_tournaments_use_parent_event_for_tournament_event
+    stub_api_request(method: :get, path: "/events/event_001/rounds", response_body: EVENT_ROUNDS, query: { "page" => "1" })
+    stub_api_request(method: :get, path: "/events/event_001/rounds/round_001/tournaments", response_body: TOURNAMENTS, query: { "page" => "1" })
+
+    event = GolfGenius::Event.construct_from(EVENT)
+    round = event.rounds.first
+
+    WebMock::RequestRegistry.instance.reset!
+
+    tournament = round.tournaments.first
+
+    assert_equal event, tournament.event
+    assert_not_requested(:get, %r{/api_v2/#{TEST_API_KEY}/events\?})
+  end
+
   def test_round_tee_sheet_from_event_rounds
     stub_api_request(method: :get, path: "/events/event_001/rounds", response_body: EVENT_ROUNDS, query: { "page" => "1" })
     stub_api_request(method: :get, path: "/events/event_001/rounds/round_001/tee_sheet", response_body: TEE_SHEET, query: { "page" => "1" })
@@ -515,6 +530,22 @@ class EventTest < Minitest::Test
     assert_equal "group_001", tee_sheet.first.id
     assert_equal "event_001", tee_sheet.first[:event_id]
     assert_equal "round_001", tee_sheet.first[:round_id]
+  end
+
+  def test_round_tee_sheet_uses_parent_event_for_group_event
+    stub_api_request(method: :get, path: "/events/event_001/rounds", response_body: EVENT_ROUNDS, query: { "page" => "1" })
+    stub_api_request(method: :get, path: "/events/event_001/rounds/round_001/tee_sheet", response_body: TEE_SHEET, query: { "page" => "1" })
+    stub_api_request(method: :get, path: "/events/event_001/rounds/round_001/tee_sheet", response_body: [], query: { "page" => "2" })
+
+    event = GolfGenius::Event.construct_from(EVENT)
+    round = event.rounds.first
+
+    WebMock::RequestRegistry.instance.reset!
+
+    group = round.tee_sheet.first
+
+    assert_equal event, group.event
+    assert_not_requested(:get, %r{/api_v2/#{TEST_API_KEY}/events\?})
   end
 
   def test_round_tee_sheet_raises_without_event_id
@@ -765,6 +796,49 @@ class EventTest < Minitest::Test
     assert_kind_of GolfGenius::Tournament, tournaments.first
     assert_equal "tourn_001", tournaments.first.id
     assert_equal "Flight A - Gross", tournaments.first.name
+  end
+
+  def test_event_tournament_results
+    stub_api_request(
+      method: :get,
+      path: "/events/event_001/rounds/round_001/tournaments/tourn_001.json",
+      response_body: TOURNAMENT_RESULTS
+    )
+
+    results = GolfGenius::Event.tournament_results("event_001", "round_001", "tourn_001")
+
+    assert_kind_of GolfGenius::TournamentResults, results
+    assert_equal "Flight A - Gross", results.title
+  end
+
+  def test_event_instance_tournament_results
+    stub_api_request(
+      method: :get,
+      path: "/events/event_001/rounds/round_001/tournaments/tourn_001.json",
+      response_body: TOURNAMENT_RESULTS
+    )
+
+    event = GolfGenius::Event.construct_from(EVENT)
+    results = event.tournament_results("round_001", "tourn_001")
+
+    assert_kind_of GolfGenius::TournamentResults, results
+    assert_equal "Flight A - Gross", results.title
+  end
+
+  def test_tournament_results_from_tournament
+    stub_api_request(
+      method: :get,
+      path: "/events/event_001/rounds/round_001/tournaments/tourn_001.json",
+      response_body: TOURNAMENT_RESULTS
+    )
+
+    tournament = GolfGenius::Tournament.construct_from(
+      { "id" => "tourn_001", "event_id" => "event_001", "round_id" => "round_001" }
+    )
+    results = tournament.results
+
+    assert_kind_of GolfGenius::TournamentResults, results
+    assert_equal "Flight A - Gross", results.title
   end
 
   def test_auto_paging_each

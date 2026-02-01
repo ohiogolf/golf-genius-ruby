@@ -50,7 +50,9 @@ module GolfGenius
 
       params = params.dup
       params[:api_key] ||= (respond_to?(:api_key, true) ? send(:api_key) : nil)
-      Event.tournaments(event_id, id, params)
+      result = Event.tournaments(event_id, id, params)
+      @event ||= Event.construct_from({ "id" => event_id }, api_key: params[:api_key])
+      Event.send(:inject_parent_object_into, result, @event, :event)
     end
 
     # Returns tee sheet and scores for this round. Requires event_id (set when round comes from event.rounds).
@@ -66,7 +68,9 @@ module GolfGenius
 
       params = params.dup
       params[:api_key] ||= (respond_to?(:api_key, true) ? send(:api_key) : nil)
-      Event.tee_sheet(event_id, id, params)
+      result = Event.tee_sheet(event_id, id, params)
+      @event ||= Event.construct_from({ "id" => event_id }, api_key: params[:api_key])
+      Event.send(:inject_parent_object_into, result, @event, :event)
     end
   end
 end
