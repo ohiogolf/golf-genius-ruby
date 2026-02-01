@@ -841,6 +841,55 @@ class EventTest < Minitest::Test
     assert_equal "Flight A - Gross", results.title
   end
 
+  def test_event_tournament_results_html
+    html = "<div class='table-responsive'><table class='result_scope'><tr><th>Pos.</th></tr></table></div>"
+    stub_api_request(
+      method: :get,
+      path: "/events/event_001/rounds/round_001/tournaments/tourn_001.html",
+      response_body: html,
+      headers: { "Content-Type" => "text/html" }
+    )
+
+    results = GolfGenius::Event.tournament_results("event_001", "round_001", "tourn_001", format: :html)
+
+    assert_kind_of String, results
+    assert_includes results, "<table"
+  end
+
+  def test_event_instance_tournament_results_html
+    html = "<div class='table-responsive'><table class='result_scope'><tr><th>Pos.</th></tr></table></div>"
+    stub_api_request(
+      method: :get,
+      path: "/events/event_001/rounds/round_001/tournaments/tourn_001.html",
+      response_body: html,
+      headers: { "Content-Type" => "text/html" }
+    )
+
+    event = GolfGenius::Event.construct_from(EVENT)
+    results = event.tournament_results("round_001", "tourn_001", format: :html)
+
+    assert_kind_of String, results
+    assert_includes results, "<table"
+  end
+
+  def test_tournament_results_html_from_tournament
+    html = "<div class='table-responsive'><table class='result_scope'><tr><th>Pos.</th></tr></table></div>"
+    stub_api_request(
+      method: :get,
+      path: "/events/event_001/rounds/round_001/tournaments/tourn_001.html",
+      response_body: html,
+      headers: { "Content-Type" => "text/html" }
+    )
+
+    tournament = GolfGenius::Tournament.construct_from(
+      { "id" => "tourn_001", "event_id" => "event_001", "round_id" => "round_001" }
+    )
+    results = tournament.results(format: :html)
+
+    assert_kind_of String, results
+    assert_includes results, "<table"
+  end
+
   def test_auto_paging_each
     # Stub page 1 (full page of 25 items)
     stub_api_request(
