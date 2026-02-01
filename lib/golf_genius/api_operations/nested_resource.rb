@@ -29,6 +29,7 @@ module GolfGenius
       # @param inject_parent [Hash, nil] Merge parent context into each item (e.g. { event_id: :parent_id }
       #   so Round has event_id)
       # @param sort_by [Symbol, nil] Attribute to sort the array by (e.g. :index for rounds)
+      # @param inject_parent_object [Symbol, nil] Set a parent object on each result (e.g. :event)
       # @param paginated [Boolean] If true, when :page is not in params, fetch all pages and return combined array
       #   (default: false)
       # @param page_size [Integer] API page size when paginated (e.g. 100 for roster); used to detect last page
@@ -44,7 +45,7 @@ module GolfGenius
       #   nested_resource :summary, path: "/events/%<parent_id>s/summary", returns: :object
       def nested_resource(name, path:, returns: :array, resource_class: nil, item_key: nil, response_key: nil,
                           attribute_aliases: nil, inject_parent: nil, sort_by: nil, paginated: false, page_size: 100,
-                          client_filters: nil)
+                          client_filters: nil, inject_parent_object: nil)
         client_filters = (client_filters || {}).freeze
         define_singleton_method(name) do |parent_id, params = {}|
           params = params.dup
@@ -110,7 +111,8 @@ module GolfGenius
         define_method(name) do |params = {}|
           params = params.dup
           params[:api_key] ||= (respond_to?(:api_key, true) ? send(:api_key) : nil)
-          self.class.public_send(name, id, params)
+          result = self.class.public_send(name, id, params)
+          self.class.send(:inject_parent_object_into, result, self, inject_parent_object)
         end
       end
 
@@ -126,13 +128,15 @@ module GolfGenius
       # @param response_key [String, Symbol, nil] If the response is a hash, the key for the array
       # @param paginated [Boolean] If true, when :page is not in params, fetch all pages (default: false)
       # @param page_size [Integer] API page size when paginated (default: 100)
+      # @param inject_parent [Boolean, Hash, nil] When true, injects parent_ids into each item (e.g. event_id,
+      #   round_id). When a Hash is provided, maps attr_key => parent_id_key.
       #
       # @example Define a deeply nested tournaments resource
       #   deep_nested_resource :tournaments,
       #     path: "/events/%<event_id>s/rounds/%<round_id>s/tournaments",
       #     parent_ids: [:event_id, :round_id]
       def deep_nested_resource(name, path:, parent_ids:, returns: :array, resource_class: nil, item_key: nil,
-                               response_key: nil, paginated: false, page_size: 100)
+                               response_key: nil, paginated: false, page_size: 100, inject_parent: nil)
         define_singleton_method(name) do |*args|
           extra = args[parent_ids.length]
           params = args.length > parent_ids.length && extra.is_a?(Hash) ? extra.dup : {}
@@ -161,6 +165,7 @@ module GolfGenius
             klass = resource_class || GolfGeniusObject
             data.map do |item|
               attrs = item_key ? Util.unwrap_list_item(item, item_key: item_key) : item
+              attrs = inject_parent_ids(attrs, path_params, inject_parent)
               klass.construct_from(attrs, api_key: api_key)
             end
           end
@@ -249,6 +254,34 @@ module GolfGenius
 
         attrs = attrs.dup
         inject_parent.each_key { |attr_key| attrs[attr_key] = parent_id }
+        attrs
+      end
+
+      def inject_parent_object_into(result, parent, inject_parent_object)
+        return result if inject_parent_object.nil? || result.nil?
+
+        ivar = "@#{inject_parent_object}"
+        if result.is_a?(Array)
+          result.each { |item| item.instance_variable_set(ivar, parent) }
+        else
+          result.instance_variable_set(ivar, parent)
+        end
+        result
+      end
+
+      def inject_parent_ids(attrs, parent_id_map, inject_parent)
+        return attrs if inject_parent.nil? || inject_parent == false
+
+        attrs = attrs.dup
+        if inject_parent == true
+          parent_id_map.each { |key, value| attrs[key] = value }
+          return attrs
+        end
+
+        inject_parent.each do |attr_key, parent_key|
+          value = parent_id_map[parent_key.to_sym]
+          attrs[attr_key] = value if value
+        end
         attrs
       end
     end

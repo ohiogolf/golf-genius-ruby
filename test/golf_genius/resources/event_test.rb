@@ -431,6 +431,8 @@ class EventTest < Minitest::Test
     assert_kind_of Array, tournaments
     assert_equal 2, tournaments.length
     assert_equal "tourn_001", tournaments.first.id
+    assert_equal "event_001", tournaments.first[:event_id]
+    assert_equal "round_001", tournaments.first[:round_id]
   end
 
   def test_event_instance_tournaments_unwraps_event_key
@@ -511,6 +513,8 @@ class EventTest < Minitest::Test
     assert_equal 2, tee_sheet.length
     assert_kind_of GolfGenius::TeeSheetGroup, tee_sheet.first
     assert_equal "group_001", tee_sheet.first.id
+    assert_equal "event_001", tee_sheet.first[:event_id]
+    assert_equal "round_001", tee_sheet.first[:round_id]
   end
 
   def test_round_tee_sheet_raises_without_event_id
@@ -525,6 +529,189 @@ class EventTest < Minitest::Test
 
     error = assert_raises(ArgumentError) { round.tournaments }
     assert_match(/event_id/, error.message)
+  end
+
+  def test_round_fetch_event
+    stub_api_request(method: :get, path: "/events", response_body: EVENTS, query: { "page" => "1" })
+
+    round = GolfGenius::Round.construct_from({ "id" => "round_001", "event_id" => "event_001" })
+    event = round.fetch_event
+
+    assert_kind_of GolfGenius::Event, event
+    assert_equal "event_001", event.id
+    assert_equal event, round.event
+  end
+
+  def test_round_event_uses_parent_when_available
+    stub_api_request(method: :get, path: "/events/event_001/rounds", response_body: EVENT_ROUNDS, query: { "page" => "1" })
+
+    event = GolfGenius::Event.construct_from(EVENT)
+    round = event.rounds.first
+
+    assert_equal event, round.event
+  end
+
+  def test_round_fetch_event_raises_without_event_id
+    round = GolfGenius::Round.construct_from({ "id" => "round_001" })
+
+    error = assert_raises(ArgumentError) { round.fetch_event }
+    assert_match(/event_id/, error.message)
+  end
+
+  def test_tournament_fetch_event
+    stub_api_request(method: :get, path: "/events", response_body: EVENTS, query: { "page" => "1" })
+
+    tournament = GolfGenius::Tournament.construct_from({ "id" => "tourn_001", "event_id" => "event_001" })
+    event = tournament.fetch_event
+
+    assert_kind_of GolfGenius::Event, event
+    assert_equal "event_001", event.id
+    assert_equal event, tournament.event
+  end
+
+  def test_tournament_event_fetches_when_missing
+    stub_api_request(method: :get, path: "/events", response_body: EVENTS, query: { "page" => "1" })
+
+    tournament = GolfGenius::Tournament.construct_from({ "id" => "tourn_001", "event_id" => "event_001" })
+    event = tournament.event
+
+    assert_kind_of GolfGenius::Event, event
+    assert_equal "event_001", event.id
+  end
+
+  def test_tournament_fetch_event_raises_without_event_id
+    tournament = GolfGenius::Tournament.construct_from({ "id" => "tourn_001" })
+
+    error = assert_raises(ArgumentError) { tournament.fetch_event }
+    assert_match(/event_id/, error.message)
+  end
+
+  def test_tournament_fetch_round
+    stub_api_request(method: :get, path: "/events/event_001/rounds", response_body: EVENT_ROUNDS, query: { "page" => "1" })
+
+    tournament = GolfGenius::Tournament.construct_from(
+      { "id" => "tourn_001", "event_id" => "event_001", "round_id" => "round_001" }
+    )
+    round = tournament.fetch_round
+
+    assert_kind_of GolfGenius::Round, round
+    assert_equal "round_001", round.id
+    assert_equal round, tournament.round
+  end
+
+  def test_tournament_round_fetches_when_missing
+    stub_api_request(method: :get, path: "/events/event_001/rounds", response_body: EVENT_ROUNDS, query: { "page" => "1" })
+
+    tournament = GolfGenius::Tournament.construct_from(
+      { "id" => "tourn_001", "event_id" => "event_001", "round_id" => "round_001" }
+    )
+    round = tournament.round
+
+    assert_kind_of GolfGenius::Round, round
+    assert_equal "round_001", round.id
+  end
+
+  def test_tournament_fetch_round_raises_without_event_id
+    tournament = GolfGenius::Tournament.construct_from({ "id" => "tourn_001", "round_id" => "round_001" })
+
+    error = assert_raises(ArgumentError) { tournament.fetch_round }
+    assert_match(/event_id/, error.message)
+  end
+
+  def test_tournament_fetch_round_raises_without_round_id
+    tournament = GolfGenius::Tournament.construct_from({ "id" => "tourn_001", "event_id" => "event_001" })
+
+    error = assert_raises(ArgumentError) { tournament.fetch_round }
+    assert_match(/round_id/, error.message)
+  end
+
+  def test_tournament_fetch_round_raises_when_round_missing
+    stub_api_request(method: :get, path: "/events/event_001/rounds", response_body: EVENT_ROUNDS, query: { "page" => "1" })
+
+    tournament = GolfGenius::Tournament.construct_from(
+      { "id" => "tourn_001", "event_id" => "event_001", "round_id" => "round_missing" }
+    )
+
+    error = assert_raises(GolfGenius::NotFoundError) { tournament.fetch_round }
+    assert_match(/Round not found/, error.message)
+  end
+
+  def test_tee_sheet_group_fetch_event
+    stub_api_request(method: :get, path: "/events", response_body: EVENTS, query: { "page" => "1" })
+
+    group = GolfGenius::TeeSheetGroup.construct_from({ "id" => "group_001", "event_id" => "event_001" })
+    event = group.fetch_event
+
+    assert_kind_of GolfGenius::Event, event
+    assert_equal "event_001", event.id
+    assert_equal event, group.event
+  end
+
+  def test_tee_sheet_group_event_fetches_when_missing
+    stub_api_request(method: :get, path: "/events", response_body: EVENTS, query: { "page" => "1" })
+
+    group = GolfGenius::TeeSheetGroup.construct_from({ "id" => "group_001", "event_id" => "event_001" })
+    event = group.event
+
+    assert_kind_of GolfGenius::Event, event
+    assert_equal "event_001", event.id
+  end
+
+  def test_tee_sheet_group_fetch_event_raises_without_event_id
+    group = GolfGenius::TeeSheetGroup.construct_from({ "id" => "group_001" })
+
+    error = assert_raises(ArgumentError) { group.fetch_event }
+    assert_match(/event_id/, error.message)
+  end
+
+  def test_tee_sheet_group_fetch_round
+    stub_api_request(method: :get, path: "/events/event_001/rounds", response_body: EVENT_ROUNDS, query: { "page" => "1" })
+
+    group = GolfGenius::TeeSheetGroup.construct_from(
+      { "id" => "group_001", "event_id" => "event_001", "round_id" => "round_001" }
+    )
+    round = group.fetch_round
+
+    assert_kind_of GolfGenius::Round, round
+    assert_equal "round_001", round.id
+    assert_equal round, group.round
+  end
+
+  def test_tee_sheet_group_round_fetches_when_missing
+    stub_api_request(method: :get, path: "/events/event_001/rounds", response_body: EVENT_ROUNDS, query: { "page" => "1" })
+
+    group = GolfGenius::TeeSheetGroup.construct_from(
+      { "id" => "group_001", "event_id" => "event_001", "round_id" => "round_001" }
+    )
+    round = group.round
+
+    assert_kind_of GolfGenius::Round, round
+    assert_equal "round_001", round.id
+  end
+
+  def test_tee_sheet_group_fetch_round_raises_without_event_id
+    group = GolfGenius::TeeSheetGroup.construct_from({ "id" => "group_001", "round_id" => "round_001" })
+
+    error = assert_raises(ArgumentError) { group.fetch_round }
+    assert_match(/event_id/, error.message)
+  end
+
+  def test_tee_sheet_group_fetch_round_raises_without_round_id
+    group = GolfGenius::TeeSheetGroup.construct_from({ "id" => "group_001", "event_id" => "event_001" })
+
+    error = assert_raises(ArgumentError) { group.fetch_round }
+    assert_match(/round_id/, error.message)
+  end
+
+  def test_tee_sheet_group_fetch_round_raises_when_round_missing
+    stub_api_request(method: :get, path: "/events/event_001/rounds", response_body: EVENT_ROUNDS, query: { "page" => "1" })
+
+    group = GolfGenius::TeeSheetGroup.construct_from(
+      { "id" => "group_001", "event_id" => "event_001", "round_id" => "round_missing" }
+    )
+
+    error = assert_raises(GolfGenius::NotFoundError) { group.fetch_round }
+    assert_match(/Round not found/, error.message)
   end
 
   def test_event_rounds

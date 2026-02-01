@@ -11,6 +11,32 @@ module GolfGenius
   #   round.tee_sheet    # => [TeeSheetGroup, ...] when round has event_id (from event.rounds)
   #   round.tournaments  # => [Tournament, ...] when round has event_id (from event.rounds)
   class Round < GolfGeniusObject
+    # Returns the cached event for this round, if loaded.
+    #
+    # @return [Event, nil]
+    def event
+      @event || fetch_event
+    end
+
+    # Lazily fetches and caches the event for this round.
+    # Requires event_id (set when round comes from event.rounds).
+    #
+    # @param params [Hash] Optional request params (e.g. api_key)
+    # @return [Event]
+    # @raise [ArgumentError] if event_id is missing
+    def fetch_event(params = {})
+      return @event if @event
+
+      event_id = self[:event_id] || self["event_id"]
+      if event_id.nil? || event_id.to_s.empty?
+        raise ArgumentError, "Round has no event_id (load via event.rounds to get it)"
+      end
+
+      params = params.dup
+      params[:api_key] ||= (respond_to?(:api_key, true) ? send(:api_key) : nil)
+      @event = Event.fetch(event_id, params)
+    end
+
     # Returns tournaments for this round. Requires event_id (set when round comes from event.rounds).
     #
     # @param params [Hash] Optional request params (e.g. api_key)

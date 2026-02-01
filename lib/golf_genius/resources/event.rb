@@ -171,6 +171,7 @@ module GolfGenius
     nested_resource :rounds, path: "/events/%<parent_id>s/rounds", item_key: "round",
                              resource_class: Round,
                              inject_parent: { event_id: :parent_id },
+                             inject_parent_object: :event,
                              sort_by: :index,
                              paginated: true,
                              page_size: 100
@@ -193,6 +194,7 @@ module GolfGenius
     deep_nested_resource :tournaments,
                          path: "/events/%<event_id>s/rounds/%<round_id>s/tournaments",
                          parent_ids: %i[event_id round_id],
+                         inject_parent: true,
                          item_key: "event",
                          resource_class: Tournament,
                          paginated: true,
@@ -203,6 +205,7 @@ module GolfGenius
     deep_nested_resource :tee_sheet,
                          path: "/events/%<event_id>s/rounds/%<round_id>s/tee_sheet",
                          parent_ids: %i[event_id round_id],
+                         inject_parent: true,
                          item_key: "pairing_group",
                          resource_class: TeeSheetGroup,
                          paginated: true,
