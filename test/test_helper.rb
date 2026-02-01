@@ -18,6 +18,8 @@ module GolfGenius
     def setup_test_configuration
       GolfGenius.reset_configuration!
       GolfGenius.api_key = TEST_API_KEY
+      GolfGenius.configuration.retry_max = 0
+      GolfGenius.configuration.retry_interval = 0
     end
 
     def stub_api_request(method:, path:, response_body:, status: 200, query: nil)

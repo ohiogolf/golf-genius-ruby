@@ -104,8 +104,8 @@ module GolfGenius
             conn.request :json
             conn.response :json, content_type: /\bjson$/
             conn.request :retry, {
-              max: 3,
-              interval: 0.5,
+              max: config.retry_max,
+              interval: config.retry_interval,
               interval_randomness: 0.5,
               backoff_factor: 2,
               exceptions: [Faraday::TimeoutError, Faraday::ConnectionFailed],
