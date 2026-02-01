@@ -28,6 +28,7 @@ module GolfGenius
   #   event = GolfGenius::Event.fetch(171716)
   #   event = GolfGenius::Event.fetch_by(ggid: 'zphsqa')  # by ggid
   #   event = GolfGenius::Event.fetch(171716, season_id: 'season_123', max_pages: 10)
+  #   event = GolfGenius::Event.fetch(171716, archived: true)  # archived only
   #
   # @example Get event roster (class or instance)
   #   roster = GolfGenius::Event.roster('event_123', photo: true)
@@ -50,6 +51,7 @@ module GolfGenius
   #   end
   #
   # @see https://www.golfgenius.com/api/v2/docs Golf Genius API Documentation
+  # rubocop:disable Metrics/ClassLength
   class Event < Resource
     # API endpoint path for events
     RESOURCE_PATH = "/events"
@@ -60,6 +62,98 @@ module GolfGenius
 
     # Match fetch by id or ggid (API returns both)
     fetch_match_on :id, :ggid
+
+    # Fetch a single event by id. When :archived is not specified, try non-archived
+    # first, then fall back to archived events before raising not found. If :archived
+    # is explicitly set (true or false), only that scope is searched. The same rules
+    # apply to +fetch_by+ (e.g., by ggid).
+    def self.fetch(id, params = {})
+      params = params.dup
+      return super if archived_param?(params)
+
+      begin
+        super
+      rescue NotFoundError
+        super(id, params.merge(archived: true))
+      end
+    end
+
+    # Fetch a single event by ggid (or id) using list pagination with archived fallback.
+    def self.fetch_by(params = {})
+      params = params.dup
+      max_pages = params.delete(:max_pages) || 20
+      field, value, list_params, archived_explicit = parse_fetch_by_params(params)
+
+      return fetch(value, list_params.merge(max_pages: max_pages)) if field == :id
+      return fetch_by_list(field, value, list_params, max_pages) if archived_explicit
+
+      begin
+        fetch_by_list(field, value, list_params, max_pages)
+      rescue NotFoundError
+        fetch_by_list(field, value, list_params.merge(archived: true), max_pages)
+      end
+    end
+
+    def self.archived_param?(params)
+      params.key?(:archived) || params.key?("archived")
+    end
+    private_class_method :archived_param?
+
+    def self.parse_fetch_by_params(params)
+      params = params.dup
+      params.delete(:api_key)
+      params.delete("api_key")
+
+      field, value, params = extract_fetch_by_field(params)
+      archived_explicit = archived_param?(params)
+      validate_fetch_by_params!(params)
+
+      [field, value, params, archived_explicit]
+    end
+    private_class_method :parse_fetch_by_params
+
+    def self.extract_fetch_by_field(params)
+      match_keys = params.keys.map(&:to_sym)
+      fetch_fields = fetch_match_fields
+      search_keys = match_keys & fetch_fields
+      raise ArgumentError, "fetch_by requires one of: #{fetch_fields.join(", ")}" if search_keys.empty?
+      raise ArgumentError, "fetch_by accepts only one attribute" if search_keys.length > 1
+
+      field = search_keys.first
+      value = params.key?(field) ? params.delete(field) : params.delete(field.to_s)
+      raise ArgumentError, "#{field} is required" if value.nil? || value.to_s.empty?
+
+      [field, value, params]
+    end
+    private_class_method :extract_fetch_by_field
+
+    def self.validate_fetch_by_params!(params)
+      remaining_keys = params.keys.map(&:to_sym) - [:archived]
+      return if remaining_keys.empty?
+
+      fetch_fields = fetch_match_fields
+      raise ArgumentError, "Only #{fetch_fields.join(", ")} are supported"
+    end
+    private_class_method :validate_fetch_by_params!
+
+    def self.fetch_by_list(field, value, list_params, max_pages)
+      value_str = value.to_s
+      page = 1
+      while page <= max_pages
+        results = list(list_params.merge(page: page))
+        break if results.empty?
+
+        found = results.find { |item| match_fetch_on?(item, [field], value_str) }
+        return found if found
+
+        break if results.length < expected_page_size(list_params)
+
+        page += 1
+      end
+
+      raise NotFoundError, "Resource not found: #{field}=#{value_str}"
+    end
+    private_class_method :fetch_by_list
 
     # Nested resource: Event roster (API returns [ { "member" => {...} } ]).
     # With photo: true, the API returns "photo" URL; we expose it as photo_url.
@@ -184,4 +278,5 @@ module GolfGenius
       Directory.construct_from(attrs, api_key: api_key)
     end
   end
+  # rubocop:enable Metrics/ClassLength
 end

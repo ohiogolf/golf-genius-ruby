@@ -254,6 +254,20 @@ GolfGenius::Event.fetch_by(ggid: "zphsqa")
 ```
 
 ```ruby
+# By default, fetch tries non-archived first, then falls back to archived.
+GolfGenius::Event.fetch(171716)
+
+# Explicit :archived scopes (no fallback):
+GolfGenius::Event.fetch(171716, archived: false) # non-archived only
+GolfGenius::Event.fetch(171716, archived: true)  # archived only
+
+# The same behavior applies when fetching by ggid:
+GolfGenius::Event.fetch_by(ggid: "zphsqa")
+GolfGenius::Event.fetch_by(ggid: "zphsqa", archived: false)
+GolfGenius::Event.fetch_by(ggid: "zphsqa", archived: true)
+```
+
+```ruby
 # => #<GolfGenius::Event id="event_001" name="Spring Championship" type="tournament" date="2026-04-15" location="Pine Valley Golf Club" archived=false ...>
 ```
 

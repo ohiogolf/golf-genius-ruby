@@ -53,6 +53,7 @@ class ErrorsTest < Minitest::Test
 
   def test_not_found_error
     stub_api_request(method: :get, path: "/events", response_body: [], query: { "page" => "1" })
+    stub_api_request(method: :get, path: "/events", response_body: [], query: { "page" => "1", "archived" => "true" })
 
     error = assert_raises(GolfGenius::NotFoundError) do
       GolfGenius::Event.fetch("nonexistent")

@@ -69,6 +69,38 @@ class EventTest < Minitest::Test
     assert_equal "tournament", event.type
   end
 
+  def test_fetch_event_falls_back_to_archived
+    archived_events = [EVENT.merge("archived" => true)]
+    stub_api_request(method: :get, path: "/events", response_body: [], query: { "page" => "1" })
+    stub_api_request(method: :get, path: "/events", response_body: archived_events, query: { "page" => "1", "archived" => "true" })
+
+    event = GolfGenius::Event.fetch("event_001")
+
+    assert_kind_of GolfGenius::Event, event
+    assert_equal "event_001", event.id
+    assert_equal true, event.archived
+  end
+
+  def test_fetch_event_respects_archived_param
+    archived_events = [EVENT.merge("archived" => true)]
+    stub_api_request(method: :get, path: "/events", response_body: archived_events, query: { "page" => "1", "archived" => "true" })
+
+    event = GolfGenius::Event.fetch("event_001", archived: true)
+
+    assert_kind_of GolfGenius::Event, event
+    assert_equal "event_001", event.id
+    assert_equal true, event.archived
+  end
+
+  def test_fetch_event_respects_archived_false
+    stub_api_request(method: :get, path: "/events", response_body: EVENTS, query: { "page" => "1", "archived" => "false" })
+
+    event = GolfGenius::Event.fetch("event_001", archived: false)
+
+    assert_kind_of GolfGenius::Event, event
+    assert_equal "event_001", event.id
+  end
+
   def test_fetch_event_by_ggid
     events_with_ggid = [EVENT.merge("ggid" => "zphsqa")]
     stub_api_request(method: :get, path: "/events", response_body: events_with_ggid, query: { "page" => "1" })
@@ -80,8 +112,45 @@ class EventTest < Minitest::Test
     assert_equal "zphsqa", event.ggid
   end
 
+  def test_fetch_event_by_ggid_falls_back_to_archived
+    archived_events = [EVENT.merge("ggid" => "zphsqa", "archived" => true)]
+    stub_api_request(method: :get, path: "/events", response_body: [], query: { "page" => "1" })
+    stub_api_request(method: :get, path: "/events", response_body: archived_events, query: { "page" => "1", "archived" => "true" })
+
+    event = GolfGenius::Event.fetch_by(ggid: "zphsqa")
+
+    assert_kind_of GolfGenius::Event, event
+    assert_equal "event_001", event.id
+    assert_equal "zphsqa", event.ggid
+    assert_equal true, event.archived
+  end
+
+  def test_fetch_event_by_ggid_respects_archived_false
+    events_with_ggid = [EVENT.merge("ggid" => "zphsqa")]
+    stub_api_request(method: :get, path: "/events", response_body: events_with_ggid, query: { "page" => "1", "archived" => "false" })
+
+    event = GolfGenius::Event.fetch_by(ggid: "zphsqa", archived: false)
+
+    assert_kind_of GolfGenius::Event, event
+    assert_equal "event_001", event.id
+    assert_equal "zphsqa", event.ggid
+  end
+
+  def test_fetch_event_by_ggid_respects_archived_true
+    archived_events = [EVENT.merge("ggid" => "zphsqa", "archived" => true)]
+    stub_api_request(method: :get, path: "/events", response_body: archived_events, query: { "page" => "1", "archived" => "true" })
+
+    event = GolfGenius::Event.fetch_by(ggid: "zphsqa", archived: true)
+
+    assert_kind_of GolfGenius::Event, event
+    assert_equal "event_001", event.id
+    assert_equal "zphsqa", event.ggid
+    assert_equal true, event.archived
+  end
+
   def test_fetch_event_raises_when_not_found
     stub_api_request(method: :get, path: "/events", response_body: [], query: { "page" => "1" })
+    stub_api_request(method: :get, path: "/events", response_body: [], query: { "page" => "1", "archived" => "true" })
 
     error = assert_raises(GolfGenius::NotFoundError) do
       GolfGenius::Event.fetch("nonexistent")

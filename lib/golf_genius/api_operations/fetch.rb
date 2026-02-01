@@ -55,7 +55,7 @@ module GolfGenius
 
         while page <= max_pages
           results = list(params.merge(page: page))
-          raise NotFoundError, "Resource not found: #{id_str}" if results.empty?
+          break if results.empty?
 
           found = results.find { |item| match_fetch_on?(item, [:id], id_str) }
           return found if found
@@ -98,7 +98,7 @@ module GolfGenius
         page = 1
         while page <= max_pages
           results = list(params.merge(page: page))
-          raise NotFoundError, "Resource not found: #{field}=#{value_str}" if results.empty?
+          break if results.empty?
 
           found = results.find { |item| match_fetch_on?(item, [field], value_str) }
           return found if found
