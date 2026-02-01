@@ -433,6 +433,17 @@ class EventTest < Minitest::Test
     assert_equal "tourn_001", tournaments.first.id
   end
 
+  def test_event_instance_tournaments_unwraps_event_key
+    stub_api_request(method: :get, path: "/events/event_001/rounds/round_001/tournaments", response_body: TOURNAMENTS_WRAPPED, query: { "page" => "1" })
+
+    event = GolfGenius::Event.construct_from(EVENT)
+    tournaments = event.tournaments("round_001")
+
+    assert_kind_of Array, tournaments
+    assert_equal 2, tournaments.length
+    assert_equal "tourn_001", tournaments.first.id
+  end
+
   def test_event_instance_tournaments_requires_round_id
     event = GolfGenius::Event.construct_from(EVENT)
 

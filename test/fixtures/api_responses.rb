@@ -287,6 +287,11 @@ module GolfGenius
       },
     ].freeze
 
+    # Sample tournaments response (API wrapped)
+    TOURNAMENTS_WRAPPED = TOURNAMENTS.map do |tournament|
+      { "event" => tournament }
+    end.freeze
+
     # Sample master roster response (API returns [ { "member" => {...} } ])
     MASTER_ROSTER = [
       {

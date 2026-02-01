@@ -193,6 +193,7 @@ module GolfGenius
     deep_nested_resource :tournaments,
                          path: "/events/%<event_id>s/rounds/%<round_id>s/tournaments",
                          parent_ids: %i[event_id round_id],
+                         item_key: "event",
                          resource_class: Tournament,
                          paginated: true,
                          page_size: 100
