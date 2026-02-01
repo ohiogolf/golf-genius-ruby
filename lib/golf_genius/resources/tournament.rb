@@ -63,10 +63,12 @@ module GolfGenius
     end
 
     # Returns tournament results for this tournament.
+    # Defaults to JSON; pass format: :html for HTML.
     # Requires event_id and round_id.
     #
-    # @param params [Hash] Optional request params (e.g. api_key)
-    # @return [TournamentResults]
+    # @param params [Hash] Optional request params (e.g. api_key, format)
+    # @option params [Symbol, String] :format The response format (:json or :html, default: :json)
+    # @return [TournamentResults, String] Results payload (object for JSON, string for HTML)
     # @raise [ArgumentError] if event_id or round_id is missing
     def results(params = {})
       event_id, round_id = validate_parent_ids!(%i[event_id round_id], "Tournament")

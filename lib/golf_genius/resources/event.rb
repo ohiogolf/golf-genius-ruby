@@ -213,9 +213,9 @@ module GolfGenius
                          paginated: true,
                          page_size: 100
 
-    # Deeply nested resource: Tournament results for a specific tournament and round.
-    # JSON format only (HTML/XML not yet supported).
-    deep_nested_resource :tournament_results,
+    # Deeply nested resource: Tournament results for a specific tournament and round (JSON only).
+    # Use .tournament_results with format: :json (default).
+    deep_nested_resource :tournament_results_json,
                          path: "/events/%<event_id>s/rounds/%<round_id>s/tournaments/%<tournament_id>s.json",
                          parent_ids: %i[event_id round_id tournament_id],
                          inject_parent: true,
@@ -223,6 +223,91 @@ module GolfGenius
                          returns: :object,
                          item_key: "event",
                          resource_class: TournamentResults
+
+    # Returns tournament results for a specific tournament and round.
+    # Defaults to JSON; pass format: :html for HTML.
+    #
+    # @param event_id [String, Integer] The event ID
+    # @param round_id [String, Integer] The round ID
+    # @param tournament_id [String, Integer] The tournament ID
+    # @param params [Hash] Optional request params (e.g. api_key, format)
+    # @option params [Symbol, String] :format The response format (:json or :html, default: :json)
+    # @return [TournamentResults, String] Results payload (object for JSON, string for HTML)
+    # @raise [ArgumentError] if any required id is missing
+    def self.tournament_results(event_id, round_id, tournament_id, params = {})
+      params = params.dup
+      format = extract_format(params).to_s.downcase
+      api_key = params.delete(:api_key)
+      resolved_ids = resolve_tournament_results_ids(event_id, round_id, tournament_id)
+      validate_results_format!(format)
+      return tournament_results_json(*resolved_ids, params.merge(api_key: api_key)) if format == "json"
+
+      fetch_tournament_results_html(resolved_ids, params, api_key)
+    end
+
+    # Instance method: event.tournament_results(round_id_or_round, tournament_id_or_tournament, params = {})
+    # or event.tournament_results(round: round_obj, tournament: tournament_obj).
+    #
+    # @param params [Hash] Optional request params (e.g. api_key, format)
+    # @option params [Symbol, String] :format The response format (:json or :html, default: :json)
+    # @return [TournamentResults, String] Results payload (object for JSON, string for HTML)
+    # @raise [ArgumentError] if required ids are missing
+    def tournament_results(*args)
+      params = args.last.is_a?(Hash) ? args.pop.dup : {}
+      params[:api_key] ||= (respond_to?(:api_key, true) ? send(:api_key) : nil)
+      other_ids = extract_nested_ids(params, args)
+      if other_ids.length < 2
+        raise ArgumentError,
+              "tournament_results requires 2 argument(s) " \
+              "(round_id, tournament_id), got #{other_ids.length}"
+      end
+      resolved = self.class.resolve_parent_ids(other_ids)
+      self.class.tournament_results(id, *resolved, params)
+    end
+
+    def self.extract_format(params)
+      params.delete(:format) || params.delete("format") || :json
+    end
+    private_class_method :extract_format
+
+    def self.validate_results_format!(format)
+      return if %w[json html].include?(format)
+
+      raise ArgumentError, "tournament_results format must be :json or :html"
+    end
+    private_class_method :validate_results_format!
+
+    def self.resolve_tournament_results_ids(event_id, round_id, tournament_id)
+      resolved = resolve_parent_ids([event_id, round_id, tournament_id])
+      if resolved.any? { |value| value.nil? || value.to_s.empty? }
+        raise ArgumentError, "tournament_results requires event_id, round_id, and tournament_id"
+      end
+
+      resolved
+    end
+    private_class_method :resolve_tournament_results_ids
+
+    def self.fetch_tournament_results_html(resolved_ids, params, api_key)
+      event_id, round_id, tournament_id = resolved_ids
+      path = format(
+        "/events/%<event_id>s/rounds/%<round_id>s/tournaments/%<tournament_id>s.html",
+        event_id: event_id,
+        round_id: round_id,
+        tournament_id: tournament_id
+      )
+      APIOperations::Request.execute(method: :get, path: path, params: params, api_key: api_key)
+    end
+    private_class_method :fetch_tournament_results_html
+
+    def extract_nested_ids(params, args)
+      other_ids = args.dup
+      %i[round_id tournament_id].each_with_index do |key, idx|
+        param_key = key.to_s.sub(/_id$/, "").to_sym
+        other_ids[idx] = params.delete(param_key) if params.key?(param_key)
+      end
+      other_ids
+    end
+    private :extract_nested_ids
 
     # API returns 100 events per page
     def self.expected_page_size(params)
