@@ -26,6 +26,7 @@ Gem::Specification.new do |spec|
   # Runtime dependencies
   spec.add_dependency "faraday", "~> 2.0"
   spec.add_dependency "faraday-retry", "~> 2.0"
+  spec.add_dependency "nokogiri", "~> 1.13"
 
   # Development dependencies
   spec.add_development_dependency "dotenv", "~> 3.2"

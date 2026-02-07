@@ -1,0 +1,29 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+usage() {
+  cat <<'EOF'
+Usage: bin/strip-commit-trailers [refs]
+
+Rewrites commit messages to remove Amp-Thread-ID and Co-authored-by trailers.
+If no refs are provided, it rewrites all history.
+
+Examples:
+  bin/strip-commit-trailers
+  bin/strip-commit-trailers HEAD~5..HEAD
+  bin/strip-commit-trailers main
+EOF
+}
+
+if [[ "${1:-}" == "-h" || "${1:-}" == "--help" ]]; then
+  usage
+  exit 0
+fi
+
+refs=("$@")
+if [ ${#refs[@]} -eq 0 ]; then
+  refs=("--all")
+fi
+
+git filter-branch -f --msg-filter \
+  "sed -e '/^Amp-Thread-ID:/d' -e '/^Co-authored-by:/d'" -- "${refs[@]}"

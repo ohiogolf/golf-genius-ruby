@@ -30,7 +30,7 @@ success "Dependencies installed"
 
 # Step 2: Run RuboCop
 info "Running RuboCop..."
-if bundle exec rubocop --parallel; then
+if ./bin/lint; then
   success "RuboCop passed"
 else
   failure "RuboCop failed"
@@ -38,7 +38,7 @@ fi
 
 # Step 3: Run tests
 info "Running tests..."
-if bundle exec rake test; then
+if ./bin/test; then
   success "Tests passed"
 else
   failure "Tests failed"

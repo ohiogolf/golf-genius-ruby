@@ -41,6 +41,12 @@ module GolfGenius
     # @return [Boolean] When true, enables request/response logging to $stdout at :debug level (if logger not set)
     attr_accessor :debug
 
+    # @return [Integer] Number of retry attempts for network errors (default: 3)
+    attr_reader :retry_max
+
+    # @return [Float] Base retry interval in seconds (default: 0.5)
+    attr_reader :retry_interval
+
     # Tracks configuration version for connection cache invalidation
     # @api private
     attr_reader :version
@@ -50,6 +56,8 @@ module GolfGenius
       @base_url = default_base_url_from_env
       @open_timeout = 30
       @read_timeout = 80
+      @retry_max = 3
+      @retry_interval = 0.5
       @logger = nil
       @log_level = nil
       @debug = false
@@ -77,6 +85,20 @@ module GolfGenius
     # @api private
     def read_timeout=(value)
       @read_timeout = value
+      increment_version
+    end
+
+    # Increments version when retry settings change to invalidate connection cache
+    # @api private
+    def retry_max=(value)
+      @retry_max = value
+      increment_version
+    end
+
+    # Increments version when retry settings change to invalidate connection cache
+    # @api private
+    def retry_interval=(value)
+      @retry_interval = value
       increment_version
     end
 

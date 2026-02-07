@@ -400,6 +400,24 @@ module GolfGenius
       },
     ].freeze
 
+    TOURNAMENT_RESULTS = {
+      "event" => {
+        "title" => "Flight A - Gross",
+        "players" => [
+          {
+            "position" => "1",
+            "name" => "John Smith",
+            "score" => "-4",
+          },
+          {
+            "position" => "T2",
+            "name" => "Jane Doe",
+            "score" => "-3",
+          },
+        ],
+      },
+    }.freeze
+
     # Paginated events response (page 1 of 2)
     EVENTS_PAGE_1 = (1..25).map do |i|
       {

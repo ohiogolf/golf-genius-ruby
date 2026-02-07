@@ -30,23 +30,20 @@ module GolfGenius
         # @raise [APIError] For other error responses
         def execute(method:, path:, params: {}, api_key: nil)
           api_key ||= GolfGenius.api_key
-          unless api_key
+          unless api_key.is_a?(String) && !api_key.strip.empty?
             raise ConfigurationError,
-                  "No API key provided. Set GolfGenius.api_key or pass api_key parameter."
+                  "Invalid API key: must be a non-empty string. Set GolfGenius.api_key or pass api_key parameter."
           end
 
           # Build URL with API key in path
           url = "#{GolfGenius.base_url}/api_v2/#{api_key}#{path}"
-          query = nil
-          if method == :get && !params.empty?
-            query = params.map do |k, v|
-              "#{CGI.escape(k.to_s)}=#{CGI.escape(v.to_s)}"
-            end.join("&")
-          end
 
-          # Log URL never contains the real API key
+          # Log URL (never contains the real API key for security)
           log_url = "#{GolfGenius.base_url}/api_v2/[REDACTED-API-KEY]#{path}"
-          log_url = "#{log_url}?#{query}" if query
+          if method == :get && !params.empty?
+            # Show params in log without manually building query string (Faraday handles actual request)
+            log_url = "#{log_url}?#{params.map { |k, v| "#{k}=#{v}" }.join("&")}"
+          end
           Util.log(:info, "GolfGenius API Request: #{method.to_s.upcase} #{log_url}")
           Util.log(:debug, "Request body: #{params.to_json}") if %i[post put patch].include?(method) && !params.empty?
 
@@ -104,8 +101,8 @@ module GolfGenius
             conn.request :json
             conn.response :json, content_type: /\bjson$/
             conn.request :retry, {
-              max: 3,
-              interval: 0.5,
+              max: config.retry_max,
+              interval: config.retry_interval,
               interval_randomness: 0.5,
               backoff_factor: 2,
               exceptions: [Faraday::TimeoutError, Faraday::ConnectionFailed],

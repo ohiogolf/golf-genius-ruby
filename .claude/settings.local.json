@@ -1,0 +1,23 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(find:*)",
+      "Bash(wc -l:*)",
+      "Bash(xargs:*)",
+      "Bash(bundle exec rspec:*)",
+      "Bash(ruby:*)",
+      "Bash(bundle install:*)",
+      "Bash(bundle exec rake:*)",
+      "Bash(grep:*)",
+      "Bash(python3:*)",
+      "Bash(/tmp/test_scoreboard.rb:*)",
+      "Bash(bundle exec ruby:*)",
+      "Bash(ls:*)",
+      "Bash(bundle exec rubocop:*)",
+      "Bash(chezmoi source-path:*)",
+      "Bash(chezmoi verify:*)",
+      "Bash(chezmoi init:*)",
+      "Bash(chezmoi status:*)"
+    ]
+  }
+}

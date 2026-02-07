@@ -215,6 +215,20 @@ module GolfGenius
         @resource_class.tee_sheet(event_id, round_id, params.merge(api_key: @api_key))
       end
 
+      # Gets tournament results for a round tournament (Event-specific).
+      # Defaults to JSON; pass format: :html for HTML.
+      #
+      # @param event_id [String] The event ID
+      # @param round_id [String] The round ID
+      # @param tournament_id [String] The tournament ID
+      # @param params [Hash] Query parameters (e.g. format)
+      # @option params [Symbol, String] :format The response format (:json or :html, default: :json)
+      # @return [TournamentResults, String] Results payload (object for JSON, string for HTML)
+      def tournament_results(event_id, round_id, tournament_id, params = {})
+        ensure_event_resource!
+        @resource_class.tournament_results(event_id, round_id, tournament_id, params.merge(api_key: @api_key))
+      end
+
       # Ensures this proxy points at the Event resource class.
       #
       # @raise [NoMethodError] When the resource does not support event-specific methods

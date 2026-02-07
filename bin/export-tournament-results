@@ -1,0 +1,132 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# Export tournament results for a target year into tmp/tournament_results/.
+#
+# Usage:
+#   GOLF_GENIUS_ENV=production GOLF_GENIUS_RESULTS_YEAR=2026 bin/export-tournament-results
+#   GOLF_GENIUS_EVENT_ID=171716 bin/export-tournament-results
+#
+# Output paths:
+#   tmp/tournament_results/<event-name>-<event-id>/<round-id>/<tournament-name>-<tournament-id>.json
+#   tmp/tournament_results/<event-name>-<event-id>/<round-id>/<tournament-name>-<tournament-id>.html
+
+require "bundler/setup"
+
+# Load env files (all gitignored). Order: .env (base) → .env.#{GOLF_GENIUS_ENV} → .env.local (wins).
+# Default to production when GOLF_GENIUS_ENV is not set so credentials load automatically.
+# Set GOLF_GENIUS_ENV=staging or GOLF_GENIUS_ENV=production to load .env.staging / .env.production.
+root = File.expand_path("..", __dir__)
+require "dotenv"
+Dotenv.load(File.join(root, ".env"))
+env_specific = ENV["GOLF_GENIUS_ENV"].to_s.strip
+env_specific = "production" if env_specific.empty?
+env_file = File.join(root, ".env.#{env_specific}")
+Dotenv.overload(env_file) if File.file?(env_file)
+Dotenv.overload(File.join(root, ".env.local"))
+
+require "golf_genius"
+require "date"
+require "fileutils"
+require "json"
+
+# Apply env vars to gem config so .env* keys work without extra setup.
+GolfGenius.api_key = ENV.fetch("GOLF_GENIUS_API_KEY", nil) if ENV["GOLF_GENIUS_API_KEY"].to_s.strip != ""
+
+def event_in_year?(event, year)
+  event_date_values(event).any? { |value| date_matches_year?(value, year) }
+end
+
+def dasherize(value)
+  base = value.to_s.downcase.strip
+  base = base.gsub(/[^a-z0-9]+/, "-")
+  base = base.gsub(/\A-+|-+\z/, "")
+  base.empty? ? "untitled" : base
+end
+
+def write_results_files(base_dir, event:, round:, tournament:, payloads:)
+  json, html = payloads
+  event_dir = "#{dasherize(event.name)}-#{event.id}"
+  round_dir = round.id.to_s
+  tournament_base = "#{dasherize(tournament.name)}-#{tournament.id}"
+  dir = File.join(base_dir, event_dir, round_dir)
+  FileUtils.mkdir_p(dir)
+  json_path = File.join(dir, "#{tournament_base}.json")
+  html_path = File.join(dir, "#{tournament_base}.html")
+  File.write(json_path, json)
+  File.write(html_path, html)
+  [json_path, html_path]
+end
+
+def fetch_and_write_results(event, base_dir)
+  event.rounds.each do |round|
+    write_round_results(event, round, base_dir)
+  end
+end
+
+def event_date_values(event)
+  [event_date_value(event, :date), event_date_value(event, :start_date), event_date_value(event, :end_date)].compact
+end
+
+def event_date_value(event, attr)
+  return unless event.respond_to?(attr)
+
+  event.public_send(attr)
+end
+
+def date_matches_year?(value, year)
+  return false if value.to_s.strip.empty?
+
+  parsed = value.respond_to?(:year) ? value : Date.parse(value.to_s)
+  parsed.year == year
+rescue Date::Error
+  false
+end
+
+def fetch_results(event, round, tournament)
+  event_id = event.id
+  round_id = round.id
+  tournament_id = tournament.id
+  json_results = GolfGenius::Event.tournament_results(event_id, round_id, tournament_id, format: :json)
+  html_results = GolfGenius::Event.tournament_results(event_id, round_id, tournament_id, format: :html)
+  [json_results, html_results]
+end
+
+def write_round_results(event, round, base_dir)
+  round.tournaments.each do |tournament|
+    json_results, html_results = fetch_results(event, round, tournament)
+    json_payload = JSON.pretty_generate(json_results.to_h(raw: true))
+    json_path, html_path = write_results_files(
+      base_dir,
+      event: event,
+      round: round,
+      tournament: tournament,
+      payloads: [json_payload, html_results]
+    )
+
+    puts "Wrote #{json_path}"
+    puts "Wrote #{html_path}"
+  end
+end
+
+target_event_id = ENV["GOLF_GENIUS_EVENT_ID"].to_s.strip
+target_year = ENV.fetch("GOLF_GENIUS_RESULTS_YEAR", Date.today.year).to_i
+base_dir = File.expand_path("../tmp/tournament_results", __dir__)
+
+if target_event_id.empty?
+  puts "Fetching events for #{target_year}..."
+
+  events = GolfGenius::Event.list
+  filtered = events.select { |event| event_in_year?(event, target_year) }
+  puts "Found #{filtered.length} events from #{target_year}."
+else
+  puts "Fetching event #{target_event_id}..."
+  filtered = [GolfGenius::Event.fetch(target_event_id)]
+end
+
+filtered.each do |event|
+  puts "Processing event #{event.id} #{event.name.inspect}"
+  fetch_and_write_results(event, base_dir)
+end
+
+puts "Done."

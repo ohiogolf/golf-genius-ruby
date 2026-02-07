@@ -18,16 +18,32 @@ module GolfGenius
     def setup_test_configuration
       GolfGenius.reset_configuration!
       GolfGenius.api_key = TEST_API_KEY
+      GolfGenius.configuration.retry_max = 0
+      GolfGenius.configuration.retry_interval = 0
     end
 
-    def stub_api_request(method:, path:, response_body:, status: 200, query: nil)
+    def stub_api_request(**options)
+      method = options.fetch(:method)
+      path = options.fetch(:path)
+      response_body = options.fetch(:response_body)
+      status = options.fetch(:status, 200)
+      query = options[:query]
+      headers = options[:headers]
+
       url = "#{TEST_BASE_URL}/api_v2/#{TEST_API_KEY}#{path}"
       stub = stub_request(method, url)
       stub = stub.with(query: query) if query
+      response_headers = { "Content-Type" => "application/json" }
+      response_headers = response_headers.merge(headers) if headers
+      body = if response_headers["Content-Type"].to_s.match?(/json/i)
+               response_body.to_json
+             else
+               response_body.to_s
+             end
       stub.to_return(
         status: status,
-        body: response_body.to_json,
-        headers: { "Content-Type" => "application/json" }
+        body: body,
+        headers: response_headers
       )
     end
 
