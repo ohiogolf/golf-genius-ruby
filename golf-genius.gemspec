@@ -28,7 +28,7 @@ Gem::Specification.new do |spec|
   spec.add_dependency "faraday-retry", "~> 2.0"
 
   # Development dependencies
-  spec.add_development_dependency "dotenv", "~> 2.0"
+  spec.add_development_dependency "dotenv", "~> 3.2"
   spec.add_development_dependency "irb", "~> 1.0"
   spec.add_development_dependency "minitest", "~> 5.0"
   spec.add_development_dependency "rake", "~> 13.0"
