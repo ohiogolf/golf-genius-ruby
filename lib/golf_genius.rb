@@ -26,6 +26,7 @@ require "golf_genius/resources/division"
 require "golf_genius/resources/tee_sheet_player"
 require "golf_genius/resources/tee_sheet_group"
 require "golf_genius/resources/event"
+require "golf_genius/scoreboard"
 
 # Golf Genius Ruby API client.
 # A Ruby library for accessing the Golf Genius API v2.

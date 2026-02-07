@@ -55,10 +55,11 @@ module GolfGenius
           resolved_path = format(path, parent_id: parent_id)
 
           fetch_page = lambda do |page_params|
+            normalized_params = Util.normalize_request_params(page_params)
             response = Request.execute(
               method: :get,
               path: resolved_path,
-              params: page_params,
+              params: normalized_params,
               api_key: api_key
             )
             unless returns == :array
@@ -157,10 +158,11 @@ module GolfGenius
           resolved_path = format(path, path_values)
 
           fetch_page = lambda do |page_params|
+            normalized_params = Util.normalize_request_params(page_params)
             response = Request.execute(
               method: :get,
               path: resolved_path,
-              params: page_params,
+              params: normalized_params,
               api_key: api_key
             )
             unless returns == :array

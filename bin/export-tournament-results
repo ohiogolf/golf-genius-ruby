@@ -5,6 +5,7 @@
 #
 # Usage:
 #   GOLF_GENIUS_ENV=production GOLF_GENIUS_RESULTS_YEAR=2026 bin/export-tournament-results
+#   GOLF_GENIUS_EVENT_ID=171716 bin/export-tournament-results
 #
 # Output paths:
 #   tmp/tournament_results/<event-name>-<event-id>/<round-id>/<tournament-name>-<tournament-id>.json
@@ -13,15 +14,15 @@
 require "bundler/setup"
 
 # Load env files (all gitignored). Order: .env (base) → .env.#{GOLF_GENIUS_ENV} → .env.local (wins).
+# Default to production when GOLF_GENIUS_ENV is not set so credentials load automatically.
 # Set GOLF_GENIUS_ENV=staging or GOLF_GENIUS_ENV=production to load .env.staging / .env.production.
 root = File.expand_path("..", __dir__)
 require "dotenv"
 Dotenv.load(File.join(root, ".env"))
 env_specific = ENV["GOLF_GENIUS_ENV"].to_s.strip
-unless env_specific.empty?
-  env_file = File.join(root, ".env.#{env_specific}")
-  Dotenv.overload(env_file) if File.file?(env_file)
-end
+env_specific = "production" if env_specific.empty?
+env_file = File.join(root, ".env.#{env_specific}")
+Dotenv.overload(env_file) if File.file?(env_file)
 Dotenv.overload(File.join(root, ".env.local"))
 
 require "golf_genius"
@@ -108,13 +109,20 @@ def write_round_results(event, round, base_dir)
   end
 end
 
+target_event_id = ENV["GOLF_GENIUS_EVENT_ID"].to_s.strip
 target_year = ENV.fetch("GOLF_GENIUS_RESULTS_YEAR", Date.today.year).to_i
 base_dir = File.expand_path("../tmp/tournament_results", __dir__)
-puts "Fetching events for #{target_year}..."
 
-events = GolfGenius::Event.list
-filtered = events.select { |event| event_in_year?(event, target_year) }
-puts "Found #{filtered.length} events from #{target_year}."
+if target_event_id.empty?
+  puts "Fetching events for #{target_year}..."
+
+  events = GolfGenius::Event.list
+  filtered = events.select { |event| event_in_year?(event, target_year) }
+  puts "Found #{filtered.length} events from #{target_year}."
+else
+  puts "Fetching event #{target_event_id}..."
+  filtered = [GolfGenius::Event.fetch(target_event_id)]
+end
 
 filtered.each do |event|
   puts "Processing event #{event.id} #{event.name.inspect}"

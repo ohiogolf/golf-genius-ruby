@@ -950,4 +950,72 @@ class EventTest < Minitest::Test
     assert_kind_of Array, all_events
     assert_equal 30, all_events.length
   end
+
+  def test_latest_round_returns_round_with_highest_index
+    rounds_response = [
+      { "round" => { "id" => "round_1", "index" => 1, "date" => "2026-03-15" } },
+      { "round" => { "id" => "round_2", "index" => 2, "date" => "2026-03-16" } },
+      { "round" => { "id" => "round_3", "index" => 3, "date" => "2026-03-17" } },
+    ]
+
+    stub_api_request(
+      method: :get,
+      path: "/events/event_123/rounds",
+      response_body: rounds_response,
+      query: { "page" => "1" }
+    )
+    stub_api_request(
+      method: :get,
+      path: "/events/event_123/rounds",
+      response_body: [],
+      query: { "page" => "2" }
+    )
+
+    event = GolfGenius::Event.construct_from({ "id" => "event_123" })
+    latest = event.latest_round
+
+    assert_kind_of GolfGenius::Round, latest
+    assert_equal "round_3", latest.id
+    assert_equal 3, latest[:index]
+  end
+
+  def test_latest_round_sorts_by_date_when_no_index
+    rounds_response = [
+      { "round" => { "id" => "round_1", "date" => "2026-03-15" } },
+      { "round" => { "id" => "round_2", "date" => "2026-03-17" } },
+      { "round" => { "id" => "round_3", "date" => "2026-03-16" } },
+    ]
+
+    stub_api_request(
+      method: :get,
+      path: "/events/event_123/rounds",
+      response_body: rounds_response,
+      query: { "page" => "1" }
+    )
+    stub_api_request(
+      method: :get,
+      path: "/events/event_123/rounds",
+      response_body: [],
+      query: { "page" => "2" }
+    )
+
+    event = GolfGenius::Event.construct_from({ "id" => "event_123" })
+    latest = event.latest_round
+
+    assert_equal "round_2", latest.id
+  end
+
+  def test_latest_round_returns_nil_when_no_rounds
+    stub_api_request(
+      method: :get,
+      path: "/events/event_123/rounds",
+      response_body: [],
+      query: { "page" => "1" }
+    )
+
+    event = GolfGenius::Event.construct_from({ "id" => "event_123" })
+    latest = event.latest_round
+
+    assert_nil latest
+  end
 end
