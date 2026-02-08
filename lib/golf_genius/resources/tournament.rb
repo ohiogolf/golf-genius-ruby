@@ -77,6 +77,24 @@ module GolfGenius
       Event.tournament_results(event_id, round_id, id, params)
     end
 
+    # Checks if this tournament is non-scoring (pairings, scorecard-printing, etc.).
+    #
+    # These tournaments are used for administrative purposes and should typically
+    # be excluded from scoreboards and results displays.
+    #
+    # @return [Boolean] true if non-scoring
+    #
+    def non_scoring?
+      # Check if API provides a type field that explicitly marks these
+      # (TODO: verify if this exists in the API response)
+
+      # For now, use name-based heuristics
+      name = self[:name] || ""
+      name_lower = name.to_s.downcase
+
+      name_lower.include?("pairings") || name_lower.include?("scorecard")
+    end
+
     private
 
     def validate_parent_ids!(keys, label)
