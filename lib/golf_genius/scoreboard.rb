@@ -15,6 +15,8 @@ require_relative "scoreboard/json_parser"
 require_relative "scoreboard/data_merger"
 require_relative "scoreboard/column_decomposer"
 require_relative "scoreboard/row_decomposer"
+require_relative "scoreboard/row"
+require_relative "scoreboard/tournament"
 
 module GolfGenius
   # Parses Golf Genius tournament results into structured, sortable leaderboards.
