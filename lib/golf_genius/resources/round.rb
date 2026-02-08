@@ -11,6 +11,27 @@ module GolfGenius
   #   round.tee_sheet    # => [TeeSheetGroup, ...] when round has event_id (from event.rounds)
   #   round.tournaments  # => [Tournament, ...] when round has event_id (from event.rounds)
   class Round < GolfGeniusObject
+    UNSTARTED = "not started"
+    IN_PROGRESS = "in progress"
+    COMPLETED = "completed"
+
+    # Status helpers for round state.
+    def unstarted?
+      status.to_s == UNSTARTED
+    end
+
+    def playing?
+      status.to_s == IN_PROGRESS
+    end
+
+    def completed?
+      status.to_s == COMPLETED
+    end
+
+    def started?
+      playing? || completed?
+    end
+
     # Returns the cached event for this round, if loaded.
     #
     # @return [Event, nil]
