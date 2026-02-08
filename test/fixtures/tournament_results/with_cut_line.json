@@ -1,0 +1,27 @@
+{
+  "name": "Test Tournament",
+  "adjusted": false,
+  "rounds": [],
+  "scopes": [
+    {
+      "id": 1,
+      "aggregates": [
+        {
+          "id": 2001,
+          "member_ids_str": ["201"],
+          "rounds": []
+        },
+        {
+          "id": 2002,
+          "member_ids_str": ["202"],
+          "rounds": []
+        },
+        {
+          "id": 2003,
+          "member_ids_str": ["203"],
+          "rounds": []
+        }
+      ]
+    }
+  ]
+}

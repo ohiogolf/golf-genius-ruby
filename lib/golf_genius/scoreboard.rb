@@ -10,6 +10,8 @@ require_relative "scoreboard/affiliation"
 require_relative "scoreboard/affiliation_parser"
 require_relative "scoreboard/name"
 require_relative "scoreboard/name_parser"
+require_relative "scoreboard/html_parser"
+require_relative "scoreboard/json_parser"
 
 module GolfGenius
   # Parses Golf Genius tournament results into structured, sortable leaderboards.
