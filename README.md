@@ -78,6 +78,42 @@ tournament.results(format: :html)
 # => "<div class='table-responsive'>..."
 ```
 
+### Scoreboard (Live Results)
+
+```ruby
+# Get live leaderboard for latest round
+scoreboard = GolfGenius::Scoreboard.new(event: "522157")
+# => #<GolfGenius::Scoreboard ...>
+
+# Access tournaments and players
+scoreboard.tournaments.first.name
+# => "Championship Flight"
+scoreboard.tournaments.first.rows.first.position
+# => "T2"
+
+# Sort alphabetically for alpha board
+alpha_board = scoreboard.sort(:last_name)
+
+# Competing players first, then alphabetical
+sorted = scoreboard.sort(:competing, :last_name)
+sorted.tournaments.first.rows.each do |row|
+  puts "#{row.last_name}, #{row.first_name} - #{row.affiliation_city}, #{row.affiliation_state}"
+end
+
+# Filter players
+tournament = scoreboard.tournaments.first
+tournament.rows.select(&:eliminated?)
+# => [#<Row position="CUT" ...>, ...]
+
+# Check current round status
+current_round = tournament.rounds.current
+# => #<Round name="R2" playing?=true>
+current_round.playing?
+# => true
+```
+
+See [docs/scoreboard-usage-guide.md](docs/scoreboard-usage-guide.md) for detailed examples.
+
 ### Event Filters
 
 ```ruby

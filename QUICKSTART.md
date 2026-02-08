@@ -59,6 +59,29 @@ GolfGenius::Event.courses("event_id")
 GolfGenius::Event.tournaments("event_id", "round_id")
 ```
 
+**Scoreboard (live results)**
+
+```ruby
+scoreboard = GolfGenius::Scoreboard.new(event: "522157")
+scoreboard.tournaments.first.name          # => "Championship Flight"
+scoreboard.tournaments.first.rows.first.position   # => "T2"
+
+# Sort alphabetically
+alpha = scoreboard.sort(:last_name)
+alpha.tournaments.first.rows.first.last_name   # => "Anderson"
+
+# Player details
+row = scoreboard.tournaments.first.rows.first
+row.first_name          # => "John"
+row.last_name           # => "Doe"
+row.affiliation_city    # => "Columbus"
+row.affiliation_state   # => "OH"
+row.eliminated?         # => false
+
+# Current round
+scoreboard.tournaments.first.rounds.current.playing?  # => true
+```
+
 **Pagination**
 
 ```ruby
