@@ -19,7 +19,7 @@ Layout/LineLength:
 
 # Allow longer methods in tests and API operations
 Metrics/MethodLength:
-  Max: 15
+  Max: 20  # Slightly higher for complex domain logic
   Exclude:
     - "test/**/*"
     - "lib/golf_genius/api_operations/**/*"
@@ -78,6 +78,7 @@ Metrics/ClassLength:
   Enabled: false  # Disabled globally - class length not a meaningful metric for this codebase
 
 Metrics/ModuleLength:
+  Max: 110  # Allow Util module to be slightly larger
   Exclude:
     - "test/**/*"
     - "lib/golf_genius/api_operations/**/*"

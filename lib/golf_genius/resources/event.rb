@@ -294,7 +294,8 @@ module GolfGenius
         round_id: round_id,
         tournament_id: tournament_id
       )
-      APIOperations::Request.execute(method: :get, path: path, params: params, api_key: api_key)
+      normalized_params = Util.normalize_request_params(params)
+      APIOperations::Request.execute(method: :get, path: path, params: normalized_params, api_key: api_key)
     end
     private_class_method :fetch_tournament_results_html
 
