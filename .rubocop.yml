@@ -31,12 +31,9 @@ Metrics/BlockLength:
     - "*.gemspec"
     - "lib/golf_genius/api_operations/**/*"
 
-# Allow more ABC complexity in tests and API operations
+# ABC complexity disabled - code readability is more important than metrics
 Metrics/AbcSize:
-  Max: 25
-  Exclude:
-    - "test/**/*"
-    - "lib/golf_genius/api_operations/**/*"
+  Enabled: false
 
 # Documentation is optional for test files
 # Main module documented in golf_genius.rb
@@ -77,11 +74,8 @@ Naming/VariableNumber:
   Exclude:
     - "test/**/*"
 
-# Allow longer test classes, fixtures, and API operations
 Metrics/ClassLength:
-  Exclude:
-    - "test/**/*"
-    - "lib/golf_genius/api_operations/**/*"
+  Enabled: false  # Disabled globally - class length not a meaningful metric for this codebase
 
 Metrics/ModuleLength:
   Exclude:

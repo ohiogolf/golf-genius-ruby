@@ -51,7 +51,6 @@ module GolfGenius
   #   end
   #
   # @see https://www.golfgenius.com/api/v2/docs Golf Genius API Documentation
-  # rubocop:disable Metrics/ClassLength
   class Event < Resource
     # API endpoint path for events
     RESOURCE_PATH = "/events"
@@ -380,5 +379,4 @@ module GolfGenius
       Directory.construct_from(attrs, api_key: api_key)
     end
   end
-  # rubocop:enable Metrics/ClassLength
 end

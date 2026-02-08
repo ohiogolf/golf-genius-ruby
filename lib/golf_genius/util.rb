@@ -175,7 +175,6 @@ module GolfGenius
   #
   # @example Converting to hash
   #   obj.to_h # => {id: "123", name: "Test"}
-  # rubocop:disable Metrics/ClassLength
   class GolfGeniusObject
     # @return [Hash] The raw attributes hash
     attr_reader :attributes
@@ -399,5 +398,4 @@ module GolfGenius
       end
     end
   end
-  # rubocop:enable Metrics/ClassLength
 end
