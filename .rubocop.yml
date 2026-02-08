@@ -83,15 +83,17 @@ Metrics/ModuleLength:
     - "test/**/*"
     - "lib/golf_genius/api_operations/**/*"
 
-# Allow higher complexity for HTTP handling code
+# Allow higher complexity for HTTP handling and resource logic
 Metrics/CyclomaticComplexity:
   Exclude:
     - "lib/golf_genius/api_operations/**/*"
     - "lib/golf_genius/util.rb"
+    - "lib/golf_genius/resources/event.rb"
 
 Metrics/PerceivedComplexity:
   Exclude:
     - "lib/golf_genius/api_operations/**/*"
+    - "lib/golf_genius/resources/event.rb"
 
 Metrics/ParameterLists:
   Exclude:

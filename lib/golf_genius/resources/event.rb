@@ -339,6 +339,28 @@ module GolfGenius
       normalize_directories(raw)
     end
 
+    # Returns the latest round for this event (highest index, or most recent date).
+    #
+    # @param params [Hash] Optional request params (e.g. api_key)
+    # @return [Round, nil] The latest round, or nil if no rounds exist
+    #
+    # @example
+    #   event = GolfGenius::Event.fetch("522157")
+    #   latest = event.latest_round
+    #
+    def latest_round(params = {})
+      params = params.dup
+      params[:api_key] ||= (respond_to?(:api_key, true) ? send(:api_key) : nil)
+      rounds_list = self.class.rounds(id, params)
+      return nil if rounds_list.nil? || rounds_list.empty?
+
+      # Sort by index (primary), then date (fallback)
+      # Use [] accessor since these are GolfGeniusObject attributes
+      rounds_list.max_by do |round|
+        [round[:index] || round["index"] || 0, round[:date] || round["date"] || ""]
+      end
+    end
+
     private
 
     # Returns a typed association for an embedded attribute.
