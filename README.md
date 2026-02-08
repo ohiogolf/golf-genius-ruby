@@ -71,7 +71,48 @@ event.rounds
 # => [#<GolfGenius::Round id="round_001" ...>, ...]
 event.rounds.first.tournaments
 # => [#<GolfGenius::Tournament id="tourn_001" ...>, ...]
+tournament = event.rounds.first.tournaments.first
+tournament.results
+# => #<GolfGenius::TournamentResults title="Flight A - Gross" ...>   # default format: :json
+tournament.results(format: :html)
+# => "<div class='table-responsive'>..."
 ```
+
+### Scoreboard (Live Results)
+
+```ruby
+# Get live leaderboard for latest round
+scoreboard = GolfGenius::Scoreboard.new(event: "522157")
+# => #<GolfGenius::Scoreboard ...>
+
+# Access tournaments and players
+scoreboard.tournaments.first.name
+# => "Championship Flight"
+scoreboard.tournaments.first.rows.first.position
+# => "T2"
+
+# Sort alphabetically for alpha board
+alpha_board = scoreboard.sort(:last_name)
+
+# Competing players first, then alphabetical
+sorted = scoreboard.sort(:competing, :last_name)
+sorted.tournaments.first.rows.each do |row|
+  puts "#{row.last_name}, #{row.first_name} - #{row.affiliation_city}, #{row.affiliation_state}"
+end
+
+# Filter players
+tournament = scoreboard.tournaments.first
+tournament.rows.select(&:eliminated?)
+# => [#<Row position="CUT" ...>, ...]
+
+# Check current round status
+current_round = tournament.rounds.current
+# => #<Round name="R2" playing?=true>
+current_round.playing?
+# => true
+```
+
+See [docs/scoreboard-usage-guide.md](docs/scoreboard-usage-guide.md) for detailed examples.
 
 ### Event Filters
 
@@ -158,6 +199,7 @@ Common exceptions include:
 | **Course** | A course and its tees used for the event (name, tees, pars, ratings). Courses are defined at the event level only. |
 | **Division** | A grouping for play within an event (e.g. flight, tee time block). External divisions from the API; has name, status, position, tee_times. |
 | **Tournament** | In the API, a competition/flight/game within a single round (e.g. “Individual Gross”, “Net Flight A”), not the whole event. One round can have multiple tournaments. |
+| **TournamentResults** | Raw results payload for a tournament within a round. Returned by `tournament.results` or `event.tournament_results`. |
 | **Roster** | The list of players/members in an event. Each item is a **RosterMember**. |
 
 ---
@@ -358,6 +400,21 @@ round.tee_sheet
 # ]
 ```
 
+**Tournament results for a round tournament**
+
+```ruby
+tournament = event.rounds.first.tournaments.first
+tournament.results
+# => #<GolfGenius::TournamentResults title="Flight A - Gross" ...>   # default format: :json
+event.tournament_results(round.id, tournament.id)
+# => #<GolfGenius::TournamentResults title="Flight A - Gross" ...>   # default format: :json
+
+tournament.results(format: :html)
+# => "<div class='table-responsive'>..."
+event.tournament_results(round.id, tournament.id, format: :html)
+# => "<div class='table-responsive'>..."
+```
+
 ---
 
 ### Player
@@ -447,7 +504,8 @@ For console usage, create `.env.staging` or `.env.production` with `GOLF_GENIUS_
 ```bash
 bundle install
 bin/console   # then reload! after editing lib/
-bundle exec rake test
+bin/lint
+bin/test
 ```
 
 - [QUICKSTART.md](QUICKSTART.md) – example-focused guide

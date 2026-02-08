@@ -11,6 +11,53 @@ module GolfGenius
   #   round.tee_sheet    # => [TeeSheetGroup, ...] when round has event_id (from event.rounds)
   #   round.tournaments  # => [Tournament, ...] when round has event_id (from event.rounds)
   class Round < GolfGeniusObject
+    UNSTARTED = "not started"
+    IN_PROGRESS = "in progress"
+    COMPLETED = "completed"
+
+    # Status helpers for round state.
+    def unstarted?
+      status.to_s == UNSTARTED
+    end
+
+    def playing?
+      status.to_s == IN_PROGRESS
+    end
+
+    def completed?
+      status.to_s == COMPLETED
+    end
+
+    def started?
+      playing? || completed?
+    end
+
+    # Returns the cached event for this round, if loaded.
+    #
+    # @return [Event, nil]
+    def event
+      @event || fetch_event
+    end
+
+    # Lazily fetches and caches the event for this round.
+    # Requires event_id (set when round comes from event.rounds).
+    #
+    # @param params [Hash] Optional request params (e.g. api_key)
+    # @return [Event]
+    # @raise [ArgumentError] if event_id is missing
+    def fetch_event(params = {})
+      return @event if @event
+
+      event_id = self[:event_id] || self["event_id"]
+      if event_id.nil? || event_id.to_s.empty?
+        raise ArgumentError, "Round has no event_id (load via event.rounds to get it)"
+      end
+
+      params = params.dup
+      params[:api_key] ||= (respond_to?(:api_key, true) ? send(:api_key) : nil)
+      @event = Event.fetch(event_id, params)
+    end
+
     # Returns tournaments for this round. Requires event_id (set when round comes from event.rounds).
     #
     # @param params [Hash] Optional request params (e.g. api_key)
@@ -24,7 +71,9 @@ module GolfGenius
 
       params = params.dup
       params[:api_key] ||= (respond_to?(:api_key, true) ? send(:api_key) : nil)
-      Event.tournaments(event_id, id, params)
+      result = Event.tournaments(event_id, id, params)
+      @event ||= Event.construct_from({ "id" => event_id }, api_key: params[:api_key])
+      Event.send(:inject_parent_object_into, result, @event, :event)
     end
 
     # Returns tee sheet and scores for this round. Requires event_id (set when round comes from event.rounds).
@@ -40,7 +89,9 @@ module GolfGenius
 
       params = params.dup
       params[:api_key] ||= (respond_to?(:api_key, true) ? send(:api_key) : nil)
-      Event.tee_sheet(event_id, id, params)
+      result = Event.tee_sheet(event_id, id, params)
+      @event ||= Event.construct_from({ "id" => event_id }, api_key: params[:api_key])
+      Event.send(:inject_parent_object_into, result, @event, :event)
     end
   end
 end

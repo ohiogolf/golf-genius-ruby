@@ -92,17 +92,41 @@ module GolfGenius
       end
 
       # Normalizes request params so resource objects and friendly keys work.
-      # - Accepts :directory / :directory_id, :season / :season_id, :category / :category_id (all map to API key)
-      # - API expects query param names "directory", "season", "category" (per docs URL template)
-      # - Replaces GolfGeniusObject values with their .id (so you can pass a Directory, etc.)
+      # - Accepts both :resource and :resource_id forms (e.g., :event or :event_id)
+      # - Both forms map to the same API parameter name (e.g., "event")
+      # - Extracts .id from GolfGeniusObject values (so you can pass objects directly)
       #
-      # @param params [Hash] Raw params (e.g. directory: dir_obj, season: season_obj)
-      # @return [Hash] Params ready for the API (directory: "123", season: "456")
+      # Supported parameter pairs:
+      # - directory / directory_id → directory
+      # - season / season_id → season
+      # - category / category_id → category
+      # - event / event_id → event
+      # - round / round_id → round
+      # - tournament / tournament_id → tournament
+      # - player / player_id → player
+      # - course / course_id → course
+      # - division / division_id → division
+      # - handicap / handicap_id → handicap
+      # - roster_member / roster_member_id → roster_member
+      # - tee / tee_id → tee
+      #
+      # @param params [Hash] Raw params (e.g. event: event_obj, round_id: "123")
+      # @return [Hash] Params ready for the API (event: "event_123", round: "123")
       def normalize_request_params(params)
+        # Map both :resource and :resource_id to the API param name
         to_api_key = {
           directory: :directory, directory_id: :directory,
           season: :season, season_id: :season,
           category: :category, category_id: :category,
+          event: :event, event_id: :event,
+          round: :round, round_id: :round,
+          tournament: :tournament, tournament_id: :tournament,
+          player: :player, player_id: :player,
+          course: :course, course_id: :course,
+          division: :division, division_id: :division,
+          handicap: :handicap, handicap_id: :handicap,
+          roster_member: :roster_member, roster_member_id: :roster_member,
+          tee: :tee, tee_id: :tee,
         }
 
         params.each_with_object({}) do |(key, value), out|
@@ -120,7 +144,8 @@ module GolfGenius
         return value unless value.is_a?(String) && !value.strip.empty?
 
         Time.parse(value)
-      rescue ArgumentError
+      rescue ArgumentError => e
+        log(:warn, "Failed to parse date/time value '#{value}': #{e.message}")
         value
       end
 
@@ -175,7 +200,6 @@ module GolfGenius
   #
   # @example Converting to hash
   #   obj.to_h # => {id: "123", name: "Test"}
-  # rubocop:disable Metrics/ClassLength
   class GolfGeniusObject
     # @return [Hash] The raw attributes hash
     attr_reader :attributes
@@ -399,5 +423,4 @@ module GolfGenius
       end
     end
   end
-  # rubocop:enable Metrics/ClassLength
 end

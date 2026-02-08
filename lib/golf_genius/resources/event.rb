@@ -51,7 +51,6 @@ module GolfGenius
   #   end
   #
   # @see https://www.golfgenius.com/api/v2/docs Golf Genius API Documentation
-  # rubocop:disable Metrics/ClassLength
   class Event < Resource
     # API endpoint path for events
     RESOURCE_PATH = "/events"
@@ -171,6 +170,7 @@ module GolfGenius
     nested_resource :rounds, path: "/events/%<parent_id>s/rounds", item_key: "round",
                              resource_class: Round,
                              inject_parent: { event_id: :parent_id },
+                             inject_parent_object: :event,
                              sort_by: :index,
                              paginated: true,
                              page_size: 100
@@ -193,6 +193,8 @@ module GolfGenius
     deep_nested_resource :tournaments,
                          path: "/events/%<event_id>s/rounds/%<round_id>s/tournaments",
                          parent_ids: %i[event_id round_id],
+                         inject_parent: true,
+                         inject_parent_object: :event,
                          item_key: "event",
                          resource_class: Tournament,
                          paginated: true,
@@ -203,10 +205,109 @@ module GolfGenius
     deep_nested_resource :tee_sheet,
                          path: "/events/%<event_id>s/rounds/%<round_id>s/tee_sheet",
                          parent_ids: %i[event_id round_id],
+                         inject_parent: true,
+                         inject_parent_object: :event,
                          item_key: "pairing_group",
                          resource_class: TeeSheetGroup,
                          paginated: true,
                          page_size: 100
+
+    # Deeply nested resource: Tournament results for a specific tournament and round (JSON only).
+    # Use .tournament_results with format: :json (default).
+    deep_nested_resource :tournament_results_json,
+                         path: "/events/%<event_id>s/rounds/%<round_id>s/tournaments/%<tournament_id>s.json",
+                         parent_ids: %i[event_id round_id tournament_id],
+                         inject_parent: true,
+                         inject_parent_object: :event,
+                         returns: :object,
+                         item_key: "event",
+                         resource_class: TournamentResults
+
+    # Returns tournament results for a specific tournament and round.
+    # Defaults to JSON; pass format: :html for HTML.
+    #
+    # @param event_id [String, Integer] The event ID
+    # @param round_id [String, Integer] The round ID
+    # @param tournament_id [String, Integer] The tournament ID
+    # @param params [Hash] Optional request params (e.g. api_key, format)
+    # @option params [Symbol, String] :format The response format (:json or :html, default: :json)
+    # @return [TournamentResults, String] Results payload (object for JSON, string for HTML)
+    # @raise [ArgumentError] if any required id is missing
+    def self.tournament_results(event_id, round_id, tournament_id, params = {})
+      params = params.dup
+      format = extract_format(params).to_s.downcase
+      api_key = params.delete(:api_key)
+      resolved_ids = resolve_tournament_results_ids(event_id, round_id, tournament_id)
+      validate_results_format!(format)
+      return tournament_results_json(*resolved_ids, params.merge(api_key: api_key)) if format == "json"
+
+      fetch_tournament_results_html(resolved_ids, params, api_key)
+    end
+
+    # Instance method: event.tournament_results(round_id_or_round, tournament_id_or_tournament, params = {})
+    # or event.tournament_results(round: round_obj, tournament: tournament_obj).
+    #
+    # @param params [Hash] Optional request params (e.g. api_key, format)
+    # @option params [Symbol, String] :format The response format (:json or :html, default: :json)
+    # @return [TournamentResults, String] Results payload (object for JSON, string for HTML)
+    # @raise [ArgumentError] if required ids are missing
+    def tournament_results(*args)
+      params = args.last.is_a?(Hash) ? args.pop.dup : {}
+      params[:api_key] ||= (respond_to?(:api_key, true) ? send(:api_key) : nil)
+      other_ids = extract_nested_ids(params, args)
+      if other_ids.length < 2
+        raise ArgumentError,
+              "tournament_results requires 2 argument(s) " \
+              "(round_id, tournament_id), got #{other_ids.length}"
+      end
+      resolved = self.class.resolve_parent_ids(other_ids)
+      self.class.tournament_results(id, *resolved, params)
+    end
+
+    def self.extract_format(params)
+      params.delete(:format) || params.delete("format") || :json
+    end
+    private_class_method :extract_format
+
+    def self.validate_results_format!(format)
+      return if %w[json html].include?(format)
+
+      raise ArgumentError, "tournament_results format must be :json or :html"
+    end
+    private_class_method :validate_results_format!
+
+    def self.resolve_tournament_results_ids(event_id, round_id, tournament_id)
+      resolved = resolve_parent_ids([event_id, round_id, tournament_id])
+      if resolved.any? { |value| value.nil? || value.to_s.empty? }
+        raise ArgumentError, "tournament_results requires event_id, round_id, and tournament_id"
+      end
+
+      resolved
+    end
+    private_class_method :resolve_tournament_results_ids
+
+    def self.fetch_tournament_results_html(resolved_ids, params, api_key)
+      event_id, round_id, tournament_id = resolved_ids
+      path = format(
+        "/events/%<event_id>s/rounds/%<round_id>s/tournaments/%<tournament_id>s.html",
+        event_id: event_id,
+        round_id: round_id,
+        tournament_id: tournament_id
+      )
+      normalized_params = Util.normalize_request_params(params)
+      APIOperations::Request.execute(method: :get, path: path, params: normalized_params, api_key: api_key)
+    end
+    private_class_method :fetch_tournament_results_html
+
+    def extract_nested_ids(params, args)
+      other_ids = args.dup
+      %i[round_id tournament_id].each_with_index do |key, idx|
+        param_key = key.to_s.sub(/_id$/, "").to_sym
+        other_ids[idx] = params.delete(param_key) if params.key?(param_key)
+      end
+      other_ids
+    end
+    private :extract_nested_ids
 
     # API returns 100 events per page
     def self.expected_page_size(params)
@@ -236,6 +337,28 @@ module GolfGenius
       return [] if raw.nil?
 
       normalize_directories(raw)
+    end
+
+    # Returns the latest round for this event (highest index, or most recent date).
+    #
+    # @param params [Hash] Optional request params (e.g. api_key)
+    # @return [Round, nil] The latest round, or nil if no rounds exist
+    #
+    # @example
+    #   event = GolfGenius::Event.fetch("522157")
+    #   latest = event.latest_round
+    #
+    def latest_round(params = {})
+      params = params.dup
+      params[:api_key] ||= (respond_to?(:api_key, true) ? send(:api_key) : nil)
+      rounds_list = self.class.rounds(id, params)
+      return nil if rounds_list.nil? || rounds_list.empty?
+
+      # Sort by index (primary), then date (fallback)
+      # Use [] accessor since these are GolfGeniusObject attributes
+      rounds_list.max_by do |round|
+        [round[:index] || round["index"] || 0, round[:date] || round["date"] || ""]
+      end
     end
 
     private
@@ -279,5 +402,4 @@ module GolfGenius
       Directory.construct_from(attrs, api_key: api_key)
     end
   end
-  # rubocop:enable Metrics/ClassLength
 end

@@ -4,15 +4,15 @@
 require "bundler/setup"
 
 # Load env files (all gitignored). Order: .env (base) → .env.#{GOLF_GENIUS_ENV} → .env.local (wins).
+# Default to production when GOLF_GENIUS_ENV is not set so credentials load automatically.
 # Set GOLF_GENIUS_ENV=staging or GOLF_GENIUS_ENV=production to load .env.staging / .env.production.
 root = File.expand_path("..", __dir__)
 require "dotenv"
 Dotenv.load(File.join(root, ".env"))
 env_specific = ENV["GOLF_GENIUS_ENV"].to_s.strip
-unless env_specific.empty?
-  env_file = File.join(root, ".env.#{env_specific}")
-  Dotenv.overload(env_file) if File.file?(env_file)
-end
+env_specific = "production" if env_specific.empty?
+env_file = File.join(root, ".env.#{env_specific}")
+Dotenv.overload(env_file) if File.file?(env_file)
 Dotenv.overload(File.join(root, ".env.local"))
 
 require "golf_genius"
@@ -31,4 +31,5 @@ def reload! # rubocop:disable Naming/PredicateMethod
 end
 
 require "irb"
+puts "Using GolfGenius Environment: #{GolfGenius.env}"
 IRB.start(__FILE__)
