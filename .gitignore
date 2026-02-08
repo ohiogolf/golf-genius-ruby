@@ -32,3 +32,6 @@ Gemfile.lock
 
 # AI / scratch work (not part of the gem)
 /thoughts/
+
+# Claude Code settings
+.claude/
