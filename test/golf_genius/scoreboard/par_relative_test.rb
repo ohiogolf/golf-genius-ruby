@@ -82,6 +82,56 @@ class ParRelativeTest < Minitest::Test
     refute_predicate cell, :even_par?
   end
 
+  # --- Cell#scored? ---
+
+  def test_cell_scored_with_numeric_value
+    cell = create_cell(value: "68", to_par: -4)
+
+    assert_predicate cell, :scored?
+  end
+
+  def test_cell_scored_with_positive_signed_value
+    cell = create_cell(value: "+2", to_par: 2)
+
+    assert_predicate cell, :scored?
+  end
+
+  def test_cell_scored_with_negative_signed_value
+    cell = create_cell(value: "-3", to_par: -3)
+
+    assert_predicate cell, :scored?
+  end
+
+  def test_cell_not_scored_with_wd
+    cell = create_cell(value: "WD", to_par: -4)
+
+    refute_predicate cell, :scored?
+  end
+
+  def test_cell_not_scored_with_dq
+    cell = create_cell(value: "DQ", to_par: 2)
+
+    refute_predicate cell, :scored?
+  end
+
+  def test_cell_not_scored_with_cut
+    cell = create_cell(value: "CUT", to_par: nil)
+
+    refute_predicate cell, :scored?
+  end
+
+  def test_cell_not_scored_with_nil_value
+    cell = create_cell(value: nil, to_par: nil)
+
+    refute_predicate cell, :scored?
+  end
+
+  def test_cell_not_scored_with_blank_value
+    cell = create_cell(value: "", to_par: nil)
+
+    refute_predicate cell, :scored?
+  end
+
   def test_cell_backwards_compatible_without_to_par
     column = GolfGenius::Scoreboard::Column.new(
       key: :player, format: "player", label: "Player", index: 0

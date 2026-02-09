@@ -48,6 +48,23 @@ module GolfGenius
         @to_par = to_par
       end
 
+      # Returns whether this cell contains an actual numeric score.
+      # A cell is scored if its value is a number (e.g., "68", "+2", "-3")
+      # rather than a status string (e.g., "WD", "DQ", "CUT", "DNS").
+      #
+      # @return [Boolean] true if the value represents a numeric score
+      #
+      # @example
+      #   cell.value  # => "68"
+      #   cell.scored? # => true
+      #
+      #   cell.value  # => "WD"
+      #   cell.scored? # => false
+      #
+      def scored?
+        value.to_s.strip.match?(/\A[+-]?\d+\z/)
+      end
+
       # Returns whether this score is under par.
       #
       # @return [Boolean] true if to_par is negative
