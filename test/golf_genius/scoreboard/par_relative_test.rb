@@ -142,6 +142,122 @@ class ParRelativeTest < Minitest::Test
     refute_predicate cell, :under_par?
   end
 
+  # --- Cell#non_scoring? ---
+
+  def test_cell_non_scoring_with_wd
+    cell = create_cell(value: "WD", to_par: nil)
+
+    assert_predicate cell, :non_scoring?
+    refute_predicate cell, :scored?
+  end
+
+  def test_cell_non_scoring_with_dq
+    cell = create_cell(value: "DQ", to_par: nil)
+
+    assert_predicate cell, :non_scoring?
+  end
+
+  def test_cell_non_scoring_with_cut
+    cell = create_cell(value: "CUT", to_par: nil)
+
+    assert_predicate cell, :non_scoring?
+  end
+
+  def test_cell_non_scoring_case_insensitive
+    cell = create_cell(value: "wd", to_par: nil)
+
+    assert_predicate cell, :non_scoring?
+  end
+
+  def test_cell_not_non_scoring_with_numeric
+    cell = create_cell(value: "68", to_par: -4)
+
+    refute_predicate cell, :non_scoring?
+    assert_predicate cell, :scored?
+  end
+
+  def test_cell_not_non_scoring_with_player_name
+    cell = create_cell(value: "John Doe", to_par: nil)
+
+    refute_predicate cell, :non_scoring?
+  end
+
+  # --- Cell#display_value ---
+
+  def test_display_value_formats_to_par_even
+    column = GolfGenius::Scoreboard::Column.new(
+      key: :total, format: "total-to-par-gross", label: "To Par", index: 0
+    )
+    cell = GolfGenius::Scoreboard::Cell.new("0", column, to_par: 0)
+
+    assert_equal "E", cell.display_value
+  end
+
+  def test_display_value_formats_to_par_under
+    column = GolfGenius::Scoreboard::Column.new(
+      key: :total, format: "total-to-par-gross", label: "To Par", index: 0
+    )
+    cell = GolfGenius::Scoreboard::Cell.new("-4", column, to_par: -4)
+
+    assert_equal "-4", cell.display_value
+  end
+
+  def test_display_value_formats_to_par_over
+    column = GolfGenius::Scoreboard::Column.new(
+      key: :total, format: "total-to-par-gross", label: "To Par", index: 0
+    )
+    cell = GolfGenius::Scoreboard::Cell.new("+5", column, to_par: 5)
+
+    assert_equal "+5", cell.display_value
+  end
+
+  def test_display_value_formats_to_par_over_without_plus
+    column = GolfGenius::Scoreboard::Column.new(
+      key: :total, format: "total-to-par-gross", label: "To Par", index: 0
+    )
+    cell = GolfGenius::Scoreboard::Cell.new("5", column, to_par: 5)
+
+    assert_equal "+5", cell.display_value
+  end
+
+  def test_display_value_returns_raw_for_strokes
+    column = GolfGenius::Scoreboard::Column.new(
+      key: :total, format: "round-total", label: "R1", index: 0
+    )
+    cell = GolfGenius::Scoreboard::Cell.new("68", column, to_par: -4)
+
+    assert_equal "68", cell.display_value
+  end
+
+  def test_display_value_returns_raw_for_non_scoring
+    column = GolfGenius::Scoreboard::Column.new(
+      key: :total, format: "total-to-par-gross", label: "To Par", index: 0
+    )
+    cell = GolfGenius::Scoreboard::Cell.new("WD", column, to_par: nil)
+
+    assert_equal "WD", cell.display_value
+  end
+
+  def test_display_value_returns_raw_for_e_in_to_par_column
+    column = GolfGenius::Scoreboard::Column.new(
+      key: :total, format: "total-to-par-gross", label: "To Par", index: 0
+    )
+    cell = GolfGenius::Scoreboard::Cell.new("E", column, to_par: 0)
+
+    # "E" is not scored?, so it returns raw value
+    # This is fine because "E" is already the format we want
+    assert_equal "E", cell.display_value
+  end
+
+  def test_display_value_returns_raw_for_player_name
+    column = GolfGenius::Scoreboard::Column.new(
+      key: :player, format: "player", label: "Player", index: 0
+    )
+    cell = GolfGenius::Scoreboard::Cell.new("John Doe", column, to_par: nil)
+
+    assert_equal "John Doe", cell.display_value
+  end
+
   # --- Row#cells integration: to-par columns ---
 
   def test_to_par_column_cell_parses_negative_value

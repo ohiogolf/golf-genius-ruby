@@ -65,6 +65,62 @@ module GolfGenius
         value.to_s.strip.match?(/\A[+-]?\d+\z/)
       end
 
+      # Returns whether this cell contains a non-scoring status value.
+      # Non-scoring values indicate a player didn't complete the tournament
+      # normally (e.g., "WD", "DQ", "CUT", "NS", "NC", "MC").
+      #
+      # Uses the same values as Row::ELIMINATED_POSITIONS.
+      #
+      # @return [Boolean] true if the value is a non-scoring status
+      #
+      # @example
+      #   cell.value  # => "WD"
+      #   cell.non_scoring? # => true
+      #
+      #   cell.value  # => "68"
+      #   cell.non_scoring? # => false
+      #
+      def non_scoring?
+        Row::ELIMINATED_POSITIONS.include?(value.to_s.upcase.strip)
+      end
+
+      # Returns the formatted display value for this cell.
+      # For to-par columns with valid data, formats consistently:
+      # - 0 becomes "E"
+      # - Positive values get "+" prefix (e.g., "+5")
+      # - Negative values keep "-" prefix (e.g., "-3")
+      #
+      # For all other cells (strokes, player names, statuses, etc.),
+      # returns the raw value unchanged.
+      #
+      # @return [String, nil] the formatted display value
+      #
+      # @example
+      #   # To-par column
+      #   cell.value # => "0"
+      #   cell.to_par # => 0
+      #   cell.display_value # => "E"
+      #
+      #   # Strokes column
+      #   cell.value # => "68"
+      #   cell.display_value # => "68"
+      #
+      #   # Status value
+      #   cell.value # => "WD"
+      #   cell.display_value # => "WD"
+      #
+      def display_value
+        # Only format numeric scores in to-par columns
+        if scored? && to_par? && !to_par.nil?
+          return "E" if to_par.zero?
+
+          return to_par.positive? ? "+#{to_par}" : to_par.to_s
+        end
+
+        # For everything else (statuses, "E", strokes, player names, etc.), return raw value
+        value
+      end
+
       # Returns whether this score is under par.
       #
       # @return [Boolean] true if to_par is negative
