@@ -99,7 +99,5 @@ module GolfGenius
   end
 end
 
-class Minitest::Test
-  include GolfGenius::TestHelpers
-  include GolfGenius::TestFixtures
-end
+Minitest::Test.include GolfGenius::TestHelpers
+Minitest::Test.include GolfGenius::TestFixtures
