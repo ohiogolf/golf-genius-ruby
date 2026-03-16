@@ -29,6 +29,7 @@ module GolfGenius
       # Format values indicating player name columns
       PLAYER_FORMATS = %w[
         player
+        team
       ].freeze
 
       # Format values indicating thru/holes completed columns
@@ -51,6 +52,12 @@ module GolfGenius
         total-net
         total
       ].freeze
+
+      # Format values that are known but don't map to a specific type
+      KNOWN_OTHER_FORMATS = %w[
+        purse
+      ].freeze
+
       # @return [Hash] the raw column data hash
       attr_reader :data
 
@@ -137,7 +144,7 @@ module GolfGenius
         return :strokes if STROKES_FORMATS.include?(fmt)
 
         # Log unknown formats to help identify missing mappings
-        warn "Unknown column format: #{format.inspect}" unless fmt.empty?
+        warn "Unknown column format: #{format.inspect}" unless fmt.empty? || KNOWN_OTHER_FORMATS.include?(fmt)
 
         :other
       end

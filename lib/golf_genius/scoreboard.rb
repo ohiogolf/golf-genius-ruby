@@ -39,28 +39,36 @@ module GolfGenius
 
     # Creates a new Scoreboard instance.
     #
-    # @param event [GolfGenius::Event, String] the event object or event ID (required)
+    # @param event [GolfGenius::Event, String, nil] the event object or event ID
+    # @param ggid [String, nil] the Golf Genius public ID (alternative to event)
     # @param round [GolfGenius::Round, String, nil] the round object or round ID (optional)
     # @param tournament [GolfGenius::Tournament, String, nil] the tournament object or tournament ID (optional)
     # @param schema [Hash, nil] pre-built schema (for internal use, e.g., sorting)
     # @param skip_event_fetch [Boolean] if true, skips fetching event metadata (uses event_id as name)
     #
-    # @raise [ArgumentError] if event is not provided
+    # @raise [ArgumentError] if neither event nor ggid is provided
     #
     # @example With IDs
     #   scoreboard = GolfGenius::Scoreboard.new(event: "522157")
     #   scoreboard = GolfGenius::Scoreboard.new(event: "522157", round: "1615931")
-    #   scoreboard = GolfGenius::Scoreboard.new(event: "522157", round: "1615931", tournament: "4522280")
+    #
+    # @example With ggid
+    #   scoreboard = GolfGenius::Scoreboard.new(ggid: "zphsqa")
     #
     # @example With objects
     #   scoreboard = GolfGenius::Scoreboard.new(event: event_obj)
-    #   scoreboard = GolfGenius::Scoreboard.new(event: event_obj, round: round_obj)
     #
     # @example Skip event fetch (avoids 3-4 paginated API calls)
     #   scoreboard = GolfGenius::Scoreboard.new(event: "522157", skip_event_fetch: true)
     #
-    def initialize(event:, round: nil, tournament: nil, schema: nil, skip_event_fetch: false)
-      raise ArgumentError, "event is required" if event.nil?
+    def initialize(event: nil, ggid: nil, round: nil, tournament: nil, schema: nil, skip_event_fetch: false)
+      # Resolve ggid to an event object if no event was provided
+      if event.nil? && ggid
+        event = GolfGenius::Event.fetch_by(ggid: ggid)
+        raise ArgumentError, "could not resolve ggid: #{ggid}" if event.nil?
+      end
+
+      raise ArgumentError, "event or ggid is required" if event.nil?
 
       # Resolve IDs from objects or use strings directly
       @event_id = event.respond_to?(:id) ? event.id : event

@@ -103,6 +103,7 @@ Metrics/PerceivedComplexity:
 Metrics/ParameterLists:
   Exclude:
     - "lib/golf_genius/api_operations/**/*"
+    - "lib/golf_genius/scoreboard.rb"
 
 # Prefer explicit true/false assertions for clarity in tests
 Minitest/AssertTruthy:
