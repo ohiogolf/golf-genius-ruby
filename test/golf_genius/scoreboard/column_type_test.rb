@@ -78,7 +78,11 @@ class ColumnTypeTest < Minitest::Test
   def test_unknown_format_returns_other_type
     column = create_column(format: "unknown-format", label: "Unknown")
 
-    assert_equal :other, column.type
+    _, err = capture_io do
+      assert_equal :other, column.type
+    end
+
+    assert_match(/Unknown column format: "unknown-format"/, err)
   end
 
   # Test summary? predicate
@@ -204,7 +208,11 @@ class ColumnTypeTest < Minitest::Test
   def test_type_returns_other_for_unrecognized_format
     column = create_column(format: "stableford-points", label: "Points")
 
-    assert_equal :other, column.type
+    _, err = capture_io do
+      assert_equal :other, column.type
+    end
+
+    assert_match(/Unknown column format: "stableford-points"/, err)
   end
 
   def test_type_warns_for_unknown_format
