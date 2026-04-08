@@ -112,6 +112,16 @@ class EventTest < Minitest::Test
     assert_equal "zphsqa", event.ggid
   end
 
+  def test_fetch_event_by_ggid_is_case_insensitive
+    events_with_ggid = [EVENT.merge("ggid" => "zphsqa")]
+    stub_api_request(method: :get, path: "/events", response_body: events_with_ggid, query: { "page" => "1" })
+
+    event = GolfGenius::Event.fetch_by(ggid: "ZPHSQA")
+
+    assert_kind_of GolfGenius::Event, event
+    assert_equal "zphsqa", event.ggid
+  end
+
   def test_fetch_event_by_ggid_falls_back_to_archived
     archived_events = [EVENT.merge("ggid" => "zphsqa", "archived" => true)]
     stub_api_request(method: :get, path: "/events", response_body: [], query: { "page" => "1" })

@@ -115,7 +115,7 @@ module GolfGenius
 
       def match_fetch_on?(item, fields, value_str)
         Array(fields).any? do |field|
-          item.respond_to?(field) && item.public_send(field).to_s == value_str
+          item.respond_to?(field) && item.public_send(field).to_s.casecmp?(value_str)
         end
       end
     end
