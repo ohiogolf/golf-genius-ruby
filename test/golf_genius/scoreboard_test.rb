@@ -890,4 +890,93 @@ class ScoreboardTest < Minitest::Test
       end
     end
   end
+
+  def test_full_integration_with_summary_only_current_round_payload
+    html = <<~HTML
+      <table class='result_scope'>
+        <tr class='header thead'>
+          <th class='pos'>Pos.</th>
+          <th class='name' data-format-text='player'>Player</th>
+          <th class='score' data-format-text='to-par-gross'>To Par Gross</th>
+          <th class='total' data-format-text='total-gross'>Total Gross</th>
+          <th class='details' data-format-text='details'>Details</th>
+        </tr>
+        <tr class='aggregate-row odd' data-aggregate-id='1001' data-aggregate-name='Marcus Meloan' data-member-ids='101'>
+          <td class='pos'>1</td>
+          <td class='name'>
+            <div class='player'>
+              <a class="open-aggregate-details" data-remote="true" href="/tournaments2/details/1001">Marcus Meloan</a>
+              <div class='affiliation'>Augusta, KY</div>
+            </div>
+          </td>
+          <td class='score'>-2</td>
+          <td class='total'>69</td>
+          <td class='details'></td>
+        </tr>
+      </table>
+    HTML
+
+    event = create_mock_event("1000", "Test Event")
+    round = create_mock_round(2001, "Round 1", 1, "2026-03-15")
+    tournament = create_mock_tournament("1001", "Test Tournament")
+
+    json_obj = Object.new
+    def json_obj.to_json(*)
+      {
+        name: "Test Tournament",
+        adjusted: false,
+        rounds: [],
+        scopes: [
+          {
+            aggregates: [
+              {
+                id: 1001,
+                member_ids_str: ["101"],
+                position: "1",
+                rank: "1",
+                name: "Marcus Meloan",
+                affiliation: "Augusta, KY",
+                score: "-2",
+                total: "69",
+                gross_scores: [4, 4, 3, 4, 5, 5, 3, 4, 3, 4, 4, 3, 4, 4, 3, 4, 4, 4],
+                net_scores: [4, 4, 3, 4, 5, 5, 3, 4, 3, 4, 4, 3, 4, 4, 3, 4, 4, 4],
+                to_par_gross: [0, 0, 0, -1, 1, 0, 0, 0, -1, 0, 0, 0, 0, 0, 0, 0, -1, 0],
+                to_par_net: [0, 0, 0, -1, 1, 0, 0, 0, -1, 0, 0, 0, 0, 0, 0, 0, -1, 0],
+                totals: {
+                  gross_scores: { out: 35, in: 34, total: 69 },
+                  net_scores: { out: 35, in: 34, total: 69 },
+                  to_par_gross: { out: -1, in: -1, total: -2 },
+                  to_par_net: { out: -1, in: -1, total: -2 },
+                },
+              },
+            ],
+          },
+        ],
+      }.to_json
+    end
+
+    GolfGenius::Event.stub :fetch, event do
+      GolfGenius::Event.stub :rounds, [round] do
+        GolfGenius::Event.stub :tournaments, [tournament] do
+          GolfGenius::Event.stub :tournament_results, proc { |*args|
+            params = args.last.is_a?(Hash) ? args.last : {}
+            params[:format] == :html ? html : json_obj
+          } do
+            scoreboard = GolfGenius::Scoreboard.new(event: "1000", round: "2001")
+            tournament = scoreboard.tournaments.first
+            row = tournament.rows.first
+            scorecard = row.scorecard(2001)
+
+            assert_equal 1, tournament.rounds.size
+            assert_equal "Round 1", tournament.rounds.first.name
+            assert scorecard, "expected synthesized scorecard for fetched round"
+            assert_equal 35, scorecard.totals[:out]
+            assert_equal 34, scorecard.totals[:in]
+            assert_equal 69, scorecard.totals[:total]
+            assert_equal [4, 4, 3, 4, 5, 5, 3, 4, 3, 4, 4, 3, 4, 4, 3, 4, 4, 4], scorecard.gross_scores
+          end
+        end
+      end
+    end
+  end
 end

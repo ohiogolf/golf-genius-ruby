@@ -140,6 +140,7 @@ module GolfGenius
           if round_id == @fetched_round_id
             # Current/fetched round - use current_round_scores
             result[round_id] = {
+              total: round_data_from_json[:total],
               scorecard: build_scorecard(round_data_from_json, json_row[:current_round_scores]),
             }
           else
@@ -147,6 +148,7 @@ module GolfGenius
             prev_scores = json_row[:previous_rounds_scores][round_id]
             if prev_scores
               result[round_id] = {
+                total: round_data_from_json[:total],
                 scorecard: build_scorecard(round_data_from_json, prev_scores),
               }
             end
