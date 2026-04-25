@@ -104,6 +104,7 @@ module GolfGenius
           id: agg["id"],
           member_ids: agg["member_ids_str"] || [],
           rounds: parse_aggregate_rounds(agg),
+          current_round_summary: parse_current_round_summary(agg),
           current_round_scores: parse_current_round_scores(agg),
           previous_rounds_scores: parse_previous_rounds_scores(agg),
         }
@@ -158,6 +159,22 @@ module GolfGenius
           to_par_gross: agg["to_par_gross"] || [],
           to_par_net: agg["to_par_net"] || [],
           totals: parse_totals(agg["totals"]),
+        }
+      end
+
+      # Parses aggregate-level summary fields for the fetched/current round.
+      #
+      # Some tournament_results payloads omit the per-round "rounds" array entirely
+      # but still expose the current round at the aggregate top level. This captures
+      # the raw summary fields needed for downstream normalization.
+      #
+      # @param agg [Hash] the row data
+      # @return [Hash] hash with score, total
+      #
+      def parse_current_round_summary(agg)
+        {
+          score: agg["score"],
+          total: agg["total"],
         }
       end
 

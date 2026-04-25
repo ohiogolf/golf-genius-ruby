@@ -2,6 +2,7 @@
 
 require_relative "scoreboard/html_parser"
 require_relative "scoreboard/json_parser"
+require_relative "scoreboard/tournament_results_normalizer"
 require_relative "scoreboard/data_merger"
 require_relative "scoreboard/column_decomposer"
 require_relative "scoreboard/row_decomposer"
@@ -294,9 +295,24 @@ module GolfGenius
       # Parse JSON
       json_string = json_obj.to_json(raw: true)
       json_parser = JsonParser.new(json_string)
-      json_data = json_parser.parse
+      json_data = TournamentResultsNormalizer.new(
+        json_parser.parse,
+        fetched_round_id: @round_id,
+        fallback_rounds: fallback_rounds_metadata
+      ).normalize
 
       [html_data, json_data]
+    end
+
+    def fallback_rounds_metadata
+      @fallback_rounds_metadata ||= rounds.map do |round|
+        {
+          id: round[:id]&.to_i,
+          name: round[:name],
+          date: round[:date],
+          in_progress: round[:in_progress] || false,
+        }
+      end
     end
 
     # Merges HTML and JSON tournament data.
