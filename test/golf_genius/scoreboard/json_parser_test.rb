@@ -162,4 +162,33 @@ class JsonParserTest < Minitest::Test
 
     assert_equal %w[103 104], agg[:member_ids]
   end
+
+  def test_parse_current_round_summary_extracts_raw_summary_fields
+    json = {
+      name: "Test Tournament",
+      adjusted: false,
+      rounds: [],
+      scopes: [
+        {
+          aggregates: [
+            {
+              id: 1001,
+              member_ids_str: ["101"],
+              score: "-2",
+              total: "69",
+              gross_scores: [4, 4, 3, 4, 5, 5, 3, 4, 3, 4, 4, 3, 4, 4, 3, 4, 4, 4],
+              totals: { gross_scores: { out: 35, in: 34, total: 69 } },
+            },
+          ],
+        },
+      ],
+    }.to_json
+
+    parser = GolfGenius::Scoreboard::JsonParser.new(json)
+    result = parser.parse
+    summary = result[:aggregates][1001][:current_round_summary]
+
+    assert_equal "-2", summary[:score]
+    assert_equal "69", summary[:total]
+  end
 end
