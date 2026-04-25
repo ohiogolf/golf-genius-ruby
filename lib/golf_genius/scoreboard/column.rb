@@ -55,6 +55,7 @@ module GolfGenius
 
       # Format values that are known but don't map to a specific type
       KNOWN_OTHER_FORMATS = %w[
+        details
         purse
       ].freeze
 
@@ -135,18 +136,26 @@ module GolfGenius
       #   to_par_column.type    # => :to_par
       #
       def type
+        return @type if defined?(@type)
+
         fmt = format.to_s.downcase
 
-        return :position if POSITION_FORMATS.include?(fmt)
-        return :player if PLAYER_FORMATS.include?(fmt)
-        return :thru if THRU_FORMATS.include?(fmt)
-        return :to_par if TO_PAR_FORMATS.include?(fmt)
-        return :strokes if STROKES_FORMATS.include?(fmt)
-
-        # Log unknown formats to help identify missing mappings
-        warn "Unknown column format: #{format.inspect}" unless fmt.empty? || KNOWN_OTHER_FORMATS.include?(fmt)
-
-        :other
+        @type =
+          if POSITION_FORMATS.include?(fmt)
+            :position
+          elsif PLAYER_FORMATS.include?(fmt)
+            :player
+          elsif THRU_FORMATS.include?(fmt)
+            :thru
+          elsif TO_PAR_FORMATS.include?(fmt)
+            :to_par
+          elsif STROKES_FORMATS.include?(fmt)
+            :strokes
+          else
+            # Log unknown formats to help identify missing mappings
+            warn "Unknown column format: #{format.inspect}" unless fmt.empty? || KNOWN_OTHER_FORMATS.include?(fmt)
+            :other
+          end
       end
 
       # Returns whether this is a summary column.
