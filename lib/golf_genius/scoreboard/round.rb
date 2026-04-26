@@ -95,14 +95,31 @@ module GolfGenius
         !!@data[:in_progress]
       end
 
+      # Returns whether the round is scheduled for a future date.
+      #
+      # @return [Boolean] true when the round date is after today
+      #
+      def future?
+        comparison_date = case date
+                          when Date
+                            date
+                          else
+                            date.to_date if date.respond_to?(:to_date)
+                          end
+
+        comparison_date && comparison_date > Date.today
+      end
+
       # Returns whether the round is complete.
       #
-      # This is the inverse of {#playing?}.
+      # Future rounds are not complete, even though they are also not
+      # in progress. For same-day rounds without explicit status metadata,
+      # callers should use scorecard/row state for stricter readiness checks.
       #
       # @return [Boolean] true if complete, false if still playing
       #
       def complete?
-        !playing?
+        !playing? && !future?
       end
 
       # Returns the raw round data as a hash.
