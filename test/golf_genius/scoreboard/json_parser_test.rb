@@ -86,6 +86,66 @@ class JsonParserTest < Minitest::Test
     assert_equal ["101"], agg[:member_ids]
   end
 
+  def test_parse_aggregate_countries
+    json = {
+      name: "Test Tournament",
+      adjusted: false,
+      rounds: [],
+      scopes: [
+        {
+          aggregates: [
+            {
+              id: 1001,
+              member_ids_str: ["101"],
+              country: [
+                {
+                  name: "England",
+                  alpha_2: "GB",
+                  alpha_3: "GBR",
+                  ioc: "ENG",
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    }.to_json
+
+    parser = GolfGenius::Scoreboard::JsonParser.new(json)
+    result = parser.parse
+
+    assert_equal([{ name: "England", alpha_2: "GB", alpha_3: "GBR", ioc: "ENG" }], result[:aggregates][1001][:countries])
+  end
+
+  def test_parse_aggregate_countries_accepts_single_hash_payload
+    json = {
+      name: "Test Tournament",
+      adjusted: false,
+      rounds: [],
+      scopes: [
+        {
+          aggregates: [
+            {
+              id: 1001,
+              member_ids_str: ["101"],
+              country: {
+                name: "England",
+                alpha_2: "GB",
+                alpha_3: "GBR",
+                ioc: "ENG",
+              },
+            },
+          ],
+        },
+      ],
+    }.to_json
+
+    parser = GolfGenius::Scoreboard::JsonParser.new(json)
+    result = parser.parse
+
+    assert_equal([{ name: "England", alpha_2: "GB", alpha_3: "GBR", ioc: "ENG" }], result[:aggregates][1001][:countries])
+  end
+
   def test_parse_aggregate_rounds
     json = load_fixture("multi_round_stroke_play.json")
     parser = GolfGenius::Scoreboard::JsonParser.new(json)
@@ -161,6 +221,76 @@ class JsonParserTest < Minitest::Test
     agg = result[:aggregates][1003]
 
     assert_equal %w[103 104], agg[:member_ids]
+  end
+
+  def test_parse_compacts_blank_member_ids
+    json = {
+      name: "Test Tournament",
+      adjusted: false,
+      rounds: [],
+      scopes: [
+        {
+          aggregates: [
+            {
+              id: 1001,
+              member_ids_str: [""],
+            },
+          ],
+        },
+      ],
+    }.to_json
+
+    parser = GolfGenius::Scoreboard::JsonParser.new(json)
+    result = parser.parse
+
+    assert_empty result[:aggregates][1001][:member_ids]
+  end
+
+  def test_parse_falls_back_to_member_ids_when_member_ids_str_is_missing
+    json = {
+      name: "Test Tournament",
+      adjusted: false,
+      rounds: [],
+      scopes: [
+        {
+          aggregates: [
+            {
+              id: 1001,
+              member_ids: [101, " 102 ", ""],
+            },
+          ],
+        },
+      ],
+    }.to_json
+
+    parser = GolfGenius::Scoreboard::JsonParser.new(json)
+    result = parser.parse
+
+    assert_equal %w[101 102], result[:aggregates][1001][:member_ids]
+  end
+
+  def test_parse_does_not_fall_back_to_member_ids_when_member_ids_str_is_empty
+    json = {
+      name: "Test Tournament",
+      adjusted: false,
+      rounds: [],
+      scopes: [
+        {
+          aggregates: [
+            {
+              id: 1001,
+              member_ids_str: [],
+              member_ids: ["101"],
+            },
+          ],
+        },
+      ],
+    }.to_json
+
+    parser = GolfGenius::Scoreboard::JsonParser.new(json)
+    result = parser.parse
+
+    assert_empty result[:aggregates][1001][:member_ids]
   end
 
   def test_parse_current_round_summary_extracts_raw_summary_fields

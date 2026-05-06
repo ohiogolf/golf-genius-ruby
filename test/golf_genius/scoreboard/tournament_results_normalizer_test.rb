@@ -16,7 +16,69 @@ class TournamentResultsNormalizerTest < Minitest::Test
 
     result = normalizer(json_data, fallback_rounds: fallback_rounds).normalize
 
-    assert_equal fallback_rounds, result[:rounds]
+    assert_equal [{ id: 2001, name: "R1", date: "2026-03-15", in_progress: false }], result[:rounds]
+  end
+
+  def test_normalize_prefers_fallback_round_status_over_payload_round_status
+    json_data = {
+      name: "Test Tournament",
+      adjusted: false,
+      rounds: [
+        { id: 2001, name: "Round 2", date: "2026-03-15", in_progress: true, status: "in progress" },
+        { id: 2000, name: "Round 1", date: "2026-03-15", in_progress: true, status: "in progress" },
+      ],
+      aggregates: {},
+    }
+    fallback_rounds = [
+      { id: 2000, name: "Round 1", date: "2026-03-15", in_progress: false, status: "completed" },
+      { id: 2001, name: "Round 2", date: "2026-03-15", in_progress: true, status: "in progress" },
+    ]
+
+    result = normalizer(json_data, fallback_rounds: fallback_rounds).normalize
+
+    assert_equal "completed", result[:rounds][0][:status]
+    assert_equal false, result[:rounds][0][:in_progress]
+    assert_equal "in progress", result[:rounds][1][:status]
+  end
+
+  def test_normalize_canonicalizes_round_names_when_fallback_name_differs
+    json_data = {
+      name: "Test Tournament",
+      adjusted: false,
+      rounds: [
+        { id: 2000, name: "R1", date: "2026-03-15", in_progress: false, status: "completed" },
+        { id: 2001, name: "Round 2", date: "2026-03-15", in_progress: true, status: "in progress" },
+      ],
+      aggregates: {},
+    }
+    fallback_rounds = [
+      { id: 2000, name: "Round 1", date: "2026-03-15", in_progress: false, status: "completed" },
+      { id: 2001, name: "Round 2", date: "2026-03-15", in_progress: true, status: "in progress" },
+    ]
+
+    result = normalizer(json_data, fallback_rounds: fallback_rounds).normalize
+
+    assert_equal "R1", result[:rounds][0][:name]
+    assert_equal "R2", result[:rounds][1][:name]
+    assert_equal "completed", result[:rounds][0][:status]
+    assert_equal "in progress", result[:rounds][1][:status]
+  end
+
+  def test_normalize_canonicalizes_payload_verbose_round_names_without_fallback
+    json_data = {
+      name: "Test Tournament",
+      adjusted: false,
+      rounds: [
+        { id: 2000, name: "Round 1", date: "2026-03-15", in_progress: false, status: "completed", index: 1 },
+        { id: 2001, name: "Round 2", date: "2026-03-16", in_progress: true, status: "in progress", index: 2 },
+      ],
+      aggregates: {},
+    }
+
+    result = normalizer(json_data).normalize
+
+    assert_equal "R1", result[:rounds][0][:name]
+    assert_equal "R2", result[:rounds][1][:name]
   end
 
   def test_normalize_synthesizes_fetched_round_when_row_rounds_are_missing

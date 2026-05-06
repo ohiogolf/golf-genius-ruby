@@ -54,18 +54,19 @@ module GolfGenius
         html_rows = @html_data[:rows] || []
         json_rows = @json_data[:aggregates] || {}
 
-        # Check that all HTML rows have matching JSON row data
         html_rows.each do |row|
-          unless json_rows.key?(row[:id])
+          json_row = matching_json_row(row)
+
+          if json_row.nil? && !json_rows.empty?
             raise GolfGenius::ValidationError, "HTML row #{row[:id]} (#{row[:name]}) has no matching JSON row data"
           end
 
-          # Check that player_ids match
-          json_row = json_rows[row[:id]]
-          html_ids = row[:player_ids].sort
-          json_ids = json_row[:member_ids].sort
+          next unless json_row
 
-          if html_ids != json_ids
+          html_ids = normalize_ids(row[:player_ids])
+          json_ids = normalize_ids(json_row[:member_ids])
+
+          unless ids_match?(html_ids, json_ids)
             raise GolfGenius::ValidationError,
                   "Player ID mismatch for row #{row[:id]}: HTML has #{html_ids.inspect}, JSON has #{json_ids.inspect}"
           end
@@ -93,7 +94,7 @@ module GolfGenius
         html_rows = @html_data[:rows] || []
 
         html_rows.map do |html_row|
-          json_row = @json_data[:aggregates][html_row[:id]]
+          json_row = matching_json_row(html_row)
           merge_row(html_row, json_row)
         end
       end
@@ -110,6 +111,7 @@ module GolfGenius
           name: html_row[:name],
           player_ids: html_row[:player_ids],
           affiliation: html_row[:affiliation],
+          countries: json_row&.dig(:countries) || [],
           cut: html_row[:cut],
           cells: html_row[:cells],
           rounds: merge_rounds_data(json_row),
@@ -125,6 +127,7 @@ module GolfGenius
       #
       def merge_rounds_data(json_row)
         result = {}
+        return result unless json_row
 
         # Get all rounds from JSON
         rounds = @json_data[:rounds] || []
@@ -169,12 +172,46 @@ module GolfGenius
           thru: round_data[:thru],
           score: round_data[:score],
           status: round_data[:status],
-          gross_scores: scores[:gross_scores],
-          net_scores: scores[:net_scores],
-          to_par_gross: scores[:to_par_gross],
-          to_par_net: scores[:to_par_net],
-          totals: scores[:totals],
+          gross_scores: scores&.dig(:gross_scores) || [],
+          net_scores: scores&.dig(:net_scores) || [],
+          to_par_gross: scores&.dig(:to_par_gross) || [],
+          to_par_net: scores&.dig(:to_par_net) || [],
+          totals: scores&.dig(:totals) || {},
         }
+      end
+
+      def matching_json_row(html_row)
+        direct_match = @json_data[:aggregates][html_row[:id]]
+        return direct_match if ids_match?(html_row[:player_ids], direct_match&.[](:member_ids))
+        return direct_match if direct_match && normalize_ids(html_row[:player_ids]).empty?
+
+        matches = member_id_matches_for(html_row)
+        return direct_match if matches.empty? && direct_match
+        return nil if matches.empty?
+        return matches.first if matches.one?
+
+        raise GolfGenius::ValidationError,
+              "HTML row #{html_row[:id]} (#{html_row[:name]}) matches multiple JSON rows by member ids"
+      end
+
+      def member_id_matches_for(html_row)
+        normalized_html_ids = normalize_ids(html_row[:player_ids])
+        return [] if normalized_html_ids.empty?
+
+        (@json_data[:aggregates] || {}).values.select do |json_row|
+          ids_match?(normalized_html_ids, json_row[:member_ids])
+        end
+      end
+
+      def ids_match?(html_ids, json_ids)
+        normalize_ids(html_ids) == normalize_ids(json_ids)
+      end
+
+      def normalize_ids(ids)
+        Array(ids).filter_map do |value|
+          id = value.to_s.strip
+          id.empty? ? nil : id
+        end.sort
       end
     end
   end

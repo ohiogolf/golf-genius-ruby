@@ -44,6 +44,36 @@ module GolfGenius
         @rounds.find(&:playing?)
       end
 
+      # Returns the latest started round.
+      #
+      # Prefers the highest-number started round, which handles same-day
+      # multi-round events where later rounds can start while earlier rounds
+      # are already complete.
+      #
+      # @return [Round, nil] latest started round or nil if none started
+      #
+      def latest_started
+        select_latest(&:started?)
+      end
+
+      # Returns the latest completed round.
+      #
+      # @return [Round, nil] latest completed round or nil if none completed
+      #
+      def latest_completed
+        select_latest(&:complete?)
+      end
+
+      # Returns the earliest upcoming round.
+      #
+      # @return [Round, nil] earliest unstarted round or nil if none upcoming
+      #
+      def earliest_upcoming
+        @rounds.select(&:unstarted?).min_by do |round|
+          [sort_number(round), sort_date(round), round.id.to_i]
+        end
+      end
+
       # Returns the number of rounds.
       #
       # @return [Integer] the round count
@@ -104,6 +134,23 @@ module GolfGenius
       #
       def last
         @rounds.last
+      end
+
+      private
+
+      def select_latest(&block)
+        @rounds.select(&block).max_by do |round|
+          [sort_number(round), sort_date(round), round.id.to_i]
+        end
+      end
+
+      def sort_number(round)
+        round.number || -1
+      end
+
+      def sort_date(round)
+        value = round.date
+        value.is_a?(Date) ? value.jd : -1
       end
     end
   end

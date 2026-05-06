@@ -386,6 +386,65 @@ class RowDecomposerTest < Minitest::Test
     assert_nil result[:rounds][103][:total], "R3 should be nil (duplicate total cleaned)"
   end
 
+  def test_cleans_duplicate_total_when_summary_uses_plain_total_key
+    row = {
+      id: 1001,
+      name: "Nellie Ong",
+      player_ids: ["101"],
+      affiliation: "England",
+      cut: false,
+      cells: ["T1", "Nellie Ong", "70", "6*", "70", "70"],
+      rounds: {},
+    }
+
+    column_structure = {
+      summary: [
+        { key: "position", format: "position", label: "Pos.", index: 0 },
+        { key: "player", format: "player", label: "Player", index: 1 },
+        { key: "total", format: "total", label: "Total", index: 2 },
+        { key: "thru", format: "thru", label: "Thru Today", index: 3 },
+      ],
+      rounds: [
+        { id: 101, name: "R1", in_progress: false, status: "completed", columns: [{ key: "total", format: "round-total", label: "R1", index: 4 }] },
+        { id: 102, name: "R2", in_progress: true, status: "in progress", columns: [{ key: "total", format: "round-total", label: "R2", index: 5 }] },
+      ],
+    }
+
+    decomposer = GolfGenius::Scoreboard::RowDecomposer.new(row, column_structure)
+    result = decomposer.decompose
+
+    assert_equal "70", result[:rounds][101][:total], "completed historical round should be preserved even when it matches summary total"
+    assert_nil result[:rounds][102][:total], "current-round duplicate should be cleaned when summary uses plain total"
+  end
+
+  def test_preserves_legitimate_duplicate_total_for_completed_single_round_tournament
+    row = {
+      id: 1001,
+      name: "Single Round Winner",
+      player_ids: ["101"],
+      affiliation: "England",
+      cut: false,
+      cells: ["1", "Single Round Winner", "70", "70"],
+      rounds: {},
+    }
+
+    column_structure = {
+      summary: [
+        { key: "position", format: "position", label: "Pos.", index: 0 },
+        { key: "player", format: "player", label: "Player", index: 1 },
+        { key: "total_gross", format: "total-gross", label: "Total", index: 2 },
+      ],
+      rounds: [
+        { id: 101, name: "R1", in_progress: false, status: "completed", columns: [{ key: "total", format: "round-total", label: "R1", index: 3 }] },
+      ],
+    }
+
+    decomposer = GolfGenius::Scoreboard::RowDecomposer.new(row, column_structure)
+    result = decomposer.decompose
+
+    assert_equal "70", result[:rounds][101][:total]
+  end
+
   def test_normalize_cell_value_converts_dashes_to_nil
     # RowDecomposer normalizes HTML "-" placeholders to nil so downstream
     # code doesn't need to handle display artifacts from the source.

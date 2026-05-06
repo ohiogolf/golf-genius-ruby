@@ -56,6 +56,44 @@ class DataMergerTest < Minitest::Test
     assert_kind_of Array, row[:cells]
   end
 
+  def test_merge_preserves_country_metadata
+    html_data = {
+      cut_text: nil,
+      rows: [
+        {
+          id: 1001,
+          name: "Player A",
+          player_ids: ["101"],
+          affiliation: "England",
+          cut: false,
+          cells: [],
+        },
+      ],
+    }
+
+    json_data = {
+      name: "Test Tournament",
+      adjusted: false,
+      rounds: [],
+      aggregates: {
+        1001 => {
+          id: 1001,
+          member_ids: ["101"],
+          countries: [{ name: "England", alpha_2: "GB", alpha_3: "GBR", ioc: "ENG" }],
+          rounds: {},
+          current_round_summary: {},
+          current_round_scores: {},
+          previous_rounds_scores: {},
+        },
+      },
+    }
+
+    merger = GolfGenius::Scoreboard::DataMerger.new(html_data, json_data, @fetched_round_id)
+    result = merger.merge
+
+    assert_equal([{ name: "England", alpha_2: "GB", alpha_3: "GBR", ioc: "ENG" }], result[:rows].first[:countries])
+  end
+
   def test_merge_injects_round_data
     merger = GolfGenius::Scoreboard::DataMerger.new(@html_data, @json_data, @fetched_round_id)
     result = merger.merge
@@ -147,6 +185,43 @@ class DataMergerTest < Minitest::Test
     assert_match(/Player ID mismatch for row 1001/, error.message)
   end
 
+  def test_merge_accepts_equivalent_player_ids_with_mixed_types
+    html_data = {
+      cut_text: nil,
+      rows: [
+        {
+          id: 1001,
+          name: "Player A",
+          player_ids: [101],
+          affiliation: nil,
+          cut: false,
+          cells: [],
+        },
+      ],
+    }
+
+    json_data = {
+      name: "Test Tournament",
+      adjusted: false,
+      rounds: [],
+      aggregates: {
+        1001 => {
+          id: 1001,
+          member_ids: ["101"],
+          rounds: {},
+          current_round_summary: {},
+          current_round_scores: {},
+          previous_rounds_scores: {},
+        },
+      },
+    }
+
+    merger = GolfGenius::Scoreboard::DataMerger.new(html_data, json_data, @fetched_round_id)
+    result = merger.merge
+
+    assert_equal [101], result[:rows].first[:player_ids]
+  end
+
   def test_merge_handles_team_with_multiple_players
     merger = GolfGenius::Scoreboard::DataMerger.new(@html_data, @json_data, @fetched_round_id)
     result = merger.merge
@@ -156,5 +231,71 @@ class DataMergerTest < Minitest::Test
 
     assert_equal 1003, team_row[:id]
     assert_equal %w[103 104], team_row[:player_ids]
+  end
+
+  def test_merge_matches_rows_by_member_ids_when_aggregate_ids_change
+    html_data = {
+      cut_text: nil,
+      rows: [
+        {
+          id: 9999,
+          name: "Player A",
+          player_ids: ["101"],
+          affiliation: nil,
+          cut: false,
+          cells: [],
+        },
+      ],
+    }
+
+    json_data = {
+      name: "Test Tournament",
+      adjusted: false,
+      rounds: [],
+      aggregates: {
+        1001 => {
+          id: 1001,
+          member_ids: ["101"],
+          rounds: {},
+          current_round_summary: {},
+          current_round_scores: {},
+          previous_rounds_scores: {},
+        },
+      },
+    }
+
+    merger = GolfGenius::Scoreboard::DataMerger.new(html_data, json_data, @fetched_round_id)
+    result = merger.merge
+
+    assert_equal 9999, result[:rows].first[:id]
+    assert_equal ["101"], result[:rows].first[:player_ids]
+  end
+
+  def test_merge_allows_html_only_rows_when_json_has_no_aggregates
+    html_data = {
+      cut_text: nil,
+      rows: [
+        {
+          id: 1001,
+          name: "Player A",
+          player_ids: ["101"],
+          affiliation: nil,
+          cut: false,
+          cells: [],
+        },
+      ],
+    }
+
+    json_data = {
+      name: "Test Tournament",
+      adjusted: false,
+      rounds: [],
+      aggregates: {},
+    }
+
+    merger = GolfGenius::Scoreboard::DataMerger.new(html_data, json_data, @fetched_round_id)
+    result = merger.merge
+
+    assert_empty result[:rows].first[:rounds]
   end
 end

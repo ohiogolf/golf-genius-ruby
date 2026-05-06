@@ -86,7 +86,7 @@ module GolfGenius
       def extract_column_format(th)
         # Check for data-format-text attribute first
         format = th["data-format-text"]
-        return format if format && !format.strip.empty?
+        return normalize_column_format(th, format) if format && !format.strip.empty?
 
         # Synthesize from CSS class
         classes = th["class"].to_s.split
@@ -95,6 +95,17 @@ module GolfGenius
 
         # Default to "text" if no format can be determined
         "text"
+      end
+
+      def normalize_column_format(th, format)
+        classes = th["class"].to_s.split
+
+        # Golf Genius sometimes marks the summary to-par "score" column as
+        # data-format-text="total". The header class distinguishes it from the
+        # actual stroke-total column.
+        return "total-to-par-gross" if format == "total" && classes.include?("score")
+
+        format
       end
 
       # Extracts the label text from a <th> element.

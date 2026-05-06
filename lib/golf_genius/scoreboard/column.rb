@@ -39,8 +39,10 @@ module GolfGenius
 
       # Format values indicating to-par score columns
       TO_PAR_FORMATS = %w[
+        to-par
         to-par-gross
         to-par-net
+        total-to-par
         total-to-par-gross
         total-to-par-net
       ].freeze

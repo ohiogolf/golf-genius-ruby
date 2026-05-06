@@ -18,6 +18,13 @@ module GolfGenius
     #   round.complete?    # => true
     #
     class Round
+      FINISHED_STATUSES = %w[completed verified complete].freeze
+
+      def self.extract_number(name)
+        match = name.to_s.match(/\d+/)
+        match ? match[0].to_i : nil
+      end
+
       # @return [Hash] the raw round data hash
       attr_reader :data
 
@@ -35,7 +42,7 @@ module GolfGenius
       # @return [Integer] the round ID
       #
       def id
-        @data[:id]
+        value(:id)
       end
 
       # Returns the round name.
@@ -43,7 +50,7 @@ module GolfGenius
       # @return [String] the round name (e.g., "R1", "R2", "R3")
       #
       def name
-        @data[:name]
+        value(:name)
       end
 
       # Returns the round number extracted from the name.
@@ -61,11 +68,7 @@ module GolfGenius
       #   round.number  # => 3
       #
       def number
-        return nil unless name
-
-        # Extract first number from name (handles "R1", "Round 2", etc.)
-        match = name.to_s.match(/\d+/)
-        match ? match[0].to_i : nil
+        self.class.extract_number(name)
       end
 
       # Returns the round date.
@@ -76,7 +79,7 @@ module GolfGenius
       # @return [Date, String] the round date as a Date object or original string
       #
       def date
-        @data[:date]
+        value(:date)
       end
 
       # Returns the raw in_progress value.
@@ -84,7 +87,33 @@ module GolfGenius
       # @return [Boolean, nil] true if in progress, false/nil otherwise
       #
       def in_progress
-        @data[:in_progress]
+        value(:in_progress)
+      end
+
+      # Returns the raw status value when available.
+      #
+      # @return [String, nil] round status from event metadata
+      #
+      def status
+        value(:status)
+      end
+
+      # Returns whether the round has explicit status metadata.
+      #
+      # @return [Boolean] true if status is present
+      #
+      def explicit_status?
+        status.to_s.strip != ""
+      end
+
+      # Returns whether the round has not started yet.
+      #
+      # @return [Boolean] true if unstarted, false otherwise
+      #
+      def unstarted?
+        return status.to_s == "not started" if explicit_status?
+
+        future?
       end
 
       # Returns whether the round is currently being played.
@@ -92,7 +121,9 @@ module GolfGenius
       # @return [Boolean] true if playing, false otherwise
       #
       def playing?
-        !!@data[:in_progress]
+        return status.to_s == "in progress" if explicit_status?
+
+        !!in_progress
       end
 
       # Returns whether the round is scheduled for a future date.
@@ -119,7 +150,20 @@ module GolfGenius
       # @return [Boolean] true if complete, false if still playing
       #
       def complete?
-        !playing? && !future?
+        return status.to_s == "completed" if explicit_status?
+        return false if playing?
+        return false if future?
+        return false if date.is_a?(Date) && date == Date.today
+
+        true
+      end
+
+      # Returns whether the round has started.
+      #
+      # @return [Boolean] true if the round is either playing or complete
+      #
+      def started?
+        playing? || complete?
       end
 
       # Returns the raw round data as a hash.
@@ -132,19 +176,31 @@ module GolfGenius
 
       private
 
+      def value(key)
+        return @data[key] if @data.key?(key)
+        return @data[key.to_s] if @data.key?(key.to_s)
+
+        nil
+      end
+
+      def write_value(key, new_value)
+        target_key = @data.key?(key.to_s) && !@data.key?(key) ? key.to_s : key
+        @data[target_key] = new_value
+      end
+
       # Parses the date string to a Date object.
       # If parsing fails, keeps the original string value.
       #
       # @return [void]
       #
       def parse_date!
-        value = @data[:date]
+        value = self.value(:date)
         return unless value.is_a?(String) && !value.strip.empty?
 
-        @data[:date] = Date.parse(value)
+        write_value(:date, Date.parse(value))
       rescue ArgumentError
         # Keep as string if parsing fails
-        @data[:date] = value
+        write_value(:date, value)
       end
     end
   end

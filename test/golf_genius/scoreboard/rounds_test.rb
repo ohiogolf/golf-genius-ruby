@@ -32,13 +32,33 @@ class RoundsTest < Minitest::Test
     assert_nil rounds.current
   end
 
-  def test_current_returns_first_playing_round_when_multiple_playing
-    # Edge case: multiple rounds marked as playing (shouldn't happen but test anyway)
-    rounds = create_rounds_with_statuses([false, true, true])
+  def test_latest_started_returns_latest_started_round_when_no_round_is_currently_playing
+    rounds = GolfGenius::Scoreboard::Rounds.new(
+      [
+        { id: 101, name: "R1", date: "2026-03-15", in_progress: false, status: "completed" },
+        { id: 102, name: "R2", date: "2026-03-16", in_progress: false, status: "completed" },
+        { id: 103, name: "R3", date: "2026-03-17", in_progress: false, status: "not started" },
+      ]
+    )
+
+    assert_equal "R2", rounds.latest_started.name
+  end
+
+  def test_current_returns_first_round_when_multiple_rounds_are_playing
+    rounds = create_rounds_with_statuses([true, true, false])
 
     current = rounds.current
 
-    assert_equal "R2", current.name
+    assert_equal "R1", current.name
+  end
+
+  def test_latest_started_returns_latest_started_round_when_multiple_rounds_are_playing
+    # Edge case: multiple rounds marked as playing (shouldn't happen but test anyway)
+    rounds = create_rounds_with_statuses([false, true, true])
+
+    current = rounds.latest_started
+
+    assert_equal "R3", current.name
   end
 
   def test_each_iterates_over_rounds
@@ -171,6 +191,7 @@ class RoundsTest < Minitest::Test
         name: "R#{i + 1}",
         date: "2026-03-#{15 + i}",
         in_progress: i == 1, # R2 is playing
+        status: round_status(i == 1, i),
       }
     end
 
@@ -184,9 +205,17 @@ class RoundsTest < Minitest::Test
         name: "R#{i + 1}",
         date: "2026-03-#{15 + i}",
         in_progress: in_progress,
+        status: round_status(in_progress, i),
       }
     end
 
     GolfGenius::Scoreboard::Rounds.new(rounds_data)
+  end
+
+  def round_status(in_progress, index)
+    return "in progress" if in_progress
+    return "completed" if index.zero?
+
+    "not started"
   end
 end

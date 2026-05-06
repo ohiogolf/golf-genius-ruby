@@ -31,6 +31,12 @@ class ColumnTypeTest < Minitest::Test
     assert_equal :to_par, column.type
   end
 
+  def test_legacy_to_par_format_returns_to_par_type
+    column = create_column(format: "to-par", label: "To Par R1", round_id: 123)
+
+    assert_equal :to_par, column.type
+  end
+
   def test_to_par_net_format_returns_to_par_type
     column = create_column(format: "to-par-net", label: "To Par Net R1", round_id: 123)
 

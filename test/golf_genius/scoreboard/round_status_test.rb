@@ -14,6 +14,12 @@ class RoundStatusTest < Minitest::Test
     assert_predicate scorecard, :playing?
   end
 
+  def test_scorecard_playing_returns_true_when_thru_has_live_star_suffix
+    scorecard = create_scorecard(thru: "6*", status: "partial")
+
+    assert_predicate scorecard, :playing?
+  end
+
   def test_scorecard_playing_returns_false_when_finished
     scorecard = create_scorecard(thru: "F", status: "completed")
 
@@ -36,6 +42,12 @@ class RoundStatusTest < Minitest::Test
 
   def test_scorecard_finished_returns_true_when_thru_is_f
     scorecard = create_scorecard(thru: "F", status: "completed")
+
+    assert_predicate scorecard, :finished?
+  end
+
+  def test_scorecard_finished_returns_true_when_thru_is_f_with_live_star_suffix
+    scorecard = create_scorecard(thru: "F*", status: "completed")
 
     assert_predicate scorecard, :finished?
   end
@@ -68,6 +80,30 @@ class RoundStatusTest < Minitest::Test
     scorecard = create_scorecard(thru: "8", status: "partial")
 
     refute_predicate scorecard, :not_started?
+  end
+
+  def test_scorecard_state_returns_playing
+    scorecard = create_scorecard(thru: "8", status: "partial")
+
+    assert_equal :playing, scorecard.state
+  end
+
+  def test_scorecard_state_returns_playing_for_starred_live_thru
+    scorecard = create_scorecard(thru: "2*", status: "partial")
+
+    assert_equal :playing, scorecard.state
+  end
+
+  def test_scorecard_state_returns_finished
+    scorecard = create_scorecard(thru: "F", status: "completed")
+
+    assert_equal :finished, scorecard.state
+  end
+
+  def test_scorecard_state_returns_not_started
+    scorecard = create_scorecard(thru: "", status: "no_holes")
+
+    assert_equal :not_started, scorecard.state
   end
 
   def test_scorecard_not_started_returns_false_for_historical_round_with_score_data
@@ -215,6 +251,16 @@ class RoundStatusTest < Minitest::Test
     row = tournament.rows.first
 
     refute_predicate row, :playing?
+  end
+
+  def test_row_round_state_helpers_use_specific_rounds
+    tournament = create_tournament_with_playing_player
+    row = tournament.rows.first
+
+    assert_equal :playing, row.round_state(102)
+    assert row.playing_round?(102)
+    refute row.finished_round?(102)
+    refute row.not_started_round?(102)
   end
 
   private

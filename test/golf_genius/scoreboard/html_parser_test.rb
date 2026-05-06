@@ -139,6 +139,23 @@ class HtmlParserTest < Minitest::Test
     assert_equal "R1", result[:columns][2][:round_name]
   end
 
+  def test_parse_columns_normalizes_score_class_total_header_to_total_to_par
+    html = <<~HTML
+      <table>
+        <tr class='header thead'>
+          <th class='score' data-format-text='total'>Total</th>
+          <th class='total' data-format-text='total'>Total</th>
+        </tr>
+      </table>
+    HTML
+
+    parser = GolfGenius::Scoreboard::HtmlParser.new(html)
+    result = parser.parse
+
+    assert_equal "total-to-par-gross", result[:columns][0][:format]
+    assert_equal "total", result[:columns][1][:format]
+  end
+
   def test_parse_rows_returns_empty_when_no_rows
     html = <<~HTML
       <table>

@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require_relative "round"
+
 module GolfGenius
   class Scoreboard
     # Normalizes parsed tournament-results JSON into the shape expected by the
@@ -26,10 +28,32 @@ module GolfGenius
       private
 
       def normalized_rounds
-        rounds = @json_data[:rounds]
-        return rounds if rounds && !rounds.empty?
+        payload_rounds = @json_data[:rounds] || []
+        return normalize_round_collection(@fallback_rounds) if payload_rounds.empty?
 
-        @fallback_rounds
+        fallback_by_id = rounds_by_id(@fallback_rounds)
+        payload_by_id = rounds_by_id(payload_rounds)
+
+        ordered_ids = (@fallback_rounds.map { |round| round[:id] } + payload_rounds.map { |round| round[:id] }).uniq
+
+        ordered_ids.map do |round_id|
+          payload_round = payload_by_id[round_id] || {}
+          fallback_round = fallback_by_id[round_id] || {}
+
+          merge_round(payload_round, fallback_round)
+        end
+      end
+
+      def normalize_round_collection(rounds)
+        rounds.map do |round|
+          round.merge(name: canonical_round_name(round[:name], round[:index]))
+        end
+      end
+
+      def rounds_by_id(rounds)
+        rounds.each_with_object({}) do |round, result|
+          result[round[:id]] = round
+        end
       end
 
       def normalized_aggregates
@@ -46,6 +70,37 @@ module GolfGenius
         return aggregate unless synthesized_round
 
         aggregate.merge(rounds: rounds.merge(@fetched_round_id => synthesized_round))
+      end
+
+      def merge_round(payload_round, fallback_round)
+        # Event metadata is authoritative for progression fields because the
+        # tournament_results payload can omit or stale-status them. The payload
+        # remains authoritative for the display name when it is present.
+        merged = fallback_round.merge(payload_round)
+        merged_name = payload_round[:name] || fallback_round[:name]
+        merged_index = payload_round[:index] || fallback_round[:index]
+
+        merged[:name] = canonical_round_name(
+          merged_name,
+          merged_index
+        )
+        merged[:status] = fallback_round[:status] || payload_round[:status]
+        merged[:in_progress] = if fallback_round.key?(:in_progress)
+                                 fallback_round[:in_progress]
+                               else
+                                 payload_round[:in_progress]
+                               end
+        merged[:date] = fallback_round[:date] || payload_round[:date]
+        merged[:index] = fallback_round[:index] || payload_round[:index]
+
+        merged
+      end
+
+      def canonical_round_name(name, index)
+        round_number = Round.extract_number(name) || index
+        return name unless round_number
+
+        "R#{round_number}"
       end
 
       def synthesize_fetched_round(aggregate)

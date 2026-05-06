@@ -250,9 +250,33 @@ class RowAffiliationTest < Minitest::Test
     assert_equal [nil, nil], row.affiliation_state
   end
 
+  def test_affiliation_country_only_uses_country_metadata
+    row = create_row("England", countries: [{ name: "England", alpha_2: "GB", alpha_3: "GBR" }])
+
+    affiliation = row.affiliations.first
+
+    assert_equal "England", affiliation.city
+    assert_equal "England", affiliation.country
+    assert_equal :country, affiliation.kind
+    assert_equal true, affiliation.country_only?
+    assert_equal false, affiliation.us?
+  end
+
+  def test_affiliation_city_state_preserves_country_metadata
+    row = create_row("Columbus, OH", countries: [{ name: "United States of America", alpha_2: "US", alpha_3: "USA" }])
+
+    affiliation = row.affiliations.first
+
+    assert_equal "Columbus", affiliation.city
+    assert_equal "OH", affiliation.state
+    assert_equal "United States of America", affiliation.country
+    assert_equal :city_state, affiliation.kind
+    assert_equal true, affiliation.us?
+  end
+
   private
 
-  def create_row(affiliation)
+  def create_row(affiliation, countries: [])
     tournament_data = {
       meta: {
         tournament_id: 1,
@@ -283,6 +307,7 @@ class RowAffiliationTest < Minitest::Test
       name: name,
       player_ids: player_ids,
       affiliation: affiliation,
+      countries: countries,
       tournament_id: 1,
       summary: {},
       rounds: {},

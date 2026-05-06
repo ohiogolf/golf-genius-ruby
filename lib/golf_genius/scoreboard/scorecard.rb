@@ -29,6 +29,12 @@ module GolfGenius
     #   end
     #
     class Scorecard
+      FINISHED_STATUSES = Round::FINISHED_STATUSES
+      # Golf Genius sometimes appends "*" to live thru markers without changing
+      # whether the player is still on the course or has already finished.
+      FINISHED_THRU_VALUES = %w[F F*].freeze
+      LIVE_THRU_PATTERN = /^\d+\*?$/
+
       # @return [Hash] the raw scorecard data hash
       attr_reader :data
 
@@ -171,8 +177,8 @@ module GolfGenius
       def playing?
         thru_value = thru.to_s.strip
         return false if thru_value.empty?
-        return false if thru_value == "F"
-        return false unless thru_value.match?(/^\d+$/)
+        return false if FINISHED_THRU_VALUES.include?(thru_value)
+        return false unless thru_value.match?(LIVE_THRU_PATTERN)
 
         !finished?
       end
@@ -193,11 +199,11 @@ module GolfGenius
       #
       def finished?
         thru_value = thru.to_s.strip
-        return true if thru_value == "F"
+        return true if FINISHED_THRU_VALUES.include?(thru_value)
 
         # Also consider completed/verified status
         status_value = status.to_s.downcase
-        return true if %w[completed verified complete].include?(status_value)
+        return true if FINISHED_STATUSES.include?(status_value)
 
         # Historical rounds have score data but no thru/status metadata.
         # If we have a real score, the round is finished.
@@ -230,6 +236,18 @@ module GolfGenius
         # Check for "no_holes" status
         status_value = status.to_s.downcase
         status_value == "no_holes"
+      end
+
+      # Returns a normalized progression state for this scorecard.
+      #
+      # @return [Symbol] one of :finished, :playing, :not_started, or :unknown
+      #
+      def state
+        return :finished if finished?
+        return :playing if playing?
+        return :not_started if not_started?
+
+        :unknown
       end
 
       # Hash-like access to scorecard data.

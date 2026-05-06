@@ -37,30 +37,32 @@ module GolfGenius
     #   affiliation.state_name  # => nil
     #
     class Affiliation
+      State = Struct.new(:code, :name, keyword_init: true)
+      Country = Struct.new(:name, :alpha2, :alpha3, keyword_init: true)
+
       # @return [String] the raw affiliation string
       attr_reader :raw
 
       # @return [String] the city or club name
       attr_reader :city
 
-      # @return [String, nil] the state abbreviation (e.g., "OH"), or nil if not present
-      attr_reader :state_code
-
-      # @return [String, nil] the full state name (e.g., "Ohio"), or nil if not present
-      attr_reader :state_name
+      # @return [Symbol, nil] the parsed affiliation kind
+      attr_reader :kind
 
       # Creates a new Affiliation instance.
       #
       # @param raw [String] the raw affiliation string
       # @param city [String] the parsed city or club name
-      # @param state_code [String, nil] the normalized state abbreviation
-      # @param state_name [String, nil] the full state name
+      # @param state [State, nil] normalized state metadata
+      # @param country [Country, nil] normalized country metadata
+      # @param kind [Symbol, nil] the parsed affiliation kind
       #
-      def initialize(raw:, city:, state_code: nil, state_name: nil)
+      def initialize(raw:, city:, state: nil, country: nil, kind: nil)
         @raw = raw
         @city = city
-        @state_code = state_code
-        @state_name = state_name
+        @state_data = state
+        @country_data = country
+        @kind = kind
       end
 
       # Returns the state abbreviation (alias for state_code).
@@ -71,6 +73,22 @@ module GolfGenius
         state_code
       end
 
+      # Returns the state abbreviation (e.g., "OH"), or nil if not present.
+      #
+      # @return [String, nil] the state abbreviation
+      #
+      def state_code
+        @state_data&.code
+      end
+
+      # Returns the full state name (e.g., "Ohio"), or nil if not present.
+      #
+      # @return [String, nil] the state name
+      #
+      def state_name
+        @state_data&.name
+      end
+
       # Returns the full affiliation string (alias for raw).
       #
       # @return [String] the full affiliation string
@@ -79,12 +97,44 @@ module GolfGenius
         raw
       end
 
+      # Returns the country name when known.
+      #
+      # @return [String, nil] the country name
+      #
+      def country
+        @country_data&.name
+      end
+
       # Returns whether the affiliation includes a state.
       #
       # @return [Boolean] true if state is present, false otherwise
       #
       def state?
         !state.nil?
+      end
+
+      # Returns whether the affiliation is a country-only location.
+      #
+      # @return [Boolean] true if country-only, false otherwise
+      #
+      def country_only?
+        kind == :country
+      end
+
+      # Returns whether the affiliation is a recognized US city/state location.
+      #
+      # @return [Boolean] true if city/state, false otherwise
+      #
+      def city_state?
+        kind == :city_state
+      end
+
+      # Returns whether the affiliation belongs to the United States.
+      #
+      # @return [Boolean] true if US, false otherwise
+      #
+      def us?
+        %w[US USA].include?(@country_data&.alpha2) || @country_data&.alpha3 == "USA"
       end
     end
   end

@@ -94,14 +94,22 @@ class ScoreboardTest < Minitest::Test
     end
 
     round = Object.new
+    status = "in progress"
     def round.id = "1615931"
 
     def round.[](key)
       case key
       when :id, "id" then "1615931"
       when :name, "name" then "R1"
+      when :status, "status" then "in progress"
       end
     end
+
+    round.define_singleton_method(:playing?) { status == "in progress" }
+    round.define_singleton_method(:started?) { ["in progress", "completed"].include?(status) }
+    round.define_singleton_method(:complete?) { status == "completed" }
+    round.define_singleton_method(:completed?) { status == "completed" }
+    round.define_singleton_method(:unstarted?) { status == "not started" }
 
     tournament = Object.new
     def tournament.id = "4522280"
@@ -141,7 +149,7 @@ class ScoreboardTest < Minitest::Test
     event
   end
 
-  def create_mock_round(id, name, index, date)
+  def create_mock_round(id, name, index, date, status: "not started")
     round = Object.new
     round.define_singleton_method(:id) { id }
     round.define_singleton_method(:[]) do |key|
@@ -150,8 +158,14 @@ class ScoreboardTest < Minitest::Test
       when :name, "name" then name
       when :index, "index" then index
       when :date, "date" then date
+      when :status, "status" then status
       end
     end
+    round.define_singleton_method(:playing?) { status == "in progress" }
+    round.define_singleton_method(:started?) { ["in progress", "completed"].include?(status) }
+    round.define_singleton_method(:complete?) { status == "completed" }
+    round.define_singleton_method(:completed?) { status == "completed" }
+    round.define_singleton_method(:unstarted?) { status == "not started" }
     round
   end
 
@@ -407,17 +421,7 @@ class ScoreboardTest < Minitest::Test
     end
 
     # Mock rounds for metadata with proper index/date for latest_round logic
-    round = Object.new
-    def round.id = "1615932"
-
-    def round.[](key)
-      case key
-      when :id, "id" then "1615932"
-      when :name, "name" then "R1"
-      when :index, "index" then 1
-      when :date, "date" then "2026-03-15"
-      end
-    end
+    round = create_mock_round("1615932", "R1", 1, "2026-03-15", status: "in progress")
 
     # Mock tournament
     tournament = Object.new
@@ -452,15 +456,7 @@ class ScoreboardTest < Minitest::Test
     end
 
     # Create round with matching ID
-    round = Object.new
-    def round.id = "1615930"
-
-    def round.[](key)
-      case key
-      when :id, "id" then "1615930"
-      when :name, "name" then "R1"
-      end
-    end
+    round = create_mock_round("1615930", "R1", 1, "2026-03-15", status: "in progress")
 
     tournament = Object.new
     def tournament.id = "4522280"
@@ -504,11 +500,11 @@ class ScoreboardTest < Minitest::Test
   end
 
   def test_resolves_latest_round_from_multiple_rounds
-    # Test that latest round is selected correctly by index (primary) and date (fallback)
+    # Test that latest started round is selected rather than the highest index.
     event = create_mock_event("522157", "Test Event")
-    round1 = create_mock_round("1615930", "R1", 1, "2026-03-15")
-    round2 = create_mock_round("1615931", "R2", 2, "2026-03-16")
-    round3 = create_mock_round("1615932", "R3", 3, "2026-03-17")
+    round1 = create_mock_round("1615930", "R1", 1, "2026-03-15", status: "completed")
+    round2 = create_mock_round("1615931", "R2", 2, "2026-03-16", status: "in progress")
+    round3 = create_mock_round("1615932", "R3", 3, "2026-03-17", status: "not started")
     tournament = create_mock_tournament("4522280", "Overall Results")
 
     # Verify rounds is only called once (memoization)
@@ -525,12 +521,32 @@ class ScoreboardTest < Minitest::Test
             scoreboard = GolfGenius::Scoreboard.new(event: "522157")
             schema = scoreboard.to_h
 
-            # Should resolve to R3 (highest index)
-            assert_equal "1615932", schema[:meta][:round_id]
-            assert_equal "R3", schema[:meta][:round_name]
+            # Should resolve to R2 (latest started round)
+            assert_equal "1615931", schema[:meta][:round_id]
+            assert_equal "R2", schema[:meta][:round_name]
 
             # Verify memoization: rounds should only be called once
             assert_equal 1, rounds_call_count, "Expected rounds to be called once (memoization), but was called #{rounds_call_count} times"
+          end
+        end
+      end
+    end
+  end
+
+  def test_resolves_earliest_upcoming_round_when_nothing_has_started
+    event = create_mock_event("522157", "Test Event")
+    round1 = create_mock_round("1615930", "R1", 1, "2026-03-15", status: "not started")
+    round2 = create_mock_round("1615931", "R2", 2, "2026-03-16", status: "not started")
+    tournament = create_mock_tournament("4522280", "Overall Results")
+
+    GolfGenius::Event.stub :fetch, event do
+      GolfGenius::Event.stub :rounds, [round1, round2] do
+        GolfGenius::Event.stub :tournaments, [tournament] do
+          GolfGenius::Event.stub :tournament_results, stub_tournament_results_lambda do
+            scoreboard = GolfGenius::Scoreboard.new(event: "522157")
+            schema = scoreboard.to_h
+
+            assert_equal "1615930", schema[:meta][:round_id]
           end
         end
       end
@@ -968,7 +984,7 @@ class ScoreboardTest < Minitest::Test
             scorecard = row.scorecard(2001)
 
             assert_equal 1, tournament.rounds.size
-            assert_equal "Round 1", tournament.rounds.first.name
+            assert_equal "R1", tournament.rounds.first.name
             assert scorecard, "expected synthesized scorecard for fetched round"
             assert_equal 35, scorecard.totals[:out]
             assert_equal 34, scorecard.totals[:in]

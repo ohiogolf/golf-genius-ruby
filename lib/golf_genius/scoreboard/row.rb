@@ -598,6 +598,45 @@ module GolfGenius
         rounds.values
       end
 
+      # Returns the normalized progression state for a specific round.
+      #
+      # @param round_id [Integer, String] the round ID
+      # @return [Symbol] one of :finished, :playing, :not_started, or :missing
+      #
+      def round_state(round_id)
+        card = scorecard(round_id)
+        return :missing unless card
+
+        card.state
+      end
+
+      # Returns whether the player finished a specific round.
+      #
+      # @param round_id [Integer, String] the round ID
+      # @return [Boolean] true if finished
+      #
+      def finished_round?(round_id)
+        round_state(round_id) == :finished
+      end
+
+      # Returns whether the player is currently playing a specific round.
+      #
+      # @param round_id [Integer, String] the round ID
+      # @return [Boolean] true if playing
+      #
+      def playing_round?(round_id)
+        round_state(round_id) == :playing
+      end
+
+      # Returns whether the player has not started a specific round.
+      #
+      # @param round_id [Integer, String] the round ID
+      # @return [Boolean] true if not started
+      #
+      def not_started_round?(round_id)
+        round_state(round_id) == :not_started
+      end
+
       # Returns all cells as Cell objects.
       #
       # Cells are returned in the same order as tournament.columns, with each
@@ -688,13 +727,23 @@ module GolfGenius
       def parse_affiliations_for_players(player_count)
         return Array.new(player_count) unless affiliation
 
+        countries = country_metadata_for_players(player_count)
+
         if affiliation.is_a?(Array)
           # Team: parse each affiliation
-          affiliation.map { |aff| AffiliationParser.parse(aff) }
+          affiliation.each_with_index.map { |aff, index| AffiliationParser.parse(aff, country: countries[index]) }
         else
           # Individual: parse single affiliation
-          [AffiliationParser.parse(affiliation)]
+          [AffiliationParser.parse(affiliation, country: countries.first)]
         end
+      end
+
+      def country_metadata_for_players(player_count)
+        countries = Array(@data[:countries])
+        return Array.new(player_count) if countries.empty?
+        return countries.first(player_count) if countries.length >= player_count
+
+        countries + Array.new(player_count - countries.length)
       end
 
       # Returns the to-par value for a cell based on its column type.

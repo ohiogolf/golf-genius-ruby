@@ -74,6 +74,43 @@ class ColumnDecomposerTest < Minitest::Test
     assert_equal 1, result[:rounds][0][:columns].length
   end
 
+  def test_decompose_matches_r_aliases_against_verbose_round_names
+    columns = [
+      { format: "round-total", label: "R1", round_name: nil },
+      { format: "round-total", label: "R2", round_name: nil },
+    ]
+
+    rounds = [
+      { id: 2000, name: "Round 1", in_progress: false },
+      { id: 2001, name: "Round 2", in_progress: true },
+    ]
+
+    decomposer = GolfGenius::Scoreboard::ColumnDecomposer.new(columns, rounds)
+    result = decomposer.decompose
+
+    assert_empty result[:summary]
+    assert_equal 1, result[:rounds][0][:columns].length
+    assert_equal 1, result[:rounds][1][:columns].length
+  end
+
+  def test_decompose_does_not_match_r1_alias_inside_r10_label
+    columns = [
+      { format: "thru", label: "Thru R10", round_name: nil },
+    ]
+
+    rounds = [
+      { id: 2000, name: "R1", in_progress: false },
+      { id: 2009, name: "R10", in_progress: true },
+    ]
+
+    decomposer = GolfGenius::Scoreboard::ColumnDecomposer.new(columns, rounds)
+    result = decomposer.decompose
+
+    assert_empty result[:rounds][0][:columns]
+    assert_equal 1, result[:rounds][1][:columns].length
+    assert_equal "Thru R10", result[:rounds][1][:columns][0][:label]
+  end
+
   def test_decompose_preserves_column_metadata
     columns = [
       { format: "player", label: "Player Name", round_name: nil },

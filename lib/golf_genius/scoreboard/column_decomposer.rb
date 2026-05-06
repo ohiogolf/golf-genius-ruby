@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require_relative "round"
+
 module GolfGenius
   class Scoreboard
     # Decomposes columns into summary and round-specific sections.
@@ -27,7 +29,7 @@ module GolfGenius
       def initialize(columns, rounds)
         @columns = columns
         @rounds = rounds
-        @round_names_to_ids = build_round_name_lookup(rounds)
+        @round_name_matchers = build_round_name_lookup(rounds)
         @round_lookup = build_round_id_lookup(rounds)
       end
 
@@ -66,11 +68,14 @@ module GolfGenius
       # @return [Hash] hash of round_name => round_id
       #
       def build_round_name_lookup(rounds)
-        result = {}
+        result = []
         rounds.each do |round|
-          result[round[:name]] = round[:id]
+          round_aliases(round).each do |alias_name|
+            result << [alias_name, round[:id]]
+          end
         end
-        result
+
+        result.uniq.sort_by { |alias_name, _round_id| -alias_name.length }
       end
 
       # Builds a lookup hash from round ID to round hash.
@@ -93,16 +98,37 @@ module GolfGenius
       #
       def identify_round(col)
         # Check if column has a round_name attribute (from data-name)
-        return @round_names_to_ids[col[:round_name]] if col[:round_name] && @round_names_to_ids[col[:round_name]]
+        if col[:round_name]
+          exact_match = @round_name_matchers.find { |alias_name, _round_id| alias_name == col[:round_name] }
+          return exact_match[1] if exact_match
+        end
 
         # Check if label contains a round name (e.g., "Thru R2", "R1")
         label = col[:label] || ""
-        @round_names_to_ids.each do |round_name, round_id|
-          return round_id if label.include?(round_name)
+        @round_name_matchers.each do |round_name, round_id|
+          return round_id if round_name_match?(label, round_name)
         end
 
         # No round association
         nil
+      end
+
+      def round_name_match?(label, round_name)
+        label.match?(/(?<![A-Za-z0-9])#{Regexp.escape(round_name)}(?![A-Za-z0-9])/i)
+      end
+
+      def round_aliases(round)
+        aliases = []
+        name = round[:name].to_s.strip
+        aliases << name unless name.empty?
+
+        round_number = Round.extract_number(name)
+        if round_number
+          aliases << "R#{round_number}"
+          aliases << "Round #{round_number}"
+        end
+
+        aliases.uniq
       end
 
       # Builds a column hash for the output structure.
@@ -163,6 +189,7 @@ module GolfGenius
             id: round_id,
             name: round[:name],
             in_progress: round[:in_progress],
+            status: round[:status],
             columns: columns,
           }
         end

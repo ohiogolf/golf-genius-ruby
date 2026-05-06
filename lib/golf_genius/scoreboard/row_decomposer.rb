@@ -101,7 +101,7 @@ module GolfGenius
 
           # Clean data bugs (duplicate totals, status codes in score fields).
           # WD players are excluded — their display is handled by Row#wd_round_strokes_value.
-          clean_round_data!(round_cells, summary) unless withdrew?(summary)
+          clean_round_data!(round_cells, summary, round) unless withdrew?(summary)
 
           # Only include round if there's data
           result[round_id] = round_cells unless round_cells.empty?
@@ -119,14 +119,14 @@ module GolfGenius
       # @param round_cells [Hash] the round cells to clean
       # @param summary [Hash] the summary cells (for total_gross comparison)
       #
-      def clean_round_data!(round_cells, summary)
+      def clean_round_data!(round_cells, summary, round)
         total = round_cells[:total]
         return unless total
 
-        total_gross = summary[:total_gross]
+        total_gross = summary[:total_gross] || summary[:total]
 
         # Bug 1: Round total equals tournament total (obvious duplicate)
-        if total_gross && total.to_s == total_gross.to_s
+        if total_gross && total.to_s == total_gross.to_s && round_status_allows_duplicate_cleaning?(round)
           round_cells[:total] = nil
           return
         end
@@ -135,6 +135,11 @@ module GolfGenius
         return unless total.to_s.match?(/^(CUT|DQ|MC|NS|NC)$/i)
 
         round_cells[:total] = nil
+      end
+
+      def round_status_allows_duplicate_cleaning?(round)
+        status = round[:status].to_s.downcase
+        !Round::FINISHED_STATUSES.include?(status)
       end
 
       # Normalizes a raw HTML cell value.

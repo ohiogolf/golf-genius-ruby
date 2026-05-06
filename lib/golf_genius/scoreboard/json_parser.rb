@@ -102,7 +102,8 @@ module GolfGenius
       def parse_aggregate(agg)
         {
           id: agg["id"],
-          member_ids: agg["member_ids_str"] || [],
+          member_ids: parse_member_ids(agg),
+          countries: parse_countries(agg),
           rounds: parse_aggregate_rounds(agg),
           current_round_summary: parse_current_round_summary(agg),
           current_round_scores: parse_current_round_scores(agg),
@@ -176,6 +177,39 @@ module GolfGenius
           score: agg["score"],
           total: agg["total"],
         }
+      end
+
+      def parse_member_ids(agg)
+        raw_ids = agg["member_ids_str"]
+        raw_ids = agg["member_ids"] if raw_ids.nil?
+
+        Array(raw_ids)
+          .filter_map do |value|
+            id = value.to_s.strip
+            id.empty? ? nil : id
+          end
+      end
+
+      def parse_countries(agg)
+        countries = case agg["country"]
+                    when Array
+                      agg["country"]
+                    when Hash
+                      [agg["country"]]
+                    else
+                      Array(agg["country"]).compact
+                    end
+
+        # rubocop:disable Naming/VariableNumber
+        countries.map do |country|
+          {
+            name: country["name"],
+            alpha_2: country["alpha_2"],
+            alpha_3: country["alpha_3"],
+            ioc: country["ioc"],
+          }
+        end
+        # rubocop:enable Naming/VariableNumber
       end
 
       # Parses previous rounds scores array.

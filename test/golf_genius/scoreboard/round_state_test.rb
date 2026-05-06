@@ -25,14 +25,70 @@ class RoundStateTest < Minitest::Test
     assert_predicate round, :playing?
   end
 
+  def test_complete_returns_false_for_same_day_round_without_explicit_status
+    round = create_round(date: Date.today, in_progress: false)
+
+    refute_predicate round, :complete?
+    refute_predicate round, :future?
+  end
+
+  def test_complete_uses_explicit_completed_status
+    round = create_round(date: Date.today, in_progress: false, status: "completed")
+
+    assert_predicate round, :complete?
+  end
+
+  def test_unstarted_uses_explicit_not_started_status
+    round = create_round(date: Date.today, in_progress: false, status: "not started")
+
+    assert_predicate round, :unstarted?
+    refute_predicate round, :complete?
+  end
+
+  def test_complete_handles_string_keyed_same_day_round_data
+    round = GolfGenius::Scoreboard::Round.new(
+      "id" => 123,
+      "name" => "Round 1",
+      "date" => Date.today.to_s,
+      "in_progress" => false
+    )
+
+    refute_predicate round, :complete?
+  end
+
+  def test_explicit_status_uses_string_keys
+    round = GolfGenius::Scoreboard::Round.new(
+      "id" => 123,
+      "name" => "Round 1",
+      "date" => Date.today.to_s,
+      "in_progress" => false,
+      "status" => "completed"
+    )
+
+    assert_predicate round, :complete?
+  end
+
+  def test_playing_uses_string_keyed_in_progress_value
+    round = GolfGenius::Scoreboard::Round.new(
+      "id" => 123,
+      "name" => "Round 1",
+      "date" => Date.today.to_s,
+      "in_progress" => true
+    )
+
+    assert_equal true, round.in_progress
+    assert_predicate round, :playing?
+  end
+
   private
 
-  def create_round(date:, in_progress:)
+  def create_round(date:, in_progress:, status: nil)
     GolfGenius::Scoreboard::Round.new(
       id: 123,
       name: "Round 1",
       date: date,
-      in_progress: in_progress
+      in_progress: in_progress,
+      status: status
     )
   end
 end

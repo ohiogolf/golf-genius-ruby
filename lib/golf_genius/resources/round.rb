@@ -28,6 +28,8 @@ module GolfGenius
       status.to_s == COMPLETED
     end
 
+    alias complete? completed?
+
     def started?
       playing? || completed?
     end

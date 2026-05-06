@@ -270,12 +270,12 @@ module GolfGenius
     # @return [Hash] tournament hash with meta, columns, rows
     #
     def build_tournament(tournament_id)
-      html_data, json_data = fetch_and_parse_tournament(tournament_id)
-      merged_data = merge_tournament_data(html_data, json_data)
+      html_data, json_data, source_round_id = fetch_and_parse_tournament(tournament_id)
+      merged_data = merge_tournament_data(html_data, json_data, source_round_id)
       column_structure = decompose_columns(html_data, json_data)
       rows = decompose_rows(merged_data, column_structure)
 
-      build_tournament_hash(tournament_id, merged_data, column_structure, rows)
+      build_tournament_hash(tournament_id, merged_data, column_structure, rows, source_round_id)
     end
 
     # Fetches and parses HTML and JSON for a tournament.
@@ -286,22 +286,13 @@ module GolfGenius
     def fetch_and_parse_tournament(tournament_id)
       # Fetch HTML and JSON
       html = GolfGenius::Event.tournament_results(@event_id, @round_id, tournament_id, format: :html)
-      json_obj = GolfGenius::Event.tournament_results(@event_id, @round_id, tournament_id, format: :json)
+      json_data, source_round_id = fetch_json_for_tournament(tournament_id)
 
       # Parse HTML
       html_parser = HtmlParser.new(html)
       html_data = html_parser.parse
 
-      # Parse JSON
-      json_string = json_obj.to_json(raw: true)
-      json_parser = JsonParser.new(json_string)
-      json_data = TournamentResultsNormalizer.new(
-        json_parser.parse,
-        fetched_round_id: @round_id,
-        fallback_rounds: fallback_rounds_metadata
-      ).normalize
-
-      [html_data, json_data]
+      [html_data, json_data, source_round_id]
     end
 
     def fallback_rounds_metadata
@@ -310,9 +301,51 @@ module GolfGenius
           id: round[:id]&.to_i,
           name: round[:name],
           date: round[:date],
+          status: round[:status] || round["status"],
+          index: round[:index] || round["index"],
           in_progress: round[:in_progress] || false,
         }
       end
+    end
+
+    def fetch_json_for_tournament(tournament_id)
+      requested_round_id = @round_id.to_i
+      requested_json = parse_tournament_results_json(tournament_id, requested_round_id)
+      return [requested_json, requested_round_id] if requested_json[:aggregates].any?
+
+      fallback_round = fallback_source_round_for(requested_round_id)
+      return [requested_json, requested_round_id] unless fallback_round
+
+      fallback_round_id = fallback_round.id.to_i
+      fallback_json = parse_tournament_results_json(tournament_id, fallback_round_id)
+
+      if fallback_json[:aggregates].any?
+        [fallback_json, fallback_round_id]
+      else
+        [requested_json, requested_round_id]
+      end
+    end
+
+    def parse_tournament_results_json(tournament_id, fetched_round_id)
+      json_obj = GolfGenius::Event.tournament_results(@event_id, fetched_round_id, tournament_id, format: :json)
+      json_string = json_obj.to_json(raw: true)
+      json_parser = JsonParser.new(json_string)
+
+      TournamentResultsNormalizer.new(
+        json_parser.parse,
+        fetched_round_id: fetched_round_id,
+        fallback_rounds: fallback_rounds_metadata
+      ).normalize
+    end
+
+    def fallback_source_round_for(requested_round_id)
+      requested_round = rounds.find { |round| round.id.to_i == requested_round_id }
+      return nil unless requested_round
+
+      rounds
+        .select { |round| round.started? && round.id.to_i != requested_round_id }
+        .select { |round| older_than_round?(round, requested_round) }
+        .max_by { |round| round_order_key(round) }
     end
 
     # Merges HTML and JSON tournament data.
@@ -321,8 +354,8 @@ module GolfGenius
     # @param json_data [Hash] parsed JSON data
     # @return [Hash] merged tournament data
     #
-    def merge_tournament_data(html_data, json_data)
-      merger = DataMerger.new(html_data, json_data, @round_id.to_i)
+    def merge_tournament_data(html_data, json_data, source_round_id)
+      merger = DataMerger.new(html_data, json_data, source_round_id.to_i)
       merger.merge
     end
 
@@ -358,7 +391,7 @@ module GolfGenius
     # @param rows [Array<Hash>] decomposed rows
     # @return [Hash] tournament hash
     #
-    def build_tournament_hash(tournament_id, merged_data, column_structure, rows)
+    def build_tournament_hash(tournament_id, merged_data, column_structure, rows, source_round_id)
       {
         meta: {
           tournament_id: tournament_id.to_i,
@@ -366,6 +399,8 @@ module GolfGenius
           cut_text: merged_data[:tournament_meta][:cut_text],
           adjusted: merged_data[:tournament_meta][:adjusted],
           rounds: merged_data[:tournament_meta][:rounds],
+          requested_round_id: @round_id.to_i,
+          source_round_id: source_round_id.to_i,
         },
         columns: column_structure,
         rows: rows,
@@ -374,7 +409,8 @@ module GolfGenius
 
     # Resolves the round_id if not explicitly provided.
     #
-    # Uses memoized rounds list to find the latest round by index/date.
+    # Uses memoized rounds list to prefer a playing round, then the latest
+    # completed round, then the earliest upcoming round.
     #
     # @raise [StandardError] if no rounds exist for the event
     #
@@ -383,13 +419,32 @@ module GolfGenius
 
       raise StandardError, "No rounds found for event #{@event_id}" if rounds_list.nil? || rounds_list.empty?
 
-      # Find latest round by index (primary), then date (fallback)
-      # Same logic as Event#latest_round but uses memoized rounds
-      latest = rounds_list.max_by do |round|
-        [round[:index] || round["index"] || 0, round[:date] || round["date"] || ""]
-      end
+      latest = select_latest_round(rounds_list, &:playing?) ||
+               select_latest_round(rounds_list, &:complete?) ||
+               select_earliest_round(rounds_list, &:unstarted?) ||
+               rounds_list.max_by { |round| round_order_key(round) }
 
       @round_id = latest.id
+    end
+
+    def round_order_key(round)
+      [
+        round[:index] || round["index"] || 0,
+        round[:date] || round["date"] || "",
+        round.id.to_i,
+      ]
+    end
+
+    def select_latest_round(rounds_list, &block)
+      rounds_list.select(&block).max_by { |round| round_order_key(round) }
+    end
+
+    def select_earliest_round(rounds_list, &block)
+      rounds_list.select(&block).min_by { |round| round_order_key(round) }
+    end
+
+    def older_than_round?(round, other_round)
+      (round_order_key(round) <=> round_order_key(other_round)) == -1
     end
 
     # Resolves the tournament IDs if not explicitly provided.
