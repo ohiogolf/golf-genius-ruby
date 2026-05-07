@@ -60,24 +60,6 @@ module GolfGenius
         value(:name)
       end
 
-      # Returns the round number extracted from the name.
-      #
-      # Parses the numeric portion from round names like "R1", "R2", "Round 3", etc.
-      # Returns nil if no number can be extracted.
-      #
-      # @return [Integer, nil] the round number (1, 2, 3, 4, etc.) or nil
-      #
-      # @example
-      #   round.name    # => "R1"
-      #   round.number  # => 1
-      #
-      #   round.name    # => "Round 3"
-      #   round.number  # => 3
-      #
-      def number
-        self.class.extract_number(name)
-      end
-
       # Returns the round date.
       #
       # The date is automatically parsed from a string (e.g., "2026-03-15") to
@@ -91,30 +73,6 @@ module GolfGenius
 
       def index
         value(:index)
-      end
-
-      # Returns the raw in_progress value.
-      #
-      # @return [Boolean, nil] true if in progress, false/nil otherwise
-      #
-      def in_progress
-        value(:in_progress)
-      end
-
-      # Returns the raw status value when available.
-      #
-      # @return [String, nil] round status from event metadata
-      #
-      def status
-        value(:status)
-      end
-
-      # Returns whether the round has explicit status metadata.
-      #
-      # @return [Boolean] true if status is present
-      #
-      def explicit_status?
-        status.to_s.strip != ""
       end
 
       # Returns whether the round has not started yet.
@@ -186,6 +144,18 @@ module GolfGenius
       end
 
       private
+
+      def in_progress
+        value(:in_progress)
+      end
+
+      def status
+        value(:status)
+      end
+
+      def explicit_status?
+        status.to_s.strip != ""
+      end
 
       def value(key)
         return @data[key] if @data.key?(key)

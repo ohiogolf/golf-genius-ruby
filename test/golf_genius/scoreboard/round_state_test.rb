@@ -76,7 +76,6 @@ class RoundStateTest < Minitest::Test
       "in_progress" => true
     )
 
-    assert_equal true, round.in_progress
     assert_predicate round, :playing?
   end
 
