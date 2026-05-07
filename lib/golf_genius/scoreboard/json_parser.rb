@@ -25,9 +25,6 @@ module GolfGenius
     #   # }
     #
     class JsonParser
-      # @return [String] the JSON to parse
-      attr_reader :json
-
       # Creates a new JSON parser.
       #
       # @param json [String] the JSON to parse
@@ -115,12 +112,10 @@ module GolfGenius
           details: normalize_blank(agg["details"]),
           disposition: normalize_blank(agg["disposition"]),
           disposition_cause: normalize_blank(agg["disposition_cause"]),
-          tour_id: normalize_blank(agg["tour_id"]),
           member_ids: parse_member_ids(agg),
           member_cards: parse_member_cards(agg),
           countries: parse_countries(agg),
           rounds: parse_aggregate_rounds(agg),
-          scorecard_statuses: parse_scorecard_statuses(agg["scorecard_statuses"]),
           current_round_summary: parse_current_round_summary(agg),
           current_round_scores: parse_current_round_scores(agg),
           previous_rounds_scores: parse_previous_rounds_scores(agg),

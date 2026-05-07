@@ -437,7 +437,7 @@ class JsonParserTest < Minitest::Test
     )
   end
 
-  def test_parse_scorecard_statuses_compacts_blanks
+  def test_parse_current_round_summary_compacts_blank_scorecard_statuses
     json = {
       name: "Test Tournament",
       adjusted: false,
@@ -462,11 +462,10 @@ class JsonParserTest < Minitest::Test
     parser = GolfGenius::Scoreboard::JsonParser.new(json)
     result = parser.parse
 
-    assert_equal %w[completed verified], result[:aggregates][1001][:scorecard_statuses]
     assert_equal "completed", result[:aggregates][1001][:current_round_summary][:status]
   end
 
-  def test_parse_scorecard_statuses_returns_empty_when_missing
+  def test_parse_current_round_summary_status_is_nil_when_missing
     json = {
       name: "Test Tournament",
       adjusted: false,
@@ -486,7 +485,6 @@ class JsonParserTest < Minitest::Test
     parser = GolfGenius::Scoreboard::JsonParser.new(json)
     result = parser.parse
 
-    assert_empty result[:aggregates][1001][:scorecard_statuses]
     assert_nil result[:aggregates][1001][:current_round_summary][:status]
   end
 end
