@@ -9,7 +9,12 @@ module GolfGenius
     # totals for front nine, back nine, and overall.
     #
     # @example Accessing scorecard data
-    #   scorecard = row.scorecard(round_id)
+    #   scorecard = GolfGenius::Scoreboard::Scorecard.new(
+    #     score: "72",
+    #     status: "complete",
+    #     thru: "18",
+    #     gross_scores: [4, 5, 3, 4]
+    #   )
     #   scorecard.score          # => "72"
     #   scorecard.status         # => "complete"
     #   scorecard.thru           # => "18"
@@ -22,21 +27,12 @@ module GolfGenius
     #   scorecard.playing?       # => true
     #   scorecard.finished?      # => false
     #   scorecard.not_started?   # => false
-    #
-    # @example Iterating through all scorecards for a row
-    #   row.scorecards.each do |scorecard|
-    #     puts "Score: #{scorecard.score}, Status: #{scorecard.status}"
-    #   end
-    #
     class Scorecard
       FINISHED_STATUSES = Round::FINISHED_STATUSES
       # Golf Genius sometimes appends "*" to live thru markers without changing
       # whether the player is still on the course or has already finished.
       FINISHED_THRU_VALUES = %w[F F*].freeze
       LIVE_THRU_PATTERN = /^\d+\*?$/
-
-      # @return [Hash] the raw scorecard data hash
-      attr_reader :data
 
       # Creates a new Scorecard instance.
       #
@@ -248,26 +244,6 @@ module GolfGenius
         return :not_started if not_started?
 
         :unknown
-      end
-
-      # Hash-like access to scorecard data.
-      #
-      # Provides backwards-compatible hash access for internal use
-      # (e.g., in cell_value_for method).
-      #
-      # @param key [Symbol, String] the attribute key
-      # @return [Object, nil] the attribute value
-      #
-      def [](key)
-        @data[key.to_sym]
-      end
-
-      # Returns the raw scorecard data as a hash.
-      #
-      # @return [Hash] the underlying data hash
-      #
-      def to_h
-        @data
       end
 
       private

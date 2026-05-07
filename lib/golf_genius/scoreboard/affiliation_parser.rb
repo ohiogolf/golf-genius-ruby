@@ -58,29 +58,17 @@ module GolfGenius
           state_data = USStates.find(state_input)
           state = normalize_state(state_data, fallback_code: state_input)
 
-          build_affiliation(
-            raw: affiliation,
-            city: city,
-            state: state,
-            country: country_data,
-            kind: :city_state
-          )
+          build_affiliation(city: city, state: state, country: country_data, kind: :city_state)
         else
           kind = country_match?(affiliation, country_data) ? :country : :freeform
 
           # No comma: treat entire string as city/club name
-          build_affiliation(
-            raw: affiliation,
-            city: affiliation,
-            state: nil,
-            country: country_data,
-            kind: kind
-          )
+          build_affiliation(city: affiliation, state: nil, country: country_data, kind: kind)
         end
       end
 
-      def self.build_affiliation(raw:, city:, state:, country:, kind:)
-        Affiliation.new(raw: raw, city: city, state: state, country: country, kind: kind)
+      def self.build_affiliation(city:, state:, country:, kind:)
+        Affiliation.new(city: city, state: state, country: country, kind: kind)
       end
 
       def self.normalize_state(state_data, fallback_code: nil)
