@@ -80,7 +80,11 @@ module GolfGenius
           net_scores: scorecard.net_scores,
           gross_to_par: scorecard.to_par_gross,
           net_to_par: scorecard.to_par_net,
-          stroke_totals: normalize_totals(scorecard.totals, fallback_total: scorecard_data[:total]),
+          stroke_totals: normalize_totals(
+            scorecard.totals,
+            fallback_total: scorecard_data[:total],
+            gross_scores: scorecard.gross_scores
+          ),
         }
       end
 
@@ -183,12 +187,29 @@ module GolfGenius
         scorecard.state.to_s
       end
 
-      def normalize_totals(totals, fallback_total: nil)
+      def normalize_totals(totals, fallback_total: nil, gross_scores: [])
+        scores = Array(gross_scores)
+        front_nine_scores = scores.first(9).compact
+        back_nine_scores = scores.drop(9).first(9).compact
+        all_scores = scores.compact
+        normalized_out = normalize_total_value(totals[:out])
+        normalized_in = normalize_total_value(totals[:in])
+        normalized_total = normalize_total_value(totals[:total] || fallback_total)
+
         {
-          out: totals[:out],
-          in: totals[:in],
-          total: totals[:total] || fallback_total,
+          out: normalized_out || (front_nine_scores.any? ? front_nine_scores.sum : nil),
+          in: normalized_in || (back_nine_scores.any? ? back_nine_scores.sum : nil),
+          total: normalized_total || (all_scores.any? ? all_scores.sum : nil),
         }
+      end
+
+      def normalize_total_value(value)
+        return nil if value.nil?
+
+        normalized = value.to_s.strip
+        return nil if normalized.empty? || normalized == "-"
+
+        Integer(normalized, exception: false) || value
       end
 
       def eliminated_outcome?

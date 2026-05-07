@@ -11,9 +11,8 @@ require_relative "value_normalizer"
 
 module GolfGenius
   class Scoreboard
-    # Builds a normalized, data-first scoreboard payload from the API primitives
-    # already used by the existing scoreboard pipeline.
-    class DetailedBuilder
+    # Builds the primary, JSON-first scoreboard payload.
+    class Builder
       def initialize(event_id:, requested_round_id:, tournament_ids:, json_loader:, event_context:)
         @event_id = event_id
         @requested_round_id = requested_round_id.to_i
@@ -106,8 +105,8 @@ module GolfGenius
         return entries if entries.any?
         # Prestart synthesis currently assumes one tournament-results stream for
         # the event. If an event exposes multiple scoring tournaments and none
-        # has aggregates yet, return no synthetic rows rather than guessing how
-        # to partition tee-sheet players across tournaments.
+        # has aggregates yet, return no synthetic entries rather than guessing
+        # how to partition tee-sheet players across tournaments.
         return [] unless @tournament_ids.one?
 
         build_prestart_entries(

@@ -63,23 +63,28 @@ GolfGenius::Event.tournaments("event_id", "round_id")
 
 ```ruby
 scoreboard = GolfGenius::Scoreboard.new(event: "522157")
-scoreboard.tournaments.first.name          # => "Championship Flight"
-scoreboard.tournaments.first.rows.first.position   # => "T2"
+payload = scoreboard.to_h
+tournament = payload[:tournaments].first
+entry = tournament[:entries].first
+
+tournament[:name]     # => "Championship Flight"
+entry[:position]      # => "T2"
+entry[:state]         # => "playing"
 
 # Sort alphabetically
 alpha = scoreboard.sort(:last_name)
-alpha.tournaments.first.rows.first.last_name   # => "Anderson"
+alpha.to_h[:tournaments].first[:entries].first[:players].first[:name][:last]  # => "Anderson"
 
 # Player details
-row = scoreboard.tournaments.first.rows.first
-row.first_name          # => "John"
-row.last_name           # => "Doe"
-row.affiliation_city    # => "Columbus"
-row.affiliation_state   # => "OH"
-row.eliminated?         # => false
+player = entry[:players].first
+player[:name][:first]      # => "John"
+player[:name][:last]       # => "Doe"
+player[:location][:city]   # => "Columbus"
+player[:location][:state]  # => "OH"
+entry[:outcome].nil?       # => true
 
 # Current round
-scoreboard.tournaments.first.rounds.current.playing?  # => true
+payload[:meta][:current_round][:state]  # => "playing"
 ```
 
 **Pagination**

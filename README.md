@@ -81,35 +81,48 @@ tournament.results(format: :html)
 ### Scoreboard (Live Results)
 
 ```ruby
-# Get live leaderboard for latest round
+# Get the normalized scoreboard payload for the latest relevant round
 scoreboard = GolfGenius::Scoreboard.new(event: "522157")
-# => #<GolfGenius::Scoreboard ...>
+payload = scoreboard.to_h
 
-# Access tournaments and players
-scoreboard.tournaments.first.name
+# Top-level metadata
+payload[:meta][:event_name]
+# => "Spring Championship"
+payload[:meta][:selected_round][:name]
+# => "R2"
+
+# Event rounds
+payload[:rounds].each do |round|
+  puts "#{round[:name]}: #{round[:state]}"
+end
+
+# Tournament entries
+tournament = payload[:tournaments].first
+tournament[:name]
 # => "Championship Flight"
-scoreboard.tournaments.first.rows.first.position
+entry = tournament[:entries].first
+entry[:position]
 # => "T2"
+entry[:state]
+# => "playing"
 
 # Sort alphabetically for alpha board
 alpha_board = scoreboard.sort(:last_name)
+alpha_board.to_h[:tournaments].first[:entries].map { |entry| entry[:name] }
 
 # Competing players first, then alphabetical
 sorted = scoreboard.sort(:competing, :last_name)
-sorted.tournaments.first.rows.each do |row|
-  puts "#{row.last_name}, #{row.first_name} - #{row.affiliation_city}, #{row.affiliation_state}"
+sorted.to_h[:tournaments].first[:entries].each do |sorted_entry|
+  player = sorted_entry[:players].first
+  puts "#{player[:name][:last]}, #{player[:name][:first]} - #{player[:location][:raw]}"
 end
 
-# Filter players
-tournament = scoreboard.tournaments.first
-tournament.rows.select(&:eliminated?)
-# => [#<Row position="CUT" ...>, ...]
-
-# Check current round status
-current_round = tournament.rounds.current
-# => #<Round name="R2" playing?=true>
-current_round.playing?
-# => true
+# Per-entry round facts
+round_data = entry[:rounds][payload[:meta][:selected_round][:id]]
+round_data[:state]
+# => "playing"
+round_data[:tee_time]
+# => "8:30 AM"
 ```
 
 See [docs/scoreboard-usage-guide.md](docs/scoreboard-usage-guide.md) for detailed examples.

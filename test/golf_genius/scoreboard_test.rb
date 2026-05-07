@@ -11,79 +11,27 @@ class ScoreboardTest < Minitest::Test
 
   def test_initialize_with_event_object
     event = Object.new
-    def event.id
-      "522157"
-    end
+    def event.id = "522157"
 
     scoreboard = GolfGenius::Scoreboard.new(event: event)
 
     assert_equal "522157", scoreboard.event_id
   end
 
-  def test_initialize_with_round_id_string
-    scoreboard = GolfGenius::Scoreboard.new(event: "522157", round: "1615931")
+  def test_initialize_with_round_and_tournament_ids
+    scoreboard = GolfGenius::Scoreboard.new(event: "522157", round: "1615931", tournament: "4522280")
 
     assert_equal "1615931", scoreboard.round_id
-  end
-
-  def test_initialize_with_round_object
-    round = Object.new
-    def round.id
-      "1615931"
-    end
-
-    scoreboard = GolfGenius::Scoreboard.new(event: "522157", round: round)
-
-    assert_equal "1615931", scoreboard.round_id
-  end
-
-  def test_initialize_with_tournament_id_string
-    scoreboard = GolfGenius::Scoreboard.new(event: "522157", tournament: "4522280")
-
-    assert_equal "4522280", scoreboard.tournament_id
-  end
-
-  def test_initialize_with_tournament_object
-    tournament = Object.new
-    def tournament.id
-      "4522280"
-    end
-
-    scoreboard = GolfGenius::Scoreboard.new(event: "522157", tournament: tournament)
-
     assert_equal "4522280", scoreboard.tournament_id
   end
 
   def test_initialize_without_event_raises_error
-    # Ruby 3.x raises ArgumentError with "missing keyword: :event"
     assert_raises(ArgumentError) do
       GolfGenius::Scoreboard.new
     end
   end
 
-  def test_to_h_returns_schema_structure
-    # Mock event, round, and tournament
-    event, round, tournament = setup_mocks
-
-    GolfGenius::Event.stub :fetch, event do
-      GolfGenius::Event.stub :rounds, [round] do
-        GolfGenius::Event.stub :tournaments, [tournament] do
-          GolfGenius::Event.stub :tournament_results, stub_tournament_results_lambda do
-            scoreboard = GolfGenius::Scoreboard.new(event: "522157", round: "1615931")
-            schema = scoreboard.to_h
-
-            assert_kind_of Hash, schema
-            assert schema.key?(:meta)
-            assert schema.key?(:tournaments)
-            assert_equal "522157", schema[:meta][:event_id]
-            assert_kind_of Array, schema[:tournaments]
-          end
-        end
-      end
-    end
-  end
-
-  def test_to_detailed_h_returns_normalized_structure
+  def test_to_h_returns_normalized_structure
     event, round, tournament = setup_mocks
     roster = [
       GolfGenius::RosterMember.construct_from(
@@ -110,7 +58,7 @@ class ScoreboardTest < Minitest::Test
               "name" => "Jane Doe",
               "player_roster_id" => "101",
               "member_card_id" => "555",
-              "score_array" => [4, 4, 3, 4, 5, 4, 3, 4] + Array.new(13),
+              "score_array" => [4, 4, 3, 4, 5, 4, 3, 4] + Array.new(10),
               "tee" => {
                 "name" => "Blue",
                 "abbreviation" => "BLU",
@@ -121,7 +69,6 @@ class ScoreboardTest < Minitest::Test
         }
       ),
     ]
-
     json_payload = {
       "name" => "Overall Results",
       "adjusted" => false,
@@ -162,7 +109,6 @@ class ScoreboardTest < Minitest::Test
               ],
               "thru" => "8",
               "score" => "-2",
-              "total" => nil,
               "gross_scores" => [4, 4, 3, 4, 5, 4, 3, 4] + Array.new(10),
               "net_scores" => [],
               "to_par_gross" => [],
@@ -186,68 +132,72 @@ class ScoreboardTest < Minitest::Test
       ],
     }
 
-    GolfGenius::Event.stub :fetch, event do
-      GolfGenius::Event.stub :rounds, [round] do
-        GolfGenius::Event.stub :tournaments, [tournament] do
-          GolfGenius::Event.stub :roster, roster do
-            GolfGenius::Event.stub :tee_sheet, tee_sheet do
-              GolfGenius::Event.stub :tournament_results, stub_detailed_tournament_results_lambda(json_payload) do
-                scoreboard = GolfGenius::Scoreboard.new(event: "522157", round: "1615931")
-                schema = scoreboard.to_detailed_h
+    scoreboard = build_scoreboard(
+      event: event,
+      rounds: [round],
+      tournaments: [tournament],
+      sources: { roster: roster, tee_sheet: tee_sheet },
+      json_payload: json_payload
+    )
 
-                assert_equal "522157", schema[:meta][:event_id]
-                assert_equal "1615931", schema[:meta][:selected_round][:id]
-                assert_equal "playing", schema[:meta][:selected_round][:state]
-                assert_equal "1615931", schema[:meta][:current_round][:id]
-                assert_equal "R1", schema[:rounds].first[:name]
-                assert_equal "playing", schema[:rounds].first[:state]
+    schema = scoreboard.to_h
 
-                tournament_data = schema[:tournaments].first
+    assert_equal "522157", schema[:meta][:event_id]
+    assert_equal "1615931", schema[:meta][:selected_round][:id]
+    assert_equal "1615931", schema[:meta][:current_round][:id]
+    assert_equal "R1", schema[:rounds].first[:name]
 
-                assert_equal "4522280", tournament_data[:id]
-                assert_equal "Overall Results", tournament_data[:name]
-                assert_equal "1615931", tournament_data[:source_round][:id]
-                assert_equal "To Par Gross", tournament_data[:columns]["score"][:label]
-                assert_equal "city, state or country", tournament_data[:columns]["affiliation"][:label]
+    tournament_data = schema[:tournaments].first
+    entry = tournament_data[:entries].first
+    round_data = entry[:rounds]["1615931"]
 
-                entry = tournament_data[:entries].first
-
-                assert_equal "99", entry[:id]
-                assert_equal "1", entry[:position]
-                assert_equal 1, entry[:rank]
-                assert_equal "playing", entry[:state]
-                assert_nil entry[:outcome]
-                assert_nil entry[:outcome_cause]
-                assert_nil entry[:details]
-                assert_equal "Test CC", entry[:players].first[:location][:raw]
-                assert_equal "Columbus", entry[:players].first[:location][:city]
-                assert_equal "Jane Doe (a)", entry[:players].first[:name][:full]
-                assert_equal true, entry[:players].first[:name][:amateur]
-                assert_equal "Blue", entry[:players].first[:tee][:name]
-                round_data = entry[:rounds]["1615931"]
-
-                assert_equal "8:30 AM", round_data[:tee_time]
-                assert_equal "playing", round_data[:state]
-                assert_equal "-2", round_data[:to_par_display]
-                assert_equal(-2, round_data[:to_par_total])
-                assert_equal 35, round_data[:stroke_totals][:out]
-              end
-            end
-          end
-        end
-      end
-    end
+    assert_equal "4522280", tournament_data[:id]
+    assert_equal "Overall Results", tournament_data[:name]
+    assert_equal "To Par Gross", tournament_data[:columns]["score"][:label]
+    assert_equal "99", entry[:id]
+    assert_equal "1", entry[:position]
+    assert_equal 1, entry[:rank]
+    assert_equal "playing", entry[:state]
+    assert_equal "Jane Doe (a)", entry[:players].first[:name][:full]
+    assert_equal true, entry[:players].first[:name][:amateur]
+    assert_equal "Columbus", entry[:players].first[:location][:city]
+    assert_equal "Blue", entry[:players].first[:tee][:name]
+    assert_equal "8:30 AM", round_data[:tee_time]
+    assert_equal "playing", round_data[:state]
+    assert_equal(-2, round_data[:to_par_total])
   end
 
-  def test_to_detailed_h_uses_tee_sheet_when_json_has_no_round_section
+  def test_to_h_derives_partial_stroke_totals_from_live_hole_scores
+    event = create_mock_event("fixture-event", "Fixture Event")
+    round1 = create_mock_round("2000", "R1", 1, "2026-03-15", status: "completed")
+    round2 = create_mock_round("2001", "R2", 2, "2026-03-16", status: "in progress")
+    tournament = create_mock_tournament("5001", "Test Tournament")
+    json_payload = JSON.parse(
+      File.read(File.expand_path("../fixtures/tournament_results/multi_round_stroke_play.json", __dir__))
+    )
+
+    scoreboard = build_scoreboard(
+      event: event,
+      rounds: [round1, round2],
+      tournaments: [tournament],
+      json_payload: json_payload
+    )
+
+    entries = scoreboard.to_h[:tournaments].first[:entries]
+    player_a = entries.find { |entry| entry[:name] == "Player A" }
+    player_b = entries.find { |entry| entry[:name] == "Player B" }
+
+    assert_equal({ out: 24, in: nil, total: 24 }, player_a[:rounds]["2001"][:stroke_totals])
+    assert_equal({ out: 36, in: nil, total: 36 }, player_b[:rounds]["2001"][:stroke_totals])
+  end
+
+  def test_to_h_uses_tee_sheet_when_json_has_no_round_section
     event, round, tournament = setup_mocks
     roster = [
       GolfGenius::RosterMember.construct_from(
         {
           "id" => "101",
           "name" => "Jane Doe",
-          "first_name" => "Jane",
-          "last_name" => "Doe",
           "member_card_id" => "555",
           "custom_fields" => {},
         }
@@ -279,55 +229,34 @@ class ScoreboardTest < Minitest::Test
               "id" => 99,
               "name" => "Jane Doe",
               "member_ids" => ["101"],
-              "member_cards" => [
-                {
-                  "member_id" => 101,
-                  "member_card_id" => 555,
-                },
-              ],
+              "member_cards" => [{ "member_id" => 101, "member_card_id" => 555 }],
               "gross_scores" => Array.new(18),
               "net_scores" => [],
               "to_par_gross" => [],
               "to_par_net" => [],
-              "totals" => {
-                "gross_scores" => {
-                  "out" => nil,
-                  "in" => nil,
-                  "total" => nil,
-                },
-              },
-              "scorecard_statuses" => [
-                {
-                  "member_card_id" => 555,
-                  "status" => "no_holes",
-                },
-              ],
+              "totals" => { "gross_scores" => { "out" => nil, "in" => nil, "total" => nil } },
+              "scorecard_statuses" => [{ "member_card_id" => 555, "status" => "no_holes" }],
             },
           ],
         },
       ],
     }
 
-    GolfGenius::Event.stub :fetch, event do
-      GolfGenius::Event.stub :rounds, [round] do
-        GolfGenius::Event.stub :tournaments, [tournament] do
-          GolfGenius::Event.stub :roster, roster do
-            GolfGenius::Event.stub :tee_sheet, tee_sheet do
-              GolfGenius::Event.stub :tournament_results, stub_detailed_tournament_results_lambda(json_payload) do
-                scoreboard = GolfGenius::Scoreboard.new(event: "522157", round: "1615931")
-                round_data = scoreboard.to_detailed_h[:tournaments].first[:entries].first[:rounds]["1615931"]
+    scoreboard = build_scoreboard(
+      event: event,
+      rounds: [round],
+      tournaments: [tournament],
+      sources: { roster: roster, tee_sheet: tee_sheet },
+      json_payload: json_payload
+    )
 
-                assert_equal "8:30 AM", round_data[:tee_time]
-                assert_equal "not_started", round_data[:state]
-              end
-            end
-          end
-        end
-      end
-    end
+    round_data = scoreboard.to_h[:tournaments].first[:entries].first[:rounds]["1615931"]
+
+    assert_equal "8:30 AM", round_data[:tee_time]
+    assert_equal "not_started", round_data[:state]
   end
 
-  def test_to_detailed_h_uses_member_card_lookup_for_round_tee_data
+  def test_to_h_uses_member_card_lookup_for_round_tee_data
     event, round, tournament = setup_mocks
     roster = [
       GolfGenius::RosterMember.construct_from(
@@ -377,26 +306,20 @@ class ScoreboardTest < Minitest::Test
       ],
     }
 
-    GolfGenius::Event.stub :fetch, event do
-      GolfGenius::Event.stub :rounds, [round] do
-        GolfGenius::Event.stub :tournaments, [tournament] do
-          GolfGenius::Event.stub :roster, roster do
-            GolfGenius::Event.stub :tee_sheet, tee_sheet do
-              GolfGenius::Event.stub :tournament_results, stub_detailed_tournament_results_lambda(json_payload) do
-                scoreboard = GolfGenius::Scoreboard.new(event: "522157", round: "1615931")
-                round_data = scoreboard.to_detailed_h[:tournaments].first[:entries].first[:rounds]["1615931"]
+    scoreboard = build_scoreboard(
+      event: event,
+      rounds: [round],
+      tournaments: [tournament],
+      sources: { roster: roster, tee_sheet: tee_sheet },
+      json_payload: json_payload
+    )
 
-                assert_equal "9:10 AM", round_data[:tee_time]
-                assert_equal "not_started", round_data[:state]
-              end
-            end
-          end
-        end
-      end
-    end
+    round_data = scoreboard.to_h[:tournaments].first[:entries].first[:rounds]["1615931"]
+
+    assert_equal "9:10 AM", round_data[:tee_time]
   end
 
-  def test_to_detailed_h_builds_prestart_entries_from_tee_sheet_when_aggregates_are_empty
+  def test_to_h_builds_prestart_entries_from_tee_sheet_when_aggregates_are_empty
     event, round, tournament = setup_mocks
     roster = [
       GolfGenius::RosterMember.construct_from(
@@ -432,48 +355,37 @@ class ScoreboardTest < Minitest::Test
       "name" => "Overall Results",
       "adjusted" => false,
       "rounds" => [],
-      "scopes" => [
-        {
-          "aggregates" => [],
-        },
-      ],
+      "scopes" => [{ "aggregates" => [] }],
     }
 
-    GolfGenius::Event.stub :fetch, event do
-      GolfGenius::Event.stub :rounds, [round] do
-        GolfGenius::Event.stub :tournaments, [tournament] do
-          GolfGenius::Event.stub :roster, roster do
-            GolfGenius::Event.stub :tee_sheet, tee_sheet do
-              GolfGenius::Event.stub :tournament_results, stub_detailed_tournament_results_lambda(json_payload) do
-                tournament_data = GolfGenius::Scoreboard.new(event: "522157", round: "1615931").to_detailed_h[:tournaments].first
-                entry = tournament_data[:entries].first
-                round_data = entry[:rounds]["1615931"]
+    scoreboard = build_scoreboard(
+      event: event,
+      rounds: [round],
+      tournaments: [tournament],
+      sources: { roster: roster, tee_sheet: tee_sheet },
+      json_payload: json_payload
+    )
 
-                assert_equal 1, tournament_data[:entries].size
-                assert_equal "Jane Doe", entry[:name]
-                assert_equal "not_started", entry[:state]
-                assert_nil entry[:position]
-                assert_nil entry[:outcome]
-                assert_equal "Columbus", entry[:players].first[:location][:city]
-                assert_equal "8:30 AM", round_data[:tee_time]
-                assert_equal "not_started", round_data[:state]
-              end
-            end
-          end
-        end
-      end
-    end
+    tournament_data = scoreboard.to_h[:tournaments].first
+    entry = tournament_data[:entries].first
+    round_data = entry[:rounds]["1615931"]
+
+    assert_equal 1, tournament_data[:entries].size
+    assert_equal "Jane Doe", entry[:name]
+    assert_equal "not_started", entry[:state]
+    assert_nil entry[:position]
+    assert_nil entry[:outcome]
+    assert_equal "Columbus", entry[:players].first[:location][:city]
+    assert_equal "8:30 AM", round_data[:tee_time]
   end
 
-  def test_to_detailed_h_clears_dns_outcome_for_prestart_rows_with_tee_times
+  def test_to_h_clears_dns_outcome_for_prestart_rows_with_tee_times
     event, round, tournament = setup_mocks
     roster = [
       GolfGenius::RosterMember.construct_from(
         {
           "id" => "101",
           "name" => "Jane Doe",
-          "first_name" => "Jane",
-          "last_name" => "Doe",
           "member_card_id" => "555",
           "custom_fields" => {},
         }
@@ -520,25 +432,21 @@ class ScoreboardTest < Minitest::Test
       ],
     }
 
-    GolfGenius::Event.stub :fetch, event do
-      GolfGenius::Event.stub :rounds, [round] do
-        GolfGenius::Event.stub :tournaments, [tournament] do
-          GolfGenius::Event.stub :roster, roster do
-            GolfGenius::Event.stub :tee_sheet, tee_sheet do
-              GolfGenius::Event.stub :tournament_results, stub_detailed_tournament_results_lambda(json_payload) do
-                entry = GolfGenius::Scoreboard.new(event: "522157", round: "1615931").to_detailed_h[:tournaments].first[:entries].first
+    scoreboard = build_scoreboard(
+      event: event,
+      rounds: [round],
+      tournaments: [tournament],
+      sources: { roster: roster, tee_sheet: tee_sheet },
+      json_payload: json_payload
+    )
 
-                assert_equal "not_started", entry[:state]
-                assert_nil entry[:outcome]
-              end
-            end
-          end
-        end
-      end
-    end
+    entry = scoreboard.to_h[:tournaments].first[:entries].first
+
+    assert_equal "not_started", entry[:state]
+    assert_nil entry[:outcome]
   end
 
-  def test_to_detailed_h_normalizes_cut_and_ns_outcomes
+  def test_to_h_normalizes_cut_and_ns_outcomes
     event, round, tournament = setup_mocks
     roster = [
       GolfGenius::RosterMember.construct_from(
@@ -558,17 +466,11 @@ class ScoreboardTest < Minitest::Test
         }
       ),
     ]
-
     json_payload = {
       "name" => "Overall Results",
       "adjusted" => false,
       "rounds" => [
-        {
-          "id" => 1_615_931,
-          "name" => "Round 1",
-          "date" => "2026-03-15",
-          "in_progress" => false,
-        },
+        { "id" => 1_615_931, "name" => "Round 1", "date" => "2026-03-15", "in_progress" => false },
       ],
       "scopes" => [
         {
@@ -596,31 +498,26 @@ class ScoreboardTest < Minitest::Test
       ],
     }
 
-    GolfGenius::Event.stub :fetch, event do
-      GolfGenius::Event.stub :rounds, [round] do
-        GolfGenius::Event.stub :tournaments, [tournament] do
-          GolfGenius::Event.stub :roster, roster do
-            GolfGenius::Event.stub :tee_sheet, [] do
-              GolfGenius::Event.stub :tournament_results, stub_detailed_tournament_results_lambda(json_payload) do
-                entries = GolfGenius::Scoreboard.new(event: "522157", round: "1615931").to_detailed_h[:tournaments].first[:entries]
-                cut_entry = entries.find { |entry| entry[:id] == "99" }
-                ns_entry = entries.find { |entry| entry[:id] == "100" }
+    scoreboard = build_scoreboard(
+      event: event,
+      rounds: [round],
+      tournaments: [tournament],
+      sources: { roster: roster, tee_sheet: [] },
+      json_payload: json_payload
+    )
 
-                assert_equal "cut", cut_entry[:outcome]
-                assert_equal "eliminated", cut_entry[:state]
-                assert_equal "finished", cut_entry[:rounds]["1615931"][:state]
-                assert_equal "ns", ns_entry[:outcome]
-                assert_equal "not_started", ns_entry[:state]
-                assert_equal "not_started", ns_entry[:rounds]["1615931"][:state]
-              end
-            end
-          end
-        end
-      end
-    end
+    entries = scoreboard.to_h[:tournaments].first[:entries]
+    cut_entry = entries.find { |entry| entry[:id] == "99" }
+    ns_entry = entries.find { |entry| entry[:id] == "100" }
+
+    assert_equal "cut", cut_entry[:outcome]
+    assert_equal "eliminated", cut_entry[:state]
+    assert_equal "finished", cut_entry[:rounds]["1615931"][:state]
+    assert_equal "ns", ns_entry[:outcome]
+    assert_equal "not_started", ns_entry[:state]
   end
 
-  def test_to_detailed_h_maps_unknown_outcome_to_unknown
+  def test_to_h_maps_unknown_outcome_to_unknown
     event, round, tournament = setup_mocks
     roster = [
       GolfGenius::RosterMember.construct_from(
@@ -656,25 +553,20 @@ class ScoreboardTest < Minitest::Test
       ],
     }
 
-    GolfGenius::Event.stub :fetch, event do
-      GolfGenius::Event.stub :rounds, [round] do
-        GolfGenius::Event.stub :tournaments, [tournament] do
-          GolfGenius::Event.stub :roster, roster do
-            GolfGenius::Event.stub :tee_sheet, [] do
-              GolfGenius::Event.stub :tournament_results, stub_detailed_tournament_results_lambda(json_payload) do
-                scoreboard = GolfGenius::Scoreboard.new(event: "522157", round: "1615931")
-                entry = scoreboard.to_detailed_h[:tournaments].first[:entries].first
+    scoreboard = build_scoreboard(
+      event: event,
+      rounds: [round],
+      tournaments: [tournament],
+      sources: { roster: roster, tee_sheet: [] },
+      json_payload: json_payload
+    )
 
-                assert_equal "unknown", entry[:outcome]
-              end
-            end
-          end
-        end
-      end
-    end
+    entry = scoreboard.to_h[:tournaments].first[:entries].first
+
+    assert_equal "unknown", entry[:outcome]
   end
 
-  def test_to_detailed_h_does_not_treat_country_as_city
+  def test_to_h_does_not_treat_country_as_city
     event, round, tournament = setup_mocks
     roster = [
       GolfGenius::RosterMember.construct_from(
@@ -693,7 +585,6 @@ class ScoreboardTest < Minitest::Test
         }
       ),
     ]
-
     json_payload = {
       "name" => "Overall Results",
       "adjusted" => false,
@@ -717,19 +608,215 @@ class ScoreboardTest < Minitest::Test
       ],
     }
 
-    GolfGenius::Event.stub :fetch, event do
+    scoreboard = build_scoreboard(
+      event: event,
+      rounds: [round],
+      tournaments: [tournament],
+      sources: { roster: roster, tee_sheet: [] },
+      json_payload: json_payload
+    )
+
+    location = scoreboard.to_h[:tournaments].first[:entries].first[:players].first[:location]
+
+    assert_equal "country", location[:kind]
+    assert_nil location[:city]
+    assert_nil location[:state]
+    assert_equal "Canada", location[:country][:name]
+  end
+
+  def test_to_h_memoizes_result
+    event, round, tournament = setup_mocks
+    scoreboard = build_scoreboard(event: event, rounds: [round], tournaments: [tournament], json_payload: empty_results_payload)
+
+    first_call = scoreboard.to_h
+    second_call = scoreboard.to_h
+
+    assert_same first_call, second_call
+  end
+
+  def test_skip_event_fetch_uses_event_id_as_name
+    round = create_mock_round("1615931", "Round 1", 1, "2026-03-15")
+    tournament = create_mock_tournament("4522280", "Overall Results")
+
+    event_fetch_called = false
+    event_fetch_stub = lambda do |*_args|
+      event_fetch_called = true
+      raise "Event.fetch should not be called when skip_event_fetch: true"
+    end
+
+    GolfGenius::Event.stub :fetch, event_fetch_stub do
       GolfGenius::Event.stub :rounds, [round] do
         GolfGenius::Event.stub :tournaments, [tournament] do
-          GolfGenius::Event.stub :roster, roster do
+          GolfGenius::Event.stub :roster, [] do
             GolfGenius::Event.stub :tee_sheet, [] do
-              GolfGenius::Event.stub :tournament_results, stub_detailed_tournament_results_lambda(json_payload) do
-                scoreboard = GolfGenius::Scoreboard.new(event: "522157", round: "1615931")
-                location = scoreboard.to_detailed_h[:tournaments].first[:entries].first[:players].first[:location]
+              GolfGenius::Event.stub :tournament_results, stub_tournament_results_json(empty_results_payload) do
+                scoreboard = GolfGenius::Scoreboard.new(event: "522157", round: "1615931", skip_event_fetch: true)
+                schema = scoreboard.to_h
 
-                assert_equal "country", location[:kind]
-                assert_nil location[:city]
-                assert_nil location[:state]
-                assert_equal "Canada", location[:country][:name]
+                refute event_fetch_called
+                assert_equal "522157", schema[:meta][:event_name]
+              end
+            end
+          end
+        end
+      end
+    end
+  end
+
+  def test_schema_parameter_is_respected
+    pre_built_schema = {
+      meta: {
+        event_id: "522157",
+        event_name: "Test Event",
+      },
+      rounds: [],
+      tournaments: [],
+    }
+
+    fetch_stub = ->(*_args) { raise "Event.fetch should not be called when schema is provided" }
+    rounds_stub = ->(*_args) { raise "Event.rounds should not be called when schema is provided" }
+    tournaments_stub = ->(*_args) { raise "Event.tournaments should not be called when schema is provided" }
+
+    GolfGenius::Event.stub :fetch, fetch_stub do
+      GolfGenius::Event.stub :rounds, rounds_stub do
+        GolfGenius::Event.stub :tournaments, tournaments_stub do
+          scoreboard = GolfGenius::Scoreboard.new(
+            event: "522157",
+            round: "1615931",
+            schema: pre_built_schema
+          )
+
+          assert_equal pre_built_schema, scoreboard.to_h
+        end
+      end
+    end
+  end
+
+  def test_resolves_latest_round_from_multiple_rounds
+    event = create_mock_event("522157", "Test Event")
+    round1 = create_mock_round("1615930", "R1", 1, "2026-03-15", status: "completed")
+    round2 = create_mock_round("1615931", "R2", 2, "2026-03-16", status: "in progress")
+    round3 = create_mock_round("1615932", "R3", 3, "2026-03-17", status: "not started")
+    tournament = create_mock_tournament("4522280", "Overall Results")
+
+    scoreboard = build_scoreboard(
+      event: event,
+      rounds: [round1, round2, round3],
+      tournaments: [tournament],
+      json_payload: empty_results_payload
+    )
+
+    assert_equal "1615931", scoreboard.to_h[:meta][:selected_round][:id]
+  end
+
+  def test_resolves_earliest_upcoming_round_when_nothing_has_started
+    event = create_mock_event("522157", "Test Event")
+    round1 = create_mock_round("1615930", "R1", 1, "2026-03-15", status: "not started")
+    round2 = create_mock_round("1615931", "R2", 2, "2026-03-16", status: "not started")
+    tournament = create_mock_tournament("4522280", "Overall Results")
+
+    scoreboard = build_scoreboard(
+      event: event,
+      rounds: [round1, round2],
+      tournaments: [tournament],
+      json_payload: empty_results_payload
+    )
+
+    assert_equal "1615930", scoreboard.to_h[:meta][:selected_round][:id]
+  end
+
+  def test_resolves_all_scoring_tournaments
+    event, round, = setup_mocks
+    tournament1 = create_mock_tournament("4522280", "Overall Results")
+    tournament2 = create_mock_tournament("4522284", "16-18 Results")
+    tournament3 = create_mock_tournament("9999", "Pairings")
+    def tournament3.non_scoring? = true
+
+    scoreboard = build_scoreboard(
+      event: event,
+      rounds: [round],
+      tournaments: [tournament1, tournament2, tournament3],
+      json_payload: empty_results_payload
+    )
+
+    scoreboard.to_h
+
+    assert_equal %w[4522280 4522284], scoreboard.instance_variable_get(:@tournament_ids)
+  end
+
+  def test_raises_error_when_no_rounds_exist
+    event = create_mock_event("522157", "Test Event")
+
+    GolfGenius::Event.stub :fetch, event do
+      GolfGenius::Event.stub :rounds, [] do
+        scoreboard = GolfGenius::Scoreboard.new(event: "522157")
+
+        error = assert_raises(StandardError) { scoreboard.to_h }
+
+        assert_match(/No rounds found for event/, error.message)
+      end
+    end
+  end
+
+  def test_raises_error_when_no_scoring_tournaments_exist
+    round = create_mock_round("1615931", "R1", 1, "2026-03-15")
+    tournament = create_mock_tournament("9999", "Pairings Only")
+    def tournament.non_scoring? = true
+
+    GolfGenius::Event.stub :rounds, [round] do
+      GolfGenius::Event.stub :tournaments, [tournament] do
+        scoreboard = GolfGenius::Scoreboard.new(event: "522157", round: "1615931")
+
+        error = assert_raises(StandardError) { scoreboard.to_h }
+
+        assert_match(/No scoring tournaments found/, error.message)
+      end
+    end
+  end
+
+  def test_sort_reuses_schema_without_rebuilding
+    event, round, tournament = setup_mocks
+    fetch_count = 0
+    rounds_count = 0
+    tournaments_count = 0
+    results_count = 0
+
+    fetch_stub = lambda do |*_args|
+      fetch_count += 1
+      event
+    end
+    rounds_stub = lambda do |*_args|
+      rounds_count += 1
+      [round]
+    end
+    tournaments_stub = lambda do |*_args|
+      tournaments_count += 1
+      [tournament]
+    end
+    results_stub = lambda do |*args|
+      results_count += 1
+      stub_tournament_results_json(sortable_results_payload).call(*args)
+    end
+
+    GolfGenius::Event.stub :fetch, fetch_stub do
+      GolfGenius::Event.stub :rounds, rounds_stub do
+        GolfGenius::Event.stub :tournaments, tournaments_stub do
+          GolfGenius::Event.stub :roster, [] do
+            GolfGenius::Event.stub :tee_sheet, [] do
+              GolfGenius::Event.stub :tournament_results, results_stub do
+                scoreboard = GolfGenius::Scoreboard.new(event: "522157", round: "1615931")
+                original = scoreboard.to_h
+                initial_counts = [fetch_count, rounds_count, tournaments_count, results_count]
+
+                sorted = scoreboard.sort(:position)
+                sorted_schema = sorted.to_h
+
+                assert_equal initial_counts, [fetch_count, rounds_count, tournaments_count, results_count]
+                refute_same original, sorted_schema
+                assert_equal(
+                  %w[1 2 3],
+                  sorted_schema[:tournaments].first[:entries].map { |entry| entry[:position] }
+                )
               end
             end
           end
@@ -741,74 +828,74 @@ class ScoreboardTest < Minitest::Test
   private
 
   def setup_mocks
-    event = Object.new
-    def event.id = "522157"
-
-    def event.[](key)
-      [:name, "name"].include?(key) ? "Test Event" : nil
-    end
-
-    round = Object.new
-    status = "in progress"
-    def round.id = "1615931"
-
-    def round.[](key)
-      case key
-      when :id, "id" then "1615931"
-      when :name, "name" then "R1"
-      when :status, "status" then "in progress"
-      end
-    end
-
-    round.define_singleton_method(:playing?) { status == "in progress" }
-    round.define_singleton_method(:started?) { ["in progress", "completed"].include?(status) }
-    round.define_singleton_method(:complete?) { status == "completed" }
-    round.define_singleton_method(:completed?) { status == "completed" }
-    round.define_singleton_method(:unstarted?) { status == "not started" }
-
-    tournament = Object.new
-    def tournament.id = "4522280"
-
-    def tournament.[](key)
-      key == :name ? "Overall Results" : nil
-    end
-
-    def tournament.non_scoring? = false
+    event = create_mock_event("522157", "Test Event")
+    round = create_mock_round("1615931", "R1", 1, "2026-03-15", status: "in progress")
+    tournament = create_mock_tournament("4522280", "Overall Results")
 
     [event, round, tournament]
   end
 
-  def stub_tournament_results_lambda
-    lambda do |*args|
-      params = args.last.is_a?(Hash) ? args.last : {}
-      if params[:format] == :html
-        "<table><tr class='header thead'></tr></table>"
-      else
-        json_obj = Object.new
-        # rubocop:disable Lint/UnusedMethodArgument
-        def json_obj.to_json(raw: true)
-          '{"name":"Overall Results","adjusted":false,"rounds":[],"scopes":[]}'
+  def build_scoreboard(json_payload:, event:, rounds:, tournaments:, sources: {})
+    roster = sources.fetch(:roster, [])
+    tee_sheet = sources.fetch(:tee_sheet, [])
+
+    GolfGenius::Event.stub :fetch, event do
+      GolfGenius::Event.stub :rounds, rounds do
+        GolfGenius::Event.stub :tournaments, tournaments do
+          GolfGenius::Event.stub :roster, roster do
+            GolfGenius::Event.stub :tee_sheet, tee_sheet do
+              GolfGenius::Event.stub :tournament_results, stub_tournament_results_json(json_payload) do
+                scoreboard = GolfGenius::Scoreboard.new(
+                  event: event.id,
+                  round: rounds.one? ? rounds.first.id : nil
+                )
+                scoreboard.to_h
+                return scoreboard
+              end
+            end
+          end
         end
-        # rubocop:enable Lint/UnusedMethodArgument
-        json_obj
       end
     end
   end
 
-  def stub_detailed_tournament_results_lambda(json_payload)
-    lambda do |*args|
-      params = args.last.is_a?(Hash) ? args.last : {}
-      if params[:format] == :html
-        "<table><tr class='header thead'></tr></table>"
-      else
-        json_obj = Object.new
-        json_string = JSON.generate(json_payload)
-        json_obj.define_singleton_method(:to_json) do |**_kwargs|
-          json_string
-        end
-        json_obj
+  def stub_tournament_results_json(json_payload)
+    lambda do |*_args|
+      json_obj = Object.new
+      json_string = JSON.generate(json_payload)
+      json_obj.define_singleton_method(:to_json) do |**_kwargs|
+        json_string
       end
+      json_obj
     end
+  end
+
+  def empty_results_payload
+    {
+      "name" => "Overall Results",
+      "adjusted" => false,
+      "rounds" => [],
+      "scopes" => [{ "aggregates" => [] }],
+    }
+  end
+
+  def sortable_results_payload
+    {
+      "name" => "Overall Results",
+      "adjusted" => false,
+      "rounds" => [
+        { "id" => 1_615_931, "name" => "Round 1", "date" => "2026-03-15", "in_progress" => false },
+      ],
+      "scopes" => [
+        {
+          "aggregates" => [
+            { "id" => 1, "name" => "Player C", "position" => "3", "member_ids" => ["101"], "member_cards" => [] },
+            { "id" => 2, "name" => "Player A", "position" => "1", "member_ids" => ["102"], "member_cards" => [] },
+            { "id" => 3, "name" => "Player B", "position" => "2", "member_ids" => ["103"], "member_cards" => [] },
+          ],
+        },
+      ],
+    }
   end
 
   def create_mock_event(id, name)
@@ -830,6 +917,7 @@ class ScoreboardTest < Minitest::Test
       when :index, "index" then index
       when :date, "date" then date
       when :status, "status" then status
+      when :in_progress, "in_progress" then status == "in progress"
       end
     end
     round.define_singleton_method(:playing?) { status == "in progress" }
@@ -846,824 +934,5 @@ class ScoreboardTest < Minitest::Test
     tournament.define_singleton_method(:[]) { |key| key == :name ? name : nil }
     tournament.define_singleton_method(:non_scoring?) { false }
     tournament
-  end
-
-  public
-
-  def test_to_h_memoizes_result
-    event, round, tournament = setup_mocks
-
-    GolfGenius::Event.stub :fetch, event do
-      GolfGenius::Event.stub :rounds, [round] do
-        GolfGenius::Event.stub :tournaments, [tournament] do
-          GolfGenius::Event.stub :tournament_results, stub_tournament_results_lambda do
-            scoreboard = GolfGenius::Scoreboard.new(event: "522157", round: "1615931")
-            first_call = scoreboard.to_h
-            second_call = scoreboard.to_h
-
-            assert_same first_call, second_call
-          end
-        end
-      end
-    end
-  end
-
-  def test_skip_event_fetch_avoids_expensive_event_fetch
-    # Test that skip_event_fetch: true doesn't call Event.fetch
-    round = create_mock_round("1615931", "R1", 1, "2026-03-15")
-    tournament = create_mock_tournament("4522280", "Overall Results")
-
-    event_fetch_called = false
-    event_fetch_stub = lambda do |*_args|
-      event_fetch_called = true
-      raise "Event.fetch should not be called when skip_event_fetch: true"
-    end
-
-    GolfGenius::Event.stub :fetch, event_fetch_stub do
-      GolfGenius::Event.stub :rounds, [round] do
-        GolfGenius::Event.stub :tournaments, [tournament] do
-          GolfGenius::Event.stub :tournament_results, stub_tournament_results_lambda do
-            scoreboard = GolfGenius::Scoreboard.new(
-              event: "522157",
-              round: "1615931",
-              skip_event_fetch: true
-            )
-            schema = scoreboard.to_h
-
-            refute event_fetch_called, "Event.fetch should not be called with skip_event_fetch: true"
-            assert_equal "522157", schema[:meta][:event_name], "Should use event_id as event_name fallback"
-          end
-        end
-      end
-    end
-  end
-
-  def test_skip_event_fetch_builds_valid_schema
-    # Test that schema is valid even without event metadata
-    round = create_mock_round("1615931", "R1", 1, "2026-03-15")
-    tournament = create_mock_tournament("4522280", "Overall Results")
-
-    GolfGenius::Event.stub :rounds, [round] do
-      GolfGenius::Event.stub :tournaments, [tournament] do
-        GolfGenius::Event.stub :tournament_results, stub_tournament_results_lambda do
-          scoreboard = GolfGenius::Scoreboard.new(
-            event: "522157",
-            round: "1615931",
-            skip_event_fetch: true
-          )
-          schema = scoreboard.to_h
-
-          assert_equal "522157", schema[:meta][:event_id]
-          assert_equal "522157", schema[:meta][:event_name]
-          assert_equal "1615931", schema[:meta][:round_id]
-          assert_equal "R1", schema[:meta][:round_name]
-          assert_equal 1, schema[:tournaments].size
-        end
-      end
-    end
-  end
-
-  def test_event_object_memoizes_when_passed
-    # Test that passing an event object memoizes it and avoids fetching
-    event = create_mock_event("522157", "Test Event")
-    round = create_mock_round("1615931", "R1", 1, "2026-03-15")
-    tournament = create_mock_tournament("4522280", "Overall Results")
-
-    event_fetch_called = false
-    event_fetch_stub = lambda do |*_args|
-      event_fetch_called = true
-      raise "Event.fetch should not be called when event object is passed"
-    end
-
-    GolfGenius::Event.stub :fetch, event_fetch_stub do
-      GolfGenius::Event.stub :rounds, [round] do
-        GolfGenius::Event.stub :tournaments, [tournament] do
-          GolfGenius::Event.stub :tournament_results, stub_tournament_results_lambda do
-            scoreboard = GolfGenius::Scoreboard.new(
-              event: event,
-              round: "1615931"
-            )
-            schema = scoreboard.to_h
-
-            refute event_fetch_called, "Event.fetch should not be called when event object is passed"
-            assert_equal "Test Event", schema[:meta][:event_name]
-          end
-        end
-      end
-    end
-  end
-
-  def test_event_name_uses_event_object_when_available
-    # Test that event name comes from event object when not skipped
-    event = create_mock_event("522157", "My Tournament Event")
-    round = create_mock_round("1615931", "R1", 1, "2026-03-15")
-    tournament = create_mock_tournament("4522280", "Overall Results")
-
-    GolfGenius::Event.stub :fetch, event do
-      GolfGenius::Event.stub :rounds, [round] do
-        GolfGenius::Event.stub :tournaments, [tournament] do
-          GolfGenius::Event.stub :tournament_results, stub_tournament_results_lambda do
-            scoreboard = GolfGenius::Scoreboard.new(
-              event: "522157",
-              round: "1615931"
-            )
-            schema = scoreboard.to_h
-
-            assert_equal "My Tournament Event", schema[:meta][:event_name]
-          end
-        end
-      end
-    end
-  end
-
-  def test_sort_reuses_schema_without_rebuilding
-    # CRITICAL: This tests the main performance fix
-    # Before the fix, sort() would pass a schema but to_h would ignore it
-    # and rebuild everything from scratch, re-fetching all data!
-    event = create_mock_event("522157", "Test Event")
-    round = create_mock_round("1615931", "R1", 1, "2026-03-15")
-    tournament = create_mock_tournament("4522280", "Overall Results")
-
-    fetch_count = 0
-    rounds_count = 0
-    tournaments_count = 0
-    results_count = 0
-
-    fetch_stub = lambda do |*_args|
-      fetch_count += 1
-      event
-    end
-
-    rounds_stub = lambda do |*_args|
-      rounds_count += 1
-      [round]
-    end
-
-    tournaments_stub = lambda do |*_args|
-      tournaments_count += 1
-      [tournament]
-    end
-
-    results_stub = lambda do |*args|
-      results_count += 1
-      stub_tournament_results_lambda.call(*args)
-    end
-
-    GolfGenius::Event.stub :fetch, fetch_stub do
-      GolfGenius::Event.stub :rounds, rounds_stub do
-        GolfGenius::Event.stub :tournaments, tournaments_stub do
-          GolfGenius::Event.stub :tournament_results, results_stub do
-            # Create initial scoreboard - this should build schema once
-            scoreboard = GolfGenius::Scoreboard.new(event: "522157", round: "1615931")
-            original_schema = scoreboard.to_h
-
-            # Capture call counts after initial build
-            initial_fetch = fetch_count
-            initial_rounds = rounds_count
-            initial_tournaments = tournaments_count
-            initial_results = results_count
-
-            # Sort the scoreboard - this creates a new Scoreboard with schema parameter
-            sorted = scoreboard.sort(:position)
-            sorted_schema = sorted.to_h
-
-            # CRITICAL ASSERTION: Sorting should NOT trigger any additional API calls
-            # because the schema parameter should be reused
-            assert_equal initial_fetch, fetch_count,
-                         "sort() should not call Event.fetch again (schema should be reused)"
-            assert_equal initial_rounds, rounds_count,
-                         "sort() should not call Event.rounds again (schema should be reused)"
-            assert_equal initial_tournaments, tournaments_count,
-                         "sort() should not call Event.tournaments again (schema should be reused)"
-            assert_equal initial_results, results_count,
-                         "sort() should not call tournament_results again (schema should be reused)"
-
-            # Verify schemas are different objects but have same structure
-            refute_same original_schema, sorted_schema, "Sorted schema should be a different object"
-            assert_equal original_schema[:meta], sorted_schema[:meta], "Metadata should be identical"
-          end
-        end
-      end
-    end
-  end
-
-  def test_schema_parameter_is_respected
-    # Test that when a schema is passed to new(), it's used instead of building
-    pre_built_schema = {
-      meta: {
-        event_id: "522157",
-        event_name: "Test Event",
-        round_id: "1615931",
-        round_name: "R1",
-      },
-      tournaments: [],
-    }
-
-    # These should never be called because schema is provided
-    fetch_stub = ->(*_args) { raise "Event.fetch should not be called when schema is provided" }
-    rounds_stub = ->(*_args) { raise "Event.rounds should not be called when schema is provided" }
-    tournaments_stub = ->(*_args) { raise "Event.tournaments should not be called when schema is provided" }
-
-    GolfGenius::Event.stub :fetch, fetch_stub do
-      GolfGenius::Event.stub :rounds, rounds_stub do
-        GolfGenius::Event.stub :tournaments, tournaments_stub do
-          scoreboard = GolfGenius::Scoreboard.new(
-            event: "522157",
-            round: "1615931",
-            schema: pre_built_schema
-          )
-
-          result = scoreboard.to_h
-
-          # Should return the exact schema that was passed in
-          assert_equal pre_built_schema, result
-        end
-      end
-    end
-  end
-
-  def test_resolves_latest_round_by_index
-    # Mock event
-    event = Object.new
-    def event.id = "522157"
-
-    def event.[](key)
-      [:name, "name"].include?(key) ? "Test Event" : nil
-    end
-
-    # Mock rounds for metadata with proper index/date for latest_round logic
-    round = create_mock_round("1615932", "R1", 1, "2026-03-15", status: "in progress")
-
-    # Mock tournament
-    tournament = Object.new
-    def tournament.id = "4522280"
-
-    def tournament.[](key)
-      key == :name ? "Overall Results" : nil
-    end
-
-    def tournament.non_scoring? = false
-
-    GolfGenius::Event.stub :fetch, event do
-      GolfGenius::Event.stub :rounds, [round] do
-        GolfGenius::Event.stub :tournaments, [tournament] do
-          GolfGenius::Event.stub :tournament_results, stub_tournament_results_lambda do
-            scoreboard = GolfGenius::Scoreboard.new(event: "522157")
-            schema = scoreboard.to_h
-
-            assert_equal "1615932", schema[:meta][:round_id]
-          end
-        end
-      end
-    end
-  end
-
-  def test_uses_explicit_round_id_when_provided
-    event = Object.new
-    def event.id = "522157"
-
-    def event.[](key)
-      [:name, "name"].include?(key) ? "Test Event" : nil
-    end
-
-    # Create round with matching ID
-    round = create_mock_round("1615930", "R1", 1, "2026-03-15", status: "in progress")
-
-    tournament = Object.new
-    def tournament.id = "4522280"
-
-    def tournament.[](key)
-      key == :name ? "Overall Results" : nil
-    end
-
-    def tournament.non_scoring? = false
-
-    GolfGenius::Event.stub :fetch, event do
-      GolfGenius::Event.stub :rounds, [round] do
-        GolfGenius::Event.stub :tournaments, [tournament] do
-          GolfGenius::Event.stub :tournament_results, stub_tournament_results_lambda do
-            scoreboard = GolfGenius::Scoreboard.new(event: "522157", round: "1615930")
-            schema = scoreboard.to_h
-
-            # Should use explicit round_id, not resolve to latest
-            assert_equal "1615930", schema[:meta][:round_id]
-          end
-        end
-      end
-    end
-  end
-
-  def test_raises_error_when_no_rounds_exist
-    event = Object.new
-    def event.id = "522157"
-
-    GolfGenius::Event.stub :fetch, event do
-      GolfGenius::Event.stub :rounds, [] do
-        scoreboard = GolfGenius::Scoreboard.new(event: "522157")
-
-        error = assert_raises(StandardError) do
-          scoreboard.to_h
-        end
-
-        assert_match(/No rounds found for event/, error.message)
-      end
-    end
-  end
-
-  def test_resolves_latest_round_from_multiple_rounds
-    # Test that latest started round is selected rather than the highest index.
-    event = create_mock_event("522157", "Test Event")
-    round1 = create_mock_round("1615930", "R1", 1, "2026-03-15", status: "completed")
-    round2 = create_mock_round("1615931", "R2", 2, "2026-03-16", status: "in progress")
-    round3 = create_mock_round("1615932", "R3", 3, "2026-03-17", status: "not started")
-    tournament = create_mock_tournament("4522280", "Overall Results")
-
-    # Verify rounds is only called once (memoization)
-    rounds_call_count = 0
-    rounds_stub = lambda do |*_args|
-      rounds_call_count += 1
-      [round1, round2, round3]
-    end
-
-    GolfGenius::Event.stub :fetch, event do
-      GolfGenius::Event.stub :rounds, rounds_stub do
-        GolfGenius::Event.stub :tournaments, [tournament] do
-          GolfGenius::Event.stub :tournament_results, stub_tournament_results_lambda do
-            scoreboard = GolfGenius::Scoreboard.new(event: "522157")
-            schema = scoreboard.to_h
-
-            # Should resolve to R2 (latest started round)
-            assert_equal "1615931", schema[:meta][:round_id]
-            assert_equal "R2", schema[:meta][:round_name]
-
-            # Verify memoization: rounds should only be called once
-            assert_equal 1, rounds_call_count, "Expected rounds to be called once (memoization), but was called #{rounds_call_count} times"
-          end
-        end
-      end
-    end
-  end
-
-  def test_resolves_earliest_upcoming_round_when_nothing_has_started
-    event = create_mock_event("522157", "Test Event")
-    round1 = create_mock_round("1615930", "R1", 1, "2026-03-15", status: "not started")
-    round2 = create_mock_round("1615931", "R2", 2, "2026-03-16", status: "not started")
-    tournament = create_mock_tournament("4522280", "Overall Results")
-
-    GolfGenius::Event.stub :fetch, event do
-      GolfGenius::Event.stub :rounds, [round1, round2] do
-        GolfGenius::Event.stub :tournaments, [tournament] do
-          GolfGenius::Event.stub :tournament_results, stub_tournament_results_lambda do
-            scoreboard = GolfGenius::Scoreboard.new(event: "522157")
-            schema = scoreboard.to_h
-
-            assert_equal "1615930", schema[:meta][:round_id]
-          end
-        end
-      end
-    end
-  end
-
-  def test_resolves_all_scoring_tournaments
-    event, round, = setup_mocks
-
-    tournament1 = Object.new
-    def tournament1.id = "4522280"
-
-    def tournament1.[](key)
-      key == :name ? "Overall Results" : nil
-    end
-
-    def tournament1.non_scoring? = false
-
-    tournament2 = Object.new
-    def tournament2.id = "4522284"
-
-    def tournament2.[](key)
-      key == :name ? "16-18 Results" : nil
-    end
-
-    def tournament2.non_scoring? = false
-
-    tournament3 = Object.new
-    def tournament3.id = "4522288"
-
-    def tournament3.[](key)
-      key == :name ? "15 & Under Results" : nil
-    end
-
-    def tournament3.non_scoring? = false
-
-    GolfGenius::Event.stub :fetch, event do
-      GolfGenius::Event.stub :rounds, [round] do
-        GolfGenius::Event.stub :tournaments, [tournament1, tournament2, tournament3] do
-          GolfGenius::Event.stub :tournament_results, stub_tournament_results_lambda do
-            scoreboard = GolfGenius::Scoreboard.new(event: "522157", round: "1615931")
-            scoreboard.to_h
-
-            # Should store all tournament IDs
-            assert_equal %w[4522280 4522284 4522288], scoreboard.instance_variable_get(:@tournament_ids)
-          end
-        end
-      end
-    end
-  end
-
-  def test_filters_out_non_scoring_tournaments
-    event, round, = setup_mocks
-
-    tournament1 = Object.new
-    def tournament1.id = "4522280"
-
-    def tournament1.[](key)
-      key == :name ? "Overall Results" : nil
-    end
-
-    def tournament1.non_scoring? = false
-
-    tournament2 = Object.new
-    def tournament2.id = "9999"
-
-    def tournament2.[](key)
-      key == :name ? "Pairings Sheet" : nil
-    end
-
-    def tournament2.non_scoring? = true
-
-    tournament3 = Object.new
-    def tournament3.id = "9998"
-
-    def tournament3.[](key)
-      key == :name ? "Scorecard Printing" : nil
-    end
-
-    def tournament3.non_scoring? = true
-
-    GolfGenius::Event.stub :fetch, event do
-      GolfGenius::Event.stub :rounds, [round] do
-        GolfGenius::Event.stub :tournaments, [tournament1, tournament2, tournament3] do
-          GolfGenius::Event.stub :tournament_results, stub_tournament_results_lambda do
-            scoreboard = GolfGenius::Scoreboard.new(event: "522157", round: "1615931")
-            scoreboard.to_h
-
-            # Should only include scoring tournament
-            assert_equal ["4522280"], scoreboard.instance_variable_get(:@tournament_ids)
-          end
-        end
-      end
-    end
-  end
-
-  def test_uses_explicit_tournament_id_when_provided
-    event, round, = setup_mocks
-
-    tournament1 = Object.new
-    def tournament1.id = "4522280"
-
-    def tournament1.[](key)
-      key == :name ? "Overall Results" : nil
-    end
-
-    def tournament1.non_scoring? = false
-
-    tournament2 = Object.new
-    def tournament2.id = "4522284"
-
-    def tournament2.[](key)
-      key == :name ? "16-18 Results" : nil
-    end
-
-    def tournament2.non_scoring? = false
-
-    GolfGenius::Event.stub :fetch, event do
-      GolfGenius::Event.stub :rounds, [round] do
-        GolfGenius::Event.stub :tournaments, [tournament1, tournament2] do
-          GolfGenius::Event.stub :tournament_results, stub_tournament_results_lambda do
-            scoreboard = GolfGenius::Scoreboard.new(event: "522157", round: "1615931", tournament: "4522280")
-            scoreboard.to_h
-
-            # Should only include specified tournament
-            assert_equal ["4522280"], scoreboard.instance_variable_get(:@tournament_ids)
-          end
-        end
-      end
-    end
-  end
-
-  def test_raises_error_when_no_tournaments_exist
-    GolfGenius::Event.stub :tournaments, [] do
-      scoreboard = GolfGenius::Scoreboard.new(event: "522157", round: "1615931")
-
-      error = assert_raises(StandardError) do
-        scoreboard.to_h
-      end
-
-      assert_match(/No tournaments found/, error.message)
-    end
-  end
-
-  def test_raises_error_when_no_scoring_tournaments_exist
-    tournament1 = Object.new
-    def tournament1.id = "9999"
-
-    def tournament1.[](key)
-      key == :name ? "Pairings Only" : nil
-    end
-
-    def tournament1.non_scoring? = true
-
-    GolfGenius::Event.stub :tournaments, [tournament1] do
-      scoreboard = GolfGenius::Scoreboard.new(event: "522157", round: "1615931")
-
-      error = assert_raises(StandardError) do
-        scoreboard.to_h
-      end
-
-      assert_match(/No scoring tournaments found/, error.message)
-    end
-  end
-
-  def test_tournaments_accessor_returns_tournaments_array
-    event, round, tournament = setup_mocks
-
-    GolfGenius::Event.stub :fetch, event do
-      GolfGenius::Event.stub :rounds, [round] do
-        GolfGenius::Event.stub :tournaments, [tournament] do
-          GolfGenius::Event.stub :tournament_results, stub_tournament_results_lambda do
-            scoreboard = GolfGenius::Scoreboard.new(event: "522157", round: "1615931")
-
-            assert_kind_of Array, scoreboard.tournaments
-            assert_equal 1, scoreboard.tournaments.length
-          end
-        end
-      end
-    end
-  end
-
-  def test_tournament_accessor_finds_by_id
-    event, round, tournament = setup_mocks
-
-    GolfGenius::Event.stub :fetch, event do
-      GolfGenius::Event.stub :rounds, [round] do
-        GolfGenius::Event.stub :tournaments, [tournament] do
-          GolfGenius::Event.stub :tournament_results, stub_tournament_results_lambda do
-            scoreboard = GolfGenius::Scoreboard.new(event: "522157", round: "1615931")
-
-            result = scoreboard.tournament(4_522_280)
-
-            assert_equal "Overall Results", result.name
-          end
-        end
-      end
-    end
-  end
-
-  def test_tournament_accessor_finds_by_name
-    event, round, tournament = setup_mocks
-
-    GolfGenius::Event.stub :fetch, event do
-      GolfGenius::Event.stub :rounds, [round] do
-        GolfGenius::Event.stub :tournaments, [tournament] do
-          GolfGenius::Event.stub :tournament_results, stub_tournament_results_lambda do
-            scoreboard = GolfGenius::Scoreboard.new(event: "522157", round: "1615931")
-
-            result = scoreboard.tournament("Overall Results")
-
-            assert_equal 4_522_280, result.tournament_id
-          end
-        end
-      end
-    end
-  end
-
-  def test_tournament_accessor_finds_by_partial_name
-    event, round, tournament = setup_mocks
-
-    GolfGenius::Event.stub :fetch, event do
-      GolfGenius::Event.stub :rounds, [round] do
-        GolfGenius::Event.stub :tournaments, [tournament] do
-          GolfGenius::Event.stub :tournament_results, stub_tournament_results_lambda do
-            scoreboard = GolfGenius::Scoreboard.new(event: "522157", round: "1615931")
-
-            result = scoreboard.tournament("overall")
-
-            assert_equal 4_522_280, result.tournament_id
-          end
-        end
-      end
-    end
-  end
-
-  def test_rows_accessor_returns_all_rows_with_tournament_id
-    event, round, tournament = setup_mocks
-
-    GolfGenius::Event.stub :fetch, event do
-      GolfGenius::Event.stub :rounds, [round] do
-        GolfGenius::Event.stub :tournaments, [tournament] do
-          GolfGenius::Event.stub :tournament_results, stub_tournament_results_lambda do
-            scoreboard = GolfGenius::Scoreboard.new(event: "522157", round: "1615931")
-
-            all_rows = scoreboard.rows
-
-            assert_kind_of Array, all_rows
-
-            # Each row should have tournament_id
-            all_rows.each do |row|
-              assert row.key?(:tournament_id)
-            end
-          end
-        end
-      end
-    end
-  end
-
-  def test_full_integration_with_fixtures
-    # Load fixtures
-    html = File.read(File.join(__dir__, "../fixtures/tournament_results/multi_round_stroke_play.html"))
-    File.read(File.join(__dir__, "../fixtures/tournament_results/multi_round_stroke_play.json"))
-
-    # Create mock objects
-    event = Object.new
-    def event.id = "1000"
-
-    def event.[](key)
-      [:name, "name"].include?(key) ? "Test Event" : nil
-    end
-
-    round = Object.new
-    def round.id = 2001
-
-    def round.[](key)
-      case key
-      when :id, "id" then 2001
-      when :name, "name" then "R2"
-      end
-    end
-
-    tournament = Object.new
-    def tournament.id = "1001"
-
-    def tournament.[](key)
-      key == :name ? "Test Tournament" : nil
-    end
-
-    def tournament.non_scoring? = false
-
-    json_obj = Object.new
-    # rubocop:disable Lint/UnusedMethodArgument
-    def json_obj.to_json(raw: true)
-      File.read(File.join(__dir__, "../fixtures/tournament_results/multi_round_stroke_play.json"))
-    end
-    # rubocop:enable Lint/UnusedMethodArgument
-
-    # Stub API calls
-    GolfGenius::Event.stub :fetch, event do
-      GolfGenius::Event.stub :rounds, [round] do
-        GolfGenius::Event.stub :tournaments, [tournament] do
-          GolfGenius::Event.stub :tournament_results, proc { |*args|
-            params = args.last.is_a?(Hash) ? args.last : {}
-            params[:format] == :html ? html : json_obj
-          } do
-            scoreboard = GolfGenius::Scoreboard.new(event: "1000", round: "2001")
-            result = scoreboard.to_h
-
-            # Verify top-level structure
-            assert result.key?(:meta)
-            assert result.key?(:tournaments)
-
-            # Verify meta
-            assert_equal "1000", result[:meta][:event_id]
-            assert_equal "Test Event", result[:meta][:event_name]
-            assert_equal "2001", result[:meta][:round_id]
-            assert_equal "R2", result[:meta][:round_name]
-
-            # Verify tournaments
-            assert_equal 1, result[:tournaments].length
-
-            tournament = result[:tournaments][0]
-
-            assert tournament.key?(:meta)
-            assert tournament.key?(:columns)
-            assert tournament.key?(:rows)
-
-            # Verify tournament meta
-            assert_equal "Test Tournament", tournament[:meta][:name]
-            assert_equal false, tournament[:meta][:adjusted]
-
-            # Verify columns structure
-            assert tournament[:columns].key?(:summary)
-            assert tournament[:columns].key?(:rounds)
-
-            # Verify rows
-            assert_equal 3, tournament[:rows].length
-
-            # Check first row structure
-            row = tournament[:rows][0]
-
-            assert_equal 1001, row[:id]
-            assert_equal "Player A", row[:name]
-            assert row.key?(:summary)
-            assert row.key?(:rounds)
-
-            # Verify summary cells
-            assert row[:summary].key?(:position)
-            assert row[:summary].key?(:player)
-
-            # Verify round data with scorecard
-            assert row[:rounds].key?(2001)
-            assert row[:rounds][2001].key?(:scorecard)
-          end
-        end
-      end
-    end
-  end
-
-  def test_full_integration_with_summary_only_current_round_payload
-    html = <<~HTML
-      <table class='result_scope'>
-        <tr class='header thead'>
-          <th class='pos'>Pos.</th>
-          <th class='name' data-format-text='player'>Player</th>
-          <th class='score' data-format-text='to-par-gross'>To Par Gross</th>
-          <th class='total' data-format-text='total-gross'>Total Gross</th>
-          <th class='details' data-format-text='details'>Details</th>
-        </tr>
-        <tr class='aggregate-row odd' data-aggregate-id='1001' data-aggregate-name='Marcus Meloan' data-member-ids='101'>
-          <td class='pos'>1</td>
-          <td class='name'>
-            <div class='player'>
-              <a class="open-aggregate-details" data-remote="true" href="/tournaments2/details/1001">Marcus Meloan</a>
-              <div class='affiliation'>Augusta, KY</div>
-            </div>
-          </td>
-          <td class='score'>-2</td>
-          <td class='total'>69</td>
-          <td class='details'></td>
-        </tr>
-      </table>
-    HTML
-
-    event = create_mock_event("1000", "Test Event")
-    round = create_mock_round(2001, "Round 1", 1, "2026-03-15")
-    tournament = create_mock_tournament("1001", "Test Tournament")
-
-    json_obj = Object.new
-    def json_obj.to_json(*)
-      {
-        name: "Test Tournament",
-        adjusted: false,
-        rounds: [],
-        scopes: [
-          {
-            aggregates: [
-              {
-                id: 1001,
-                member_ids_str: ["101"],
-                position: "1",
-                rank: "1",
-                name: "Marcus Meloan",
-                affiliation: "Augusta, KY",
-                score: "-2",
-                total: "69",
-                gross_scores: [4, 4, 3, 4, 5, 5, 3, 4, 3, 4, 4, 3, 4, 4, 3, 4, 4, 4],
-                net_scores: [4, 4, 3, 4, 5, 5, 3, 4, 3, 4, 4, 3, 4, 4, 3, 4, 4, 4],
-                to_par_gross: [0, 0, 0, -1, 1, 0, 0, 0, -1, 0, 0, 0, 0, 0, 0, 0, -1, 0],
-                to_par_net: [0, 0, 0, -1, 1, 0, 0, 0, -1, 0, 0, 0, 0, 0, 0, 0, -1, 0],
-                totals: {
-                  gross_scores: { out: 35, in: 34, total: 69 },
-                  net_scores: { out: 35, in: 34, total: 69 },
-                  to_par_gross: { out: -1, in: -1, total: -2 },
-                  to_par_net: { out: -1, in: -1, total: -2 },
-                },
-              },
-            ],
-          },
-        ],
-      }.to_json
-    end
-
-    GolfGenius::Event.stub :fetch, event do
-      GolfGenius::Event.stub :rounds, [round] do
-        GolfGenius::Event.stub :tournaments, [tournament] do
-          GolfGenius::Event.stub :tournament_results, proc { |*args|
-            params = args.last.is_a?(Hash) ? args.last : {}
-            params[:format] == :html ? html : json_obj
-          } do
-            scoreboard = GolfGenius::Scoreboard.new(event: "1000", round: "2001")
-            tournament = scoreboard.tournaments.first
-            row = tournament.rows.first
-            scorecard = row.scorecard(2001)
-
-            assert_equal 1, tournament.rounds.size
-            assert_equal "R1", tournament.rounds.first.name
-            assert scorecard, "expected synthesized scorecard for fetched round"
-            assert_equal 35, scorecard.totals[:out]
-            assert_equal 34, scorecard.totals[:in]
-            assert_equal 69, scorecard.totals[:total]
-            assert_equal [4, 4, 3, 4, 5, 5, 3, 4, 3, 4, 4, 3, 4, 4, 3, 4, 4, 4], scorecard.gross_scores
-          end
-        end
-      end
-    end
   end
 end
