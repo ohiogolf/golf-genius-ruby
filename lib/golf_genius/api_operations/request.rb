@@ -83,6 +83,9 @@ module GolfGenius
           current_version = GolfGenius.configuration.version
 
           # Rebuild connection if configuration has changed
+          # Callers may issue concurrent read requests through this shared
+          # connection. Keep it configuration-only; avoid storing per-request
+          # mutable state on the connection object or in module instance vars.
           if @connection.nil? || @connection_config_version != current_version
             @connection_config_version = current_version
             @connection = build_connection

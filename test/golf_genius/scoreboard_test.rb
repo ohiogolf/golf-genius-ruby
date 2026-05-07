@@ -83,6 +83,661 @@ class ScoreboardTest < Minitest::Test
     end
   end
 
+  def test_to_detailed_h_returns_normalized_structure
+    event, round, tournament = setup_mocks
+    roster = [
+      GolfGenius::RosterMember.construct_from(
+        {
+          "id" => "101",
+          "name" => "Jane Doe",
+          "first_name" => "Jane",
+          "last_name" => "Doe",
+          "member_card_id" => "555",
+          "custom_fields" => {
+            "affiliation" => "Test CC",
+            "city" => "Columbus",
+            "state" => "OH",
+          },
+        }
+      ),
+    ]
+    tee_sheet = [
+      GolfGenius::TeeSheetGroup.construct_from(
+        {
+          "tee_time" => "8:30 AM",
+          "players" => [
+            {
+              "name" => "Jane Doe",
+              "player_roster_id" => "101",
+              "member_card_id" => "555",
+              "score_array" => [4, 4, 3, 4, 5, 4, 3, 4] + Array.new(13),
+              "tee" => {
+                "name" => "Blue",
+                "abbreviation" => "BLU",
+                "color" => "#00f",
+              },
+            },
+          ],
+        }
+      ),
+    ]
+
+    json_payload = {
+      "name" => "Overall Results",
+      "adjusted" => false,
+      "column_names" => {
+        "score" => "To Par<br/>Gross",
+        "affiliation" => "city%2C state or country",
+      },
+      "column_visibility" => {
+        "score" => true,
+        "affiliation" => true,
+      },
+      "rounds" => [
+        {
+          "id" => 1_615_931,
+          "name" => "Round 1",
+          "date" => "2026-03-15",
+          "in_progress" => true,
+        },
+      ],
+      "scopes" => [
+        {
+          "aggregates" => [
+            {
+              "id" => 99,
+              "name" => "Jane   Doe (a)",
+              "position" => "1",
+              "affiliation" => "Test CC",
+              "details" => "",
+              "disposition" => "",
+              "disposition_cause" => "",
+              "rank" => "1",
+              "member_ids" => ["101"],
+              "member_cards" => [
+                {
+                  "member_id" => 101,
+                  "member_card_id" => 555,
+                },
+              ],
+              "thru" => "8",
+              "score" => "-2",
+              "total" => nil,
+              "gross_scores" => [4, 4, 3, 4, 5, 4, 3, 4] + Array.new(10),
+              "net_scores" => [],
+              "to_par_gross" => [],
+              "to_par_net" => [],
+              "totals" => {
+                "gross_scores" => {
+                  "out" => 35,
+                  "in" => nil,
+                  "total" => nil,
+                },
+              },
+              "scorecard_statuses" => [
+                {
+                  "member_card_id" => 555,
+                  "status" => "partial",
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    }
+
+    GolfGenius::Event.stub :fetch, event do
+      GolfGenius::Event.stub :rounds, [round] do
+        GolfGenius::Event.stub :tournaments, [tournament] do
+          GolfGenius::Event.stub :roster, roster do
+            GolfGenius::Event.stub :tee_sheet, tee_sheet do
+              GolfGenius::Event.stub :tournament_results, stub_detailed_tournament_results_lambda(json_payload) do
+                scoreboard = GolfGenius::Scoreboard.new(event: "522157", round: "1615931")
+                schema = scoreboard.to_detailed_h
+
+                assert_equal "522157", schema[:meta][:event_id]
+                assert_equal "1615931", schema[:meta][:selected_round][:id]
+                assert_equal "playing", schema[:meta][:selected_round][:state]
+                assert_equal "1615931", schema[:meta][:current_round][:id]
+                assert_equal "R1", schema[:rounds].first[:name]
+                assert_equal "playing", schema[:rounds].first[:state]
+
+                tournament_data = schema[:tournaments].first
+
+                assert_equal "4522280", tournament_data[:id]
+                assert_equal "Overall Results", tournament_data[:name]
+                assert_equal "1615931", tournament_data[:source_round][:id]
+                assert_equal "To Par Gross", tournament_data[:columns]["score"][:label]
+                assert_equal "city, state or country", tournament_data[:columns]["affiliation"][:label]
+
+                entry = tournament_data[:entries].first
+
+                assert_equal "99", entry[:id]
+                assert_equal "1", entry[:position]
+                assert_equal 1, entry[:rank]
+                assert_equal "playing", entry[:state]
+                assert_nil entry[:outcome]
+                assert_nil entry[:outcome_cause]
+                assert_nil entry[:details]
+                assert_equal "Test CC", entry[:players].first[:location][:raw]
+                assert_equal "Columbus", entry[:players].first[:location][:city]
+                assert_equal "Jane Doe (a)", entry[:players].first[:name][:full]
+                assert_equal true, entry[:players].first[:name][:amateur]
+                assert_equal "Blue", entry[:players].first[:tee][:name]
+                round_data = entry[:rounds]["1615931"]
+
+                assert_equal "8:30 AM", round_data[:tee_time]
+                assert_equal "playing", round_data[:state]
+                assert_equal "-2", round_data[:to_par_display]
+                assert_equal(-2, round_data[:to_par_total])
+                assert_equal 35, round_data[:stroke_totals][:out]
+              end
+            end
+          end
+        end
+      end
+    end
+  end
+
+  def test_to_detailed_h_uses_tee_sheet_when_json_has_no_round_section
+    event, round, tournament = setup_mocks
+    roster = [
+      GolfGenius::RosterMember.construct_from(
+        {
+          "id" => "101",
+          "name" => "Jane Doe",
+          "first_name" => "Jane",
+          "last_name" => "Doe",
+          "member_card_id" => "555",
+          "custom_fields" => {},
+        }
+      ),
+    ]
+    tee_sheet = [
+      GolfGenius::TeeSheetGroup.construct_from(
+        {
+          "tee_time" => "8:30 AM",
+          "players" => [
+            {
+              "name" => "Jane Doe",
+              "player_roster_id" => "101",
+              "member_card_id" => "555",
+              "score_array" => [],
+            },
+          ],
+        }
+      ),
+    ]
+    json_payload = {
+      "name" => "Overall Results",
+      "adjusted" => false,
+      "rounds" => [],
+      "scopes" => [
+        {
+          "aggregates" => [
+            {
+              "id" => 99,
+              "name" => "Jane Doe",
+              "member_ids" => ["101"],
+              "member_cards" => [
+                {
+                  "member_id" => 101,
+                  "member_card_id" => 555,
+                },
+              ],
+              "gross_scores" => Array.new(18),
+              "net_scores" => [],
+              "to_par_gross" => [],
+              "to_par_net" => [],
+              "totals" => {
+                "gross_scores" => {
+                  "out" => nil,
+                  "in" => nil,
+                  "total" => nil,
+                },
+              },
+              "scorecard_statuses" => [
+                {
+                  "member_card_id" => 555,
+                  "status" => "no_holes",
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    }
+
+    GolfGenius::Event.stub :fetch, event do
+      GolfGenius::Event.stub :rounds, [round] do
+        GolfGenius::Event.stub :tournaments, [tournament] do
+          GolfGenius::Event.stub :roster, roster do
+            GolfGenius::Event.stub :tee_sheet, tee_sheet do
+              GolfGenius::Event.stub :tournament_results, stub_detailed_tournament_results_lambda(json_payload) do
+                scoreboard = GolfGenius::Scoreboard.new(event: "522157", round: "1615931")
+                round_data = scoreboard.to_detailed_h[:tournaments].first[:entries].first[:rounds]["1615931"]
+
+                assert_equal "8:30 AM", round_data[:tee_time]
+                assert_equal "not_started", round_data[:state]
+              end
+            end
+          end
+        end
+      end
+    end
+  end
+
+  def test_to_detailed_h_uses_member_card_lookup_for_round_tee_data
+    event, round, tournament = setup_mocks
+    roster = [
+      GolfGenius::RosterMember.construct_from(
+        {
+          "id" => "101",
+          "name" => "Jane Doe",
+          "member_card_id" => "555",
+          "custom_fields" => {},
+        }
+      ),
+    ]
+    tee_sheet = [
+      GolfGenius::TeeSheetGroup.construct_from(
+        {
+          "tee_time" => "9:10 AM",
+          "players" => [
+            {
+              "name" => "Jane Doe",
+              "member_card_id" => "555",
+              "score_array" => [],
+            },
+          ],
+        }
+      ),
+    ]
+    json_payload = {
+      "name" => "Overall Results",
+      "adjusted" => false,
+      "rounds" => [],
+      "scopes" => [
+        {
+          "aggregates" => [
+            {
+              "id" => 99,
+              "name" => "Jane Doe",
+              "member_ids" => ["101"],
+              "member_cards" => [{ "member_id" => 101, "member_card_id" => 555 }],
+              "gross_scores" => Array.new(18),
+              "net_scores" => [],
+              "to_par_gross" => [],
+              "to_par_net" => [],
+              "totals" => { "gross_scores" => { "out" => nil, "in" => nil, "total" => nil } },
+              "scorecard_statuses" => [{ "member_card_id" => 555, "status" => "no_holes" }],
+            },
+          ],
+        },
+      ],
+    }
+
+    GolfGenius::Event.stub :fetch, event do
+      GolfGenius::Event.stub :rounds, [round] do
+        GolfGenius::Event.stub :tournaments, [tournament] do
+          GolfGenius::Event.stub :roster, roster do
+            GolfGenius::Event.stub :tee_sheet, tee_sheet do
+              GolfGenius::Event.stub :tournament_results, stub_detailed_tournament_results_lambda(json_payload) do
+                scoreboard = GolfGenius::Scoreboard.new(event: "522157", round: "1615931")
+                round_data = scoreboard.to_detailed_h[:tournaments].first[:entries].first[:rounds]["1615931"]
+
+                assert_equal "9:10 AM", round_data[:tee_time]
+                assert_equal "not_started", round_data[:state]
+              end
+            end
+          end
+        end
+      end
+    end
+  end
+
+  def test_to_detailed_h_builds_prestart_entries_from_tee_sheet_when_aggregates_are_empty
+    event, round, tournament = setup_mocks
+    roster = [
+      GolfGenius::RosterMember.construct_from(
+        {
+          "id" => "101",
+          "name" => "Jane Doe",
+          "first_name" => "Jane",
+          "last_name" => "Doe",
+          "member_card_id" => "555",
+          "custom_fields" => {
+            "city" => "Columbus",
+            "state" => "OH",
+          },
+        }
+      ),
+    ]
+    tee_sheet = [
+      GolfGenius::TeeSheetGroup.construct_from(
+        {
+          "tee_time" => "8:30 AM",
+          "players" => [
+            {
+              "name" => "Jane Doe",
+              "player_roster_id" => "101",
+              "member_card_id" => "555",
+              "score_array" => [],
+            },
+          ],
+        }
+      ),
+    ]
+    json_payload = {
+      "name" => "Overall Results",
+      "adjusted" => false,
+      "rounds" => [],
+      "scopes" => [
+        {
+          "aggregates" => [],
+        },
+      ],
+    }
+
+    GolfGenius::Event.stub :fetch, event do
+      GolfGenius::Event.stub :rounds, [round] do
+        GolfGenius::Event.stub :tournaments, [tournament] do
+          GolfGenius::Event.stub :roster, roster do
+            GolfGenius::Event.stub :tee_sheet, tee_sheet do
+              GolfGenius::Event.stub :tournament_results, stub_detailed_tournament_results_lambda(json_payload) do
+                tournament_data = GolfGenius::Scoreboard.new(event: "522157", round: "1615931").to_detailed_h[:tournaments].first
+                entry = tournament_data[:entries].first
+                round_data = entry[:rounds]["1615931"]
+
+                assert_equal 1, tournament_data[:entries].size
+                assert_equal "Jane Doe", entry[:name]
+                assert_equal "not_started", entry[:state]
+                assert_nil entry[:position]
+                assert_nil entry[:outcome]
+                assert_equal "Columbus", entry[:players].first[:location][:city]
+                assert_equal "8:30 AM", round_data[:tee_time]
+                assert_equal "not_started", round_data[:state]
+              end
+            end
+          end
+        end
+      end
+    end
+  end
+
+  def test_to_detailed_h_clears_dns_outcome_for_prestart_rows_with_tee_times
+    event, round, tournament = setup_mocks
+    roster = [
+      GolfGenius::RosterMember.construct_from(
+        {
+          "id" => "101",
+          "name" => "Jane Doe",
+          "first_name" => "Jane",
+          "last_name" => "Doe",
+          "member_card_id" => "555",
+          "custom_fields" => {},
+        }
+      ),
+    ]
+    tee_sheet = [
+      GolfGenius::TeeSheetGroup.construct_from(
+        {
+          "tee_time" => "8:30 AM",
+          "players" => [
+            {
+              "name" => "Jane Doe",
+              "player_roster_id" => "101",
+              "member_card_id" => "555",
+              "score_array" => [],
+            },
+          ],
+        }
+      ),
+    ]
+    json_payload = {
+      "name" => "Overall Results",
+      "adjusted" => false,
+      "rounds" => [],
+      "scopes" => [
+        {
+          "aggregates" => [
+            {
+              "id" => 99,
+              "name" => "Jane Doe",
+              "position" => "",
+              "disposition" => "DNS",
+              "member_ids" => ["101"],
+              "member_cards" => [{ "member_id" => 101, "member_card_id" => 555 }],
+              "gross_scores" => Array.new(18),
+              "net_scores" => [],
+              "to_par_gross" => [],
+              "to_par_net" => [],
+              "totals" => { "gross_scores" => { "out" => nil, "in" => nil, "total" => nil } },
+              "scorecard_statuses" => [{ "member_card_id" => 555, "status" => "no_holes" }],
+            },
+          ],
+        },
+      ],
+    }
+
+    GolfGenius::Event.stub :fetch, event do
+      GolfGenius::Event.stub :rounds, [round] do
+        GolfGenius::Event.stub :tournaments, [tournament] do
+          GolfGenius::Event.stub :roster, roster do
+            GolfGenius::Event.stub :tee_sheet, tee_sheet do
+              GolfGenius::Event.stub :tournament_results, stub_detailed_tournament_results_lambda(json_payload) do
+                entry = GolfGenius::Scoreboard.new(event: "522157", round: "1615931").to_detailed_h[:tournaments].first[:entries].first
+
+                assert_equal "not_started", entry[:state]
+                assert_nil entry[:outcome]
+              end
+            end
+          end
+        end
+      end
+    end
+  end
+
+  def test_to_detailed_h_normalizes_cut_and_ns_outcomes
+    event, round, tournament = setup_mocks
+    roster = [
+      GolfGenius::RosterMember.construct_from(
+        {
+          "id" => "101",
+          "name" => "Cut Player",
+          "member_card_id" => "555",
+          "custom_fields" => {},
+        }
+      ),
+      GolfGenius::RosterMember.construct_from(
+        {
+          "id" => "202",
+          "name" => "No Start Player",
+          "member_card_id" => "777",
+          "custom_fields" => {},
+        }
+      ),
+    ]
+
+    json_payload = {
+      "name" => "Overall Results",
+      "adjusted" => false,
+      "rounds" => [
+        {
+          "id" => 1_615_931,
+          "name" => "Round 1",
+          "date" => "2026-03-15",
+          "in_progress" => false,
+        },
+      ],
+      "scopes" => [
+        {
+          "aggregates" => [
+            {
+              "id" => 99,
+              "name" => "Cut Player",
+              "position" => "CUT",
+              "member_ids" => ["101"],
+              "member_cards" => [{ "member_id" => 101, "member_card_id" => 555 }],
+              "rounds" => [{ "id" => 1_615_931, "thru" => "F", "score" => "+4", "total" => "76" }],
+              "scorecard_statuses" => [{ "member_card_id" => 555, "status" => "completed" }],
+            },
+            {
+              "id" => 100,
+              "name" => "No Start Player",
+              "position" => "NS",
+              "member_ids" => ["202"],
+              "member_cards" => [{ "member_id" => 202, "member_card_id" => 777 }],
+              "rounds" => [{ "id" => 1_615_931, "thru" => nil, "score" => nil, "total" => nil }],
+              "scorecard_statuses" => [{ "member_card_id" => 777, "status" => "completed" }],
+            },
+          ],
+        },
+      ],
+    }
+
+    GolfGenius::Event.stub :fetch, event do
+      GolfGenius::Event.stub :rounds, [round] do
+        GolfGenius::Event.stub :tournaments, [tournament] do
+          GolfGenius::Event.stub :roster, roster do
+            GolfGenius::Event.stub :tee_sheet, [] do
+              GolfGenius::Event.stub :tournament_results, stub_detailed_tournament_results_lambda(json_payload) do
+                entries = GolfGenius::Scoreboard.new(event: "522157", round: "1615931").to_detailed_h[:tournaments].first[:entries]
+                cut_entry = entries.find { |entry| entry[:id] == "99" }
+                ns_entry = entries.find { |entry| entry[:id] == "100" }
+
+                assert_equal "cut", cut_entry[:outcome]
+                assert_equal "eliminated", cut_entry[:state]
+                assert_equal "finished", cut_entry[:rounds]["1615931"][:state]
+                assert_equal "ns", ns_entry[:outcome]
+                assert_equal "not_started", ns_entry[:state]
+                assert_equal "not_started", ns_entry[:rounds]["1615931"][:state]
+              end
+            end
+          end
+        end
+      end
+    end
+  end
+
+  def test_to_detailed_h_maps_unknown_outcome_to_unknown
+    event, round, tournament = setup_mocks
+    roster = [
+      GolfGenius::RosterMember.construct_from(
+        {
+          "id" => "101",
+          "name" => "Mystery Player",
+          "member_card_id" => "555",
+          "custom_fields" => {},
+        }
+      ),
+    ]
+    json_payload = {
+      "name" => "Overall Results",
+      "adjusted" => false,
+      "rounds" => [
+        { "id" => 1_615_931, "name" => "Round 1", "date" => "2026-03-15", "in_progress" => false },
+      ],
+      "scopes" => [
+        {
+          "aggregates" => [
+            {
+              "id" => 99,
+              "name" => "Mystery Player",
+              "position" => "FRC",
+              "disposition" => "FRC",
+              "member_ids" => ["101"],
+              "member_cards" => [{ "member_id" => 101, "member_card_id" => 555 }],
+              "rounds" => [{ "id" => 1_615_931, "thru" => "F", "score" => "+2", "total" => "74" }],
+              "scorecard_statuses" => [{ "member_card_id" => 555, "status" => "completed" }],
+            },
+          ],
+        },
+      ],
+    }
+
+    GolfGenius::Event.stub :fetch, event do
+      GolfGenius::Event.stub :rounds, [round] do
+        GolfGenius::Event.stub :tournaments, [tournament] do
+          GolfGenius::Event.stub :roster, roster do
+            GolfGenius::Event.stub :tee_sheet, [] do
+              GolfGenius::Event.stub :tournament_results, stub_detailed_tournament_results_lambda(json_payload) do
+                scoreboard = GolfGenius::Scoreboard.new(event: "522157", round: "1615931")
+                entry = scoreboard.to_detailed_h[:tournaments].first[:entries].first
+
+                assert_equal "unknown", entry[:outcome]
+              end
+            end
+          end
+        end
+      end
+    end
+  end
+
+  def test_to_detailed_h_does_not_treat_country_as_city
+    event, round, tournament = setup_mocks
+    roster = [
+      GolfGenius::RosterMember.construct_from(
+        {
+          "id" => "101",
+          "name" => "Jane Doe",
+          "member_card_id" => "555",
+          "custom_fields" => {
+            "affiliation" => "Canada",
+          },
+          "country" => {
+            "name" => "Canada",
+            "alpha_2" => "CA",
+            "alpha_3" => "CAN",
+          },
+        }
+      ),
+    ]
+
+    json_payload = {
+      "name" => "Overall Results",
+      "adjusted" => false,
+      "rounds" => [],
+      "scopes" => [
+        {
+          "aggregates" => [
+            {
+              "id" => 99,
+              "name" => "Jane Doe",
+              "member_ids" => ["101"],
+              "member_cards" => [{ "member_id" => 101, "member_card_id" => 555 }],
+              "country" => {
+                "name" => "Canada",
+                "alpha_2" => "CA",
+                "alpha_3" => "CAN",
+              },
+            },
+          ],
+        },
+      ],
+    }
+
+    GolfGenius::Event.stub :fetch, event do
+      GolfGenius::Event.stub :rounds, [round] do
+        GolfGenius::Event.stub :tournaments, [tournament] do
+          GolfGenius::Event.stub :roster, roster do
+            GolfGenius::Event.stub :tee_sheet, [] do
+              GolfGenius::Event.stub :tournament_results, stub_detailed_tournament_results_lambda(json_payload) do
+                scoreboard = GolfGenius::Scoreboard.new(event: "522157", round: "1615931")
+                location = scoreboard.to_detailed_h[:tournaments].first[:entries].first[:players].first[:location]
+
+                assert_equal "country", location[:kind]
+                assert_nil location[:city]
+                assert_nil location[:state]
+                assert_equal "Canada", location[:country][:name]
+              end
+            end
+          end
+        end
+      end
+    end
+  end
+
   private
 
   def setup_mocks
@@ -135,6 +790,22 @@ class ScoreboardTest < Minitest::Test
           '{"name":"Overall Results","adjusted":false,"rounds":[],"scopes":[]}'
         end
         # rubocop:enable Lint/UnusedMethodArgument
+        json_obj
+      end
+    end
+  end
+
+  def stub_detailed_tournament_results_lambda(json_payload)
+    lambda do |*args|
+      params = args.last.is_a?(Hash) ? args.last : {}
+      if params[:format] == :html
+        "<table><tr class='header thead'></tr></table>"
+      else
+        json_obj = Object.new
+        json_string = JSON.generate(json_payload)
+        json_obj.define_singleton_method(:to_json) do |**_kwargs|
+          json_string
+        end
         json_obj
       end
     end

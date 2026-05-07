@@ -6,6 +6,7 @@ require_relative "scoreboard/tournament_results_normalizer"
 require_relative "scoreboard/data_merger"
 require_relative "scoreboard/column_decomposer"
 require_relative "scoreboard/row_decomposer"
+require_relative "scoreboard/detailed_builder"
 require_relative "scoreboard/round_selector"
 require_relative "scoreboard/tournament"
 
@@ -96,6 +97,49 @@ module GolfGenius
     #
     def to_h
       @to_h ||= @schema || build_schema
+    end
+
+    # Returns a normalized, data-first payload alongside the existing table schema.
+    #
+    # This detailed shape favors canonical player/round facts over presentation
+    # cells so callers can render their own UI or perform downstream analysis.
+    #
+    # Shape:
+    # - meta: event name plus selected/current round references
+    # - rounds: all event rounds with canonical state
+    # - tournaments[]:
+    #   - source_round: the round whose tournament_results payload was used
+    #   - columns: cleaned display labels from Golf Genius
+    #   - entries[]:
+    #     - position/rank/state/outcome
+    #     - players[]: normalized identity/name/location/tee data
+    #     - rounds[round_id]: per-entry round facts such as state, thru,
+    #       to_par_display, to_par_total, gross_scores, and stroke_totals
+    #
+    # @example
+    #   scoreboard.to_detailed_h
+    #   # => {
+    #   #   meta: { event_id: "519450", selected_round: { id: "1608422", ... } },
+    #   #   tournaments: [
+    #   #     {
+    #   #       id: "4501424",
+    #   #       source_round: { id: "1608422", ... },
+    #   #       entries: [
+    #   #         {
+    #   #           position: "T1",
+    #   #           rank: 1,
+    #   #           state: "finished",
+    #   #           rounds: { "1608422" => { to_par_display: "E", stroke_totals: { total: 71 } } }
+    #   #         }
+    #   #       ]
+    #   #     }
+    #   #   ]
+    #   # }
+    #
+    # @return [Hash] detailed scoreboard payload
+    #
+    def to_detailed_h
+      @to_detailed_h ||= build_detailed_schema
     end
 
     # Returns all tournaments as Tournament objects.
@@ -199,6 +243,24 @@ module GolfGenius
         },
         tournaments: build_tournaments,
       }
+    end
+
+    def build_detailed_schema
+      resolve_round! unless @round_id
+      resolve_tournaments! unless @tournament_ids
+
+      event_obj = event
+
+      DetailedBuilder.new(
+        event_id: @event_id,
+        requested_round_id: @round_id.to_i,
+        tournament_ids: @tournament_ids,
+        json_loader: method(:fetch_json_for_tournament),
+        event_context: {
+          name: event_obj ? event_obj["name"] : @event_id.to_s,
+          rounds: fallback_rounds_metadata,
+        }
+      ).build
     end
 
     # Returns the event object, fetching and memoizing it on first access.
