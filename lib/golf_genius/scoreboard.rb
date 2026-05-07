@@ -6,6 +6,7 @@ require_relative "scoreboard/tournament_results_normalizer"
 require_relative "scoreboard/data_merger"
 require_relative "scoreboard/column_decomposer"
 require_relative "scoreboard/row_decomposer"
+require_relative "scoreboard/round_selector"
 require_relative "scoreboard/tournament"
 
 module GolfGenius
@@ -339,13 +340,7 @@ module GolfGenius
     end
 
     def fallback_source_round_for(requested_round_id)
-      requested_round = rounds.find { |round| round.id.to_i == requested_round_id }
-      return nil unless requested_round
-
-      rounds
-        .select { |round| round.started? && round.id.to_i != requested_round_id }
-        .select { |round| older_than_round?(round, requested_round) }
-        .max_by { |round| round_order_key(round) }
+      RoundSelector.fallback_source_round(rounds, requested_round_id)
     end
 
     # Merges HTML and JSON tournament data.
@@ -419,32 +414,7 @@ module GolfGenius
 
       raise StandardError, "No rounds found for event #{@event_id}" if rounds_list.nil? || rounds_list.empty?
 
-      latest = select_latest_round(rounds_list, &:playing?) ||
-               select_latest_round(rounds_list, &:complete?) ||
-               select_earliest_round(rounds_list, &:unstarted?) ||
-               rounds_list.max_by { |round| round_order_key(round) }
-
-      @round_id = latest.id
-    end
-
-    def round_order_key(round)
-      [
-        round[:index] || round["index"] || 0,
-        round[:date] || round["date"] || "",
-        round.id.to_i,
-      ]
-    end
-
-    def select_latest_round(rounds_list, &block)
-      rounds_list.select(&block).max_by { |round| round_order_key(round) }
-    end
-
-    def select_earliest_round(rounds_list, &block)
-      rounds_list.select(&block).min_by { |round| round_order_key(round) }
-    end
-
-    def older_than_round?(round, other_round)
-      (round_order_key(round) <=> round_order_key(other_round)) == -1
+      @round_id = RoundSelector.select_current(rounds_list).id
     end
 
     # Resolves the tournament IDs if not explicitly provided.
