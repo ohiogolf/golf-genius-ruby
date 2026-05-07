@@ -208,6 +208,7 @@ module GolfGenius
 
         normalized = value.to_s.strip
         return nil if normalized.empty? || normalized == "-"
+        return nil if SchemaValues::Outcome::FROM_GOLF_GENIUS.key?(normalized.upcase)
 
         Integer(normalized, exception: false) || value
       end

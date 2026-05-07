@@ -191,6 +191,64 @@ class ScoreboardTest < Minitest::Test
     assert_equal({ out: 36, in: nil, total: 36 }, player_b[:rounds]["2001"][:stroke_totals])
   end
 
+  def test_to_h_ignores_non_numeric_stroke_total_markers
+    event = create_mock_event("fixture-event", "Fixture Event")
+    round1 = create_mock_round("2000", "R1", 1, "2026-03-15", status: "completed")
+    tournament = create_mock_tournament("5001", "Test Tournament")
+    json_payload = {
+      "name" => "Overall Results",
+      "adjusted" => false,
+      "rounds" => [
+        { "id" => 2000, "name" => "Round 1", "date" => "2026-03-15", "in_progress" => false },
+      ],
+      "scopes" => [
+        {
+          "aggregates" => [
+            {
+              "id" => 99,
+              "name" => "Player A",
+              "position" => "WD",
+              "disposition" => "WD",
+              "disposition_cause" => "",
+              "member_ids" => ["101"],
+              "member_cards" => [],
+              "thru" => "9",
+              "score" => nil,
+              "gross_scores" => [4, 4, 4, 4, 4, 4, 4, 4, 4] + Array.new(9),
+              "net_scores" => [],
+              "to_par_gross" => [],
+              "to_par_net" => [],
+              "totals" => {
+                "gross_scores" => {
+                  "out" => 36,
+                  "in" => nil,
+                  "total" => "WD",
+                },
+              },
+              "scorecard_statuses" => [
+                {
+                  "status" => "partial",
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    }
+
+    scoreboard = build_scoreboard(
+      event: event,
+      rounds: [round1],
+      tournaments: [tournament],
+      json_payload: json_payload
+    )
+
+    entry = scoreboard.to_h[:tournaments].first[:entries].first
+
+    assert_equal "wd", entry[:outcome]
+    assert_equal({ out: 36, in: nil, total: 36 }, entry[:rounds]["2000"][:stroke_totals])
+  end
+
   def test_to_h_uses_tee_sheet_when_json_has_no_round_section
     event, round, tournament = setup_mocks
     roster = [
