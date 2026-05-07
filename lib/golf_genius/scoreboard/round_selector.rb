@@ -66,11 +66,8 @@ module GolfGenius
 
       def round_value(round, key)
         return round[key] || round[key.to_s] if round.respond_to?(:[]) && !round.is_a?(Round)
-        return unless round.is_a?(Round)
 
-        return round.public_send(key) if round.respond_to?(key)
-
-        round.to_h[key] || round.to_h[key.to_s]
+        round.public_send(key) if round.is_a?(Round)
       end
 
       def responds_to_round_contract?(round)

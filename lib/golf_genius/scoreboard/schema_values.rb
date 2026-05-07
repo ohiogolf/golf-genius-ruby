@@ -9,14 +9,6 @@ module GolfGenius
         FINISHED = "finished"
         ELIMINATED = "eliminated"
         UNKNOWN = "unknown"
-
-        VALUES = [
-          NOT_STARTED,
-          PLAYING,
-          FINISHED,
-          ELIMINATED,
-          UNKNOWN,
-        ].freeze
       end
 
       module Outcome
@@ -38,8 +30,6 @@ module GolfGenius
           "MC" => MC,
           "NC" => NC,
         }.freeze
-
-        VALUES = (FROM_GOLF_GENIUS.values + [UNKNOWN]).freeze
       end
 
       module LocationKind
@@ -47,13 +37,6 @@ module GolfGenius
         COUNTRY = "country"
         FREEFORM = "freeform"
         UNKNOWN = "unknown"
-
-        VALUES = [
-          CITY_STATE,
-          COUNTRY,
-          FREEFORM,
-          UNKNOWN,
-        ].freeze
       end
     end
   end

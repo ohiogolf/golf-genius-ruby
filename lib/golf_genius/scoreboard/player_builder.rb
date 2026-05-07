@@ -9,7 +9,7 @@ module GolfGenius
     # Builds normalized player payloads and tee-sheet lookup context.
     class PlayerBuilder
       def self.build_roster_lookup(roster)
-        roster.each_with_object({ by_member_id: {}, by_member_card_id: {}, ordered_members: [] }) do |member, result|
+        roster.each_with_object({ by_member_id: {}, by_member_card_id: {} }) do |member, result|
           custom_fields = ValueNormalizer.normalize_hash(member[:custom_fields])
           country = LocationBuilder.normalize_country_object(member[:country])
           entry = {
@@ -28,7 +28,6 @@ module GolfGenius
 
           result[:by_member_id][entry[:member_id]] = entry
           result[:by_member_card_id][entry[:member_card_id]] = entry if entry[:member_card_id]
-          result[:ordered_members] << entry
         end
       end
 
