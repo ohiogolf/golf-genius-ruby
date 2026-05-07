@@ -108,7 +108,7 @@ class TournamentResultsNormalizerTest < Minitest::Test
     }
 
     result = normalizer(json_data).normalize
-    round = result[:aggregates][1001][:rounds][2001]
+    round = result[:aggregates][1001][:rounds]["2001"]
 
     assert_equal "F", round[:thru]
     assert_equal "-2", round[:score]
@@ -143,7 +143,7 @@ class TournamentResultsNormalizerTest < Minitest::Test
     }
 
     result = normalizer(json_data).normalize
-    round = result[:aggregates][1001][:rounds][2001]
+    round = result[:aggregates][1001][:rounds]["2001"]
 
     assert_equal "9", round[:thru]
     assert_equal "partial", round[:status]
@@ -176,7 +176,7 @@ class TournamentResultsNormalizerTest < Minitest::Test
     }
 
     result = normalizer(json_data).normalize
-    round = result[:aggregates][1001][:rounds][2001]
+    round = result[:aggregates][1001][:rounds]["2001"]
 
     assert_equal "F", round[:thru]
     assert_equal "completed", round[:status]

@@ -46,7 +46,7 @@ module GolfGenius
 
       def normalize_round_collection(rounds)
         rounds.map do |round|
-          round.merge(name: canonical_round_name(round[:name], round[:index]))
+          round.merge(name: Round.canonical_name(round[:name], round[:index]))
         end
       end
 
@@ -64,12 +64,13 @@ module GolfGenius
 
       def normalize_aggregate(aggregate)
         rounds = aggregate[:rounds] || {}
-        return aggregate if rounds[@fetched_round_id]
+        fetched_round_id = @fetched_round_id.to_s
+        return aggregate if rounds[fetched_round_id]
 
         synthesized_round = synthesize_fetched_round(aggregate)
         return aggregate unless synthesized_round
 
-        aggregate.merge(rounds: rounds.merge(@fetched_round_id => synthesized_round))
+        aggregate.merge(rounds: rounds.merge(fetched_round_id => synthesized_round))
       end
 
       def merge_round(payload_round, fallback_round)
@@ -80,7 +81,7 @@ module GolfGenius
         merged_name = payload_round[:name] || fallback_round[:name]
         merged_index = payload_round[:index] || fallback_round[:index]
 
-        merged[:name] = canonical_round_name(
+        merged[:name] = Round.canonical_name(
           merged_name,
           merged_index
         )
@@ -96,22 +97,15 @@ module GolfGenius
         merged
       end
 
-      def canonical_round_name(name, index)
-        round_number = Round.extract_number(name) || index
-        return name unless round_number
-
-        "R#{round_number}"
-      end
-
       def synthesize_fetched_round(aggregate)
         summary = aggregate[:current_round_summary] || {}
         return nil unless round_summary_present?(summary, aggregate[:current_round_scores])
 
         {
-          thru: current_round_thru(aggregate[:current_round_scores]),
+          thru: summary[:thru] || current_round_thru(aggregate[:current_round_scores]),
           score: summary[:score],
           total: summary[:total],
-          status: current_round_status(aggregate[:current_round_scores]),
+          status: summary[:status] || current_round_status(aggregate[:current_round_scores]),
         }
       end
 

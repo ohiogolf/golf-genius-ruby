@@ -134,7 +134,7 @@ module GolfGenius
 
         rounds.each do |round|
           round_id = round[:id]
-          round_data_from_json = json_row[:rounds][round_id]
+          round_data_from_json = json_row[:rounds][round_id.to_s]
 
           # Skip if no data for this round
           next unless round_data_from_json
@@ -148,7 +148,7 @@ module GolfGenius
             }
           else
             # Previous round - use previous_rounds_scores
-            prev_scores = json_row[:previous_rounds_scores][round_id]
+            prev_scores = json_row[:previous_rounds_scores][round_id.to_s]
             if prev_scores
               result[round_id] = {
                 total: round_data_from_json[:total],

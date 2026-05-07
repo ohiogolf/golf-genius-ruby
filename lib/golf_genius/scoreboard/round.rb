@@ -25,6 +25,13 @@ module GolfGenius
         match ? match[0].to_i : nil
       end
 
+      def self.canonical_name(name, index = nil)
+        round_number = extract_number(name) || index
+        return name unless round_number
+
+        "R#{round_number}"
+      end
+
       # @return [Hash] the raw round data hash
       attr_reader :data
 
@@ -80,6 +87,10 @@ module GolfGenius
       #
       def date
         value(:date)
+      end
+
+      def index
+        value(:index)
       end
 
       # Returns the raw in_progress value.

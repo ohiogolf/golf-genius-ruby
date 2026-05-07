@@ -157,7 +157,7 @@ class JsonParserTest < Minitest::Test
     assert_equal 2, agg[:rounds].length
 
     # Check R2 data
-    r2 = agg[:rounds][2001]
+    r2 = agg[:rounds]["2001"]
 
     assert_equal "8", r2[:thru]
     assert_equal "-8", r2[:score]
@@ -165,7 +165,7 @@ class JsonParserTest < Minitest::Test
     assert_equal "partial", r2[:status]
 
     # Check R1 data
-    r1 = agg[:rounds][2000]
+    r1 = agg[:rounds]["2000"]
 
     assert_equal "F", r1[:thru]
     assert_equal "+16", r1[:score]
@@ -203,9 +203,9 @@ class JsonParserTest < Minitest::Test
 
     # Should have R1 data
     assert_equal 1, prev.length
-    assert prev.key?(2000)
+    assert prev.key?("2000")
 
-    r1 = prev[2000]
+    r1 = prev["2000"]
 
     assert_equal [4, 5, 3, 7, 6, 5, 6, 4, 7, 3, 5, 3, 7, 5, 3, 5, 3, 7], r1[:gross_scores]
     assert_equal 47, r1[:totals][:out]
@@ -320,5 +320,173 @@ class JsonParserTest < Minitest::Test
 
     assert_equal "-2", summary[:score]
     assert_equal "69", summary[:total]
+  end
+
+  def test_parse_columns_decodes_html_and_preserves_visibility
+    json = {
+      name: "Test Tournament",
+      adjusted: false,
+      column_names: {
+        "score" => "To Par<br/>Gross",
+        "affiliation" => "city%2C state",
+      },
+      column_visibility: {
+        "score" => true,
+        "affiliation" => false,
+      },
+      rounds: [],
+      scopes: [],
+    }.to_json
+
+    parser = GolfGenius::Scoreboard::JsonParser.new(json)
+    result = parser.parse
+
+    assert_equal "To Par Gross", result[:columns]["score"][:label]
+    assert_equal true, result[:columns]["score"][:visible]
+    assert_equal "city, state", result[:columns]["affiliation"][:label]
+    assert_equal false, result[:columns]["affiliation"][:visible]
+  end
+
+  def test_parse_cut_list_position_collapses_identical_scope_values
+    json = {
+      name: "Test Tournament",
+      adjusted: false,
+      rounds: [],
+      scopes: [
+        { cut_list_position: "10", aggregates: [] },
+        { cut_list_position: "10", aggregates: [] },
+      ],
+    }.to_json
+
+    parser = GolfGenius::Scoreboard::JsonParser.new(json)
+    result = parser.parse
+
+    assert_equal "10", result[:cut_list_position]
+  end
+
+  def test_parse_cut_list_position_preserves_divergent_scope_values
+    json = {
+      name: "Test Tournament",
+      adjusted: false,
+      rounds: [],
+      scopes: [
+        { cut_list_position: "10", aggregates: [] },
+        { cut_list_position: "12", aggregates: [] },
+      ],
+    }.to_json
+
+    parser = GolfGenius::Scoreboard::JsonParser.new(json)
+    result = parser.parse
+
+    assert_equal %w[10 12], result[:cut_list_position]
+  end
+
+  def test_parse_member_cards_returns_empty_when_missing
+    json = {
+      name: "Test Tournament",
+      adjusted: false,
+      rounds: [],
+      scopes: [
+        {
+          aggregates: [
+            {
+              id: 1001,
+              member_ids_str: ["101"],
+            },
+          ],
+        },
+      ],
+    }.to_json
+
+    parser = GolfGenius::Scoreboard::JsonParser.new(json)
+    result = parser.parse
+
+    assert_empty result[:aggregates][1001][:member_cards]
+  end
+
+  def test_parse_member_cards_extracts_member_id_and_card_id
+    json = {
+      name: "Test Tournament",
+      adjusted: false,
+      rounds: [],
+      scopes: [
+        {
+          aggregates: [
+            {
+              id: 1001,
+              member_ids_str: ["101"],
+              member_cards: [
+                { member_id: 101, member_card_id: 555 },
+                { member_id: "102", member_card_id: "777" },
+              ],
+            },
+          ],
+        },
+      ],
+    }.to_json
+
+    parser = GolfGenius::Scoreboard::JsonParser.new(json)
+    result = parser.parse
+
+    assert_equal(
+      [
+        { member_id: "101", member_card_id: "555" },
+        { member_id: "102", member_card_id: "777" },
+      ],
+      result[:aggregates][1001][:member_cards]
+    )
+  end
+
+  def test_parse_scorecard_statuses_compacts_blanks
+    json = {
+      name: "Test Tournament",
+      adjusted: false,
+      rounds: [],
+      scopes: [
+        {
+          aggregates: [
+            {
+              id: 1001,
+              member_ids_str: ["101"],
+              scorecard_statuses: [
+                { status: "completed" },
+                { status: " " },
+                { status: "verified" },
+              ],
+            },
+          ],
+        },
+      ],
+    }.to_json
+
+    parser = GolfGenius::Scoreboard::JsonParser.new(json)
+    result = parser.parse
+
+    assert_equal %w[completed verified], result[:aggregates][1001][:scorecard_statuses]
+    assert_equal "completed", result[:aggregates][1001][:current_round_summary][:status]
+  end
+
+  def test_parse_scorecard_statuses_returns_empty_when_missing
+    json = {
+      name: "Test Tournament",
+      adjusted: false,
+      rounds: [],
+      scopes: [
+        {
+          aggregates: [
+            {
+              id: 1001,
+              member_ids_str: ["101"],
+            },
+          ],
+        },
+      ],
+    }.to_json
+
+    parser = GolfGenius::Scoreboard::JsonParser.new(json)
+    result = parser.parse
+
+    assert_empty result[:aggregates][1001][:scorecard_statuses]
+    assert_nil result[:aggregates][1001][:current_round_summary][:status]
   end
 end
