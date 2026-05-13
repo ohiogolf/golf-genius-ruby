@@ -4,7 +4,7 @@ require "test_helper"
 
 class GolfGeniusTest < Minitest::Test
   def test_version
-    assert_equal "2.0.1", GolfGenius::VERSION
+    assert_equal "2.1.0", GolfGenius::VERSION
   end
 
   def test_api_docs_url_constant
