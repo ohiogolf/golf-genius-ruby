@@ -117,8 +117,8 @@ module GolfGenius
 
         {
           full: full_name,
-          first: roster_member&.dig(:first_name) || parsed_name&.first_name,
-          last: roster_member&.dig(:last_name) || parsed_name&.last_name,
+          first: roster_name_part(roster_member, :first_name) || parsed_name&.first_name,
+          last: last_name_without_duplicated_suffix(roster_member, parsed_name),
           suffix: parsed_name&.suffix,
           metadata: parsed_name&.metadata || [],
           amateur: parsed_name&.amateur? || false,
@@ -139,6 +139,25 @@ module GolfGenius
 
         parsed = NameParser.parse(full_name)
         parsed.is_a?(Array) ? nil : parsed
+      end
+
+      def roster_name_part(roster_member, key)
+        ValueNormalizer.normalize_text(roster_member&.dig(key))
+      end
+
+      def last_name_without_duplicated_suffix(roster_member, parsed_name)
+        roster_last_name = roster_name_part(roster_member, :last_name)
+        return parsed_name&.last_name if suffix_embedded_in_last_name?(roster_last_name, parsed_name)
+
+        roster_last_name || parsed_name&.last_name
+      end
+
+      def suffix_embedded_in_last_name?(roster_last_name, parsed_name)
+        return false if roster_last_name.nil? || parsed_name.nil?
+        return false if parsed_name.last_name.nil? || parsed_name.suffix.nil?
+
+        suffix = Regexp.escape(parsed_name.suffix.sub(/\.\z/, ""))
+        roster_last_name.match?(/\A#{Regexp.escape(parsed_name.last_name)}\s+#{suffix}\.?\z/i)
       end
 
       def simplify_tee(tee)
